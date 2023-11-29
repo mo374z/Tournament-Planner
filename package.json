@@ -1,0 +1,21 @@
+{
+  "name": "tournament-planner",
+  "version": "1.0.0",
+  "description": "Installation:\r - node.js[https://nodejs.org/en/download/]\r - mongoDB[https://www.mongodb.com/try/download/community]",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test",
+    "your-custom-script": "echo npm",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "mocha": "^10.2.0"
+  }
+}
