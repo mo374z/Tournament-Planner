@@ -29,5 +29,4 @@ https://nodejs.org/en/download/
 MongoDB
 https://www.youtube.com/watch?v=iYMtc8c945U
 
-
-
+1. Mongo DB instalieren
