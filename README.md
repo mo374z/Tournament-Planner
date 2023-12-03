@@ -46,9 +46,12 @@ npm install --save express path handlebars express-handlebars @handlebars/allow-
 
 
 
-npm install --save mongoose   der Code geht nicht mit version 7.xx !!!!
+npm install --save mongoose   
+
+der Code geht nicht mit version 7.xx !!!!
 
 Deshalb:
+
 npm uninstall mongoose
 npm install --save mongoose@6.10.0
 
