@@ -1,0 +1,19 @@
+{
+  "name": "tournament-planner",
+  "version": "1.0.0",
+  "description": "https://www.notion.so/Tournament-Planner-7e94f4fb5a0f4e75b6e059d9e2c7bfe5",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Simon",
+  "license": "ISC",
+  "dependencies": {
+    "@handlebars/allow-prototype-access": "^1.0.5",
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "handlebars": "^4.7.8",
+    "mongoose": "^6.10.0",
+    "path": "^0.12.7"
+  }
+}

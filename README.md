@@ -26,7 +26,26 @@ https://nodejs.org/en/download/
 
 
 
+
+1. Mongo DB instalieren
+
+Playlist Mongo mit Shell:
+https://www.youtube.com/watch?v=ExcRbA7fy_A&list=PL4cUxeGkcC9h77dJ-QJlwGlZlTd4ecZOA
+
+
 MongoDB
 https://www.youtube.com/watch?v=iYMtc8c945U
 
-1. Mongo DB instalieren
+
+npm init
+
+npm install --save express path handlebars express-handlebars @handlebars/allow-prototype-access
+
+node index.js
+
+npm install --save mongoose   der Code geht nicht mit version 7.0
+
+Deshalb:
+npm uninstall mongoose
+npm install --save mongoose@6.10.0
+
