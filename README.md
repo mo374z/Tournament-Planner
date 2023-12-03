@@ -53,6 +53,7 @@ der Code geht nicht mit version 7.xx !!!!
 Deshalb:
 
 npm uninstall mongoose
+
 npm install --save mongoose@6.10.0
 
 
