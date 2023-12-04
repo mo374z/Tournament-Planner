@@ -18,12 +18,14 @@ cd ./client
 
 npx create-react-app .
 
-
- npm install socket.io-client
+npm install socket.io-client
 
  
 
  # run
- \Server> node index.js
+
 
  client> npm start  
+
+
+  \Server> node index.js
