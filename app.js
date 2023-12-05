@@ -1,75 +1,49 @@
 const express = require('express');
+const bodyParser = require('body-parser');
+
 const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+app.use(bodyParser.urlencoded({ extended: true }));
 
-let timer = 0;
-let scoreTeamA = 0;
-let scoreTeamB = 0;
-let countdownInterval;
+// Statische Dateien (CSS, JS) können im Ordner "public" liegen
+app.use(express.static('public'));
 
-function startTimer() {
-    clearInterval(countdownInterval);
-    timer = 300; // 5 Minuten in Sekunden
-    io.emit('timerUpdate', timer);
-    countdownInterval = setInterval(() => {
-        timer--;
-        const minutes = Math.floor(timer / 60);
-        const seconds = timer % 60;
-        io.emit('timerUpdate', `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
-        if (timer <= 0) {
-            clearInterval(countdownInterval);
-        }
-    }, 1000);
-}
-
-function resetTimer() {
-    clearInterval(countdownInterval);
-    timer = 0;
-    io.emit('timerUpdate', timer);
-}
-
-function pauseTimer() {
-    clearInterval(countdownInterval);
-}
-
+// Startseite mit Eingabefeldern für Mannschaften
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/index.html');
 });
 
-app.get('/live', (req, res) => {
-    res.sendFile(__dirname + '/live.html');
+// POST-Anfrage zum Generieren des Spielplans
+app.post('/generate', (req, res) => {
+  // Hier den Spielplan generieren basierend auf den eingegebenen Mannschaften
+  const teamsGroup1 = req.body.group1.split('\r\n'); // Mannschaften aus Gruppe 1
+  const teamsGroup2 = req.body.group2.split('\r\n'); // Mannschaften aus Gruppe 2
+  const teamsGroup3 = req.body.group3.split('\r\n'); // Mannschaften aus Gruppe 3
+
+  // Hier den Spielplan generieren...
+
+  // Beispiel: Ausgabe des generierten Spielplans
+  const schedule = {
+    group1: generateSchedule(teamsGroup1),
+    group2: generateSchedule(teamsGroup2),
+    group3: generateSchedule(teamsGroup3),
+  };
+
+  res.send(schedule);
 });
 
-io.on('connection', (socket) => {
-    console.log('Benutzer verbunden');
+// Funktion zum Generieren des Spielplans (einfaches Beispiel)
+function generateSchedule(teams) {
+  const schedule = [];
+  for (let i = 0; i < teams.length; i++) {
+    for (let j = i + 1; j < teams.length; j++) {
+      schedule.push(`${teams[i]} vs ${teams[j]}`);
+    }
+  }
+  return schedule;
+}
 
-    io.emit('timerUpdate', timer);
-    io.emit('scoreUpdate', { teamA: scoreTeamA, teamB: scoreTeamB });
-
-    socket.on('timerStart', () => {
-        startTimer();
-    });
-
-    socket.on('timerReset', () => {
-        resetTimer();
-    });
-
-    socket.on('timerPause', () => {
-        pauseTimer();
-    });
-
-    socket.on('scoreEvent', (data) => {
-        if (data.team === 'A') {
-            scoreTeamA += data.change;
-        } else if (data.team === 'B') {
-            scoreTeamB += data.change;
-        }
-        io.emit('scoreUpdate', { teamA: scoreTeamA, teamB: scoreTeamB });
-    });
-});
-
+// Server starten
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-    console.log(`Server läuft auf Port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server gestartet auf Port ${PORT}`);
 });
