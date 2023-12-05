@@ -25,7 +25,7 @@ npm install socket.io-client
  # run
 
 
- client> npm start  
+ \client> npm start  
 
 
   \Server> node index.js
