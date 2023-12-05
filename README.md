@@ -60,3 +60,5 @@ npm install --save mongoose@6.10.0
 ## Programm starten
 node index.js
 
+benötigt MonoDB mit Datenbank "StudentDB" und collection "students"
+
