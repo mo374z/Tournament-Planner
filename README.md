@@ -2,17 +2,8 @@
 
 ## Setup
 
-Installation:
-- node.js[https://nodejs.org/en/download/]
-- mongoDB[https://www.mongodb.com/try/download/community]
+Starte dein Node.js-Programm mit dem Befehl node app.js. 
 
+Jetzt kannst du http://localhost:3000/ in deinem Browser öffnen, um auf die Hauptseite zuzugreifen und den Timer zu starten und den Spielstand einzugeben. 
 
-Starting the app:
-- add mongod to the environment variables (C:/../Program Files/MongoDB/Server/7.0/bin)
-- rund the database by 'mongod' in cmd
-- run 'npm start' in cmd (must be navigated to project directory) -> starting the node server
-
-
-Issue Resolution:
-- if react is not linked yet (Invalid Hook Call Error Message) run 'npm link client/node_modules/react' in cmd
-
+Auf http://localhost:3000/live kannst du die Live-Ansicht des Timers und des Spielstands sehen, die in Echtzeit aktualisiert wird.

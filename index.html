@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hauptseite</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            align-items: center;
+        }
+
+        .timer-section {
+            margin-bottom: 20px;
+        }
+
+        .timer-section p {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .buttons-section button {
+            margin: 0 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .score-section p {
+            margin: 5px 0;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hauptseite</h1>
+    <div class="container">
+        <div class="timer-section">
+            <p>Timer: <span id="timerValue">00:00</span></p>
+            <div class="buttons-section">
+                <button onclick="startTimer()">Start</button>
+                <button onclick="pauseTimer()">Pause</button>
+                <button onclick="resetTimer()">Reset</button>
+            </div>
+        </div>
+    </div>
+    <div class="score-section">
+        <p>Spielstand: <span id="scoreValue">Team A 0 - 0 Team B</span></p>
+    </div>
+    <div>
+        <button onclick="updateScore('A', 1)">Team A +1</button>
+        <button onclick="updateScore('A', -1)">Team A -1</button>
+        <button onclick="updateScore('B', 1)">Team B +1</button>
+        <button onclick="updateScore('B', -1)">Team B -1</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('timerUpdate', (timer) => {
+            document.getElementById('timerValue').innerText = timer;
+        });
+
+        socket.on('scoreUpdate', (scores) => {
+            const scoreString = `Team A ${scores.teamA} - ${scores.teamB} Team B`;
+            document.getElementById('scoreValue').innerText = scoreString;
+        });
+
+        function startTimer() {
+            socket.emit('timerStart');
+        }
+
+        function resetTimer() {
+            socket.emit('timerReset');
+        }
+
+        function pauseTimer() {
+            socket.emit('timerPause');
+        }
+
+        function updateScore(team, change) {
+            socket.emit('scoreEvent', { team, change });
+        }
+    </script>
+</body>
+</html>

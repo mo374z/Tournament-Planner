@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live-Ansicht</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .live-section {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            
+        }
+
+        .live-section p {
+            margin: 0;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live-Ansicht</h1>
+    <div class="live-section">
+        <p>Timer: <span id="timerValue">00:00</span></p>
+        <br>
+        <p> <span id="scoreValue">Team A 0 - 0 Team B</span></p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('timerUpdate', (timer) => {
+            document.getElementById('timerValue').innerText = timer;
+        });
+
+        socket.on('scoreUpdate', (scores) => {
+            const scoreString = `Team A ${scores.teamA} - ${scores.teamB} Team B`;
+            document.getElementById('scoreValue').innerText = scoreString;
+        });
+    </script>
+</body>
+</html>
