@@ -1,3 +1,5 @@
+// this is the main entry point of our application and should only contain the absolute minimum code needed to start our application
+
 const path = require('path')
 const express = require('express')
 const exphbs = require('express-handlebars')
