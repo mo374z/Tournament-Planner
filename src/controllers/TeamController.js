@@ -13,3 +13,7 @@ function addTeam(name) {
 function getAllTeams() {
     return teams;
 }
+
+function getTeamStats(teamName) {
+    // find team stats in Schedule DB and return the current points
+}

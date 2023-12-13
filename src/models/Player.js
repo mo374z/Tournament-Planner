@@ -5,6 +5,7 @@ import Team from './Team';
 class Player {
   constructor(name, color) {
     this.name = name;
+    this.number = "";
     this.goals = 0;
     this.team = Team;
   }
