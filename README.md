@@ -15,4 +15,5 @@ Starting the app:
 
 Issue Resolution:
 - if react is not linked yet (Invalid Hook Call Error Message) run 'npm link client/node_modules/react' in cmd
+- in development;
 
