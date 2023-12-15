@@ -14,18 +14,20 @@ router.get('/', (req,res) => {
 
 
 router.post('/', (req, res) => {
-    console.log("Empfangen " + req)
+    console.log("Empfangen " + req);
     if(req.body._id == ''){
+        console.log("insertRecord");
         insertRecord(req,res);
     }
     else{
+        console.log("updateRecord ");
         updateRecord(req,res);
     }
 })
 
 async function insertRecord(req, res) {
     var team = new Team();
-    team.name = req.body.teamName;
+    team.name = req.body.name;
     team.group = req.body.group;
     team.goals = req.body.goals;
 
@@ -41,7 +43,15 @@ async function insertRecord(req, res) {
 
 async function updateRecord(req, res) {
     try {
-        const updatedTeam = await Team.findOneAndUpdate({ _id: req.body._id }, req.body,{ new: true }).exec();
+        const teamId = req.body._id;
+        const updatedData = {
+            name: req.body.name,
+            group: req.body.group,
+            goals: req.body.goals
+        };
+
+        const updatedTeam = await Team.findOneAndUpdate({ _id: teamId }, updatedData, { new: true }).exec();
+
 
         if (updatedTeam) {
             res.redirect('team/list');
@@ -98,7 +108,7 @@ router.get('/delete/:id', async (req, res) => {
         const deletedStudent = await Team.findByIdAndDelete(req.params.id).exec();
         
         if (deletedStudent) {
-            res.redirect('layouts/teamlist');
+            res.redirect('/team/list');
         } else {
             // Handle scenario where the student with the given ID wasn't found
             res.status(404).send('Student not found');
@@ -135,6 +145,6 @@ module.exports = router;
 //     return teams;
 // }
 
-// function getTeamStats(teamName) {
+// function getTeamStats(name) {
 //     // find team stats in Schedule DB and return the current points
 // }

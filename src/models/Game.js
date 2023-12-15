@@ -49,9 +49,9 @@ var GameSchema = new mongoose.Schema({
     opponents: {
       type: Array,
     },
-    duration: {
-      type: Number,
-    }
+    goals: {
+      type: Array,
+    },
 
 });
 

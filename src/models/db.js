@@ -32,4 +32,5 @@ module.exports = connectToMongo;
 connectToMongo();
 
 require('./Team');
+require('./Game');
 

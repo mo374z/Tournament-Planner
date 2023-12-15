@@ -32,6 +32,12 @@ app.engine('hbs', exphbs.engine({
   defaultLayout: 'main',
   extname: 'hbs',
   layoutsDir: __dirname + '/src/views/layouts/',
+  helpers: {
+    formatTime: function(time) {
+        const formattedTime = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return formattedTime;
+    }
+}
 }));
 
 app.set('view engine', 'hbs');
@@ -44,7 +50,7 @@ app.listen(3000, () => {
 
  const TeamController = require("./src/controllers/TeamController");
 
- const TeamController = require("./src/controllers/ScheduleController");
+ const ScheduleController = require("./src/controllers/ScheduleController");
 
 
  app.use("/team", TeamController);

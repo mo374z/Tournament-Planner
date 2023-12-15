@@ -1,0 +1,27 @@
+<section style="text-align: center;">
+    <h1>Groups List</h1>
+
+    {{#each teamsByGroup}}
+        <h2>Group {{_id}}</h2>
+        <table style="margin: 0 auto; width: 80%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f2f2f2; height: 40px;">
+                    <th style="width: 50%; border: 1px solid #ddd;">Team Name</th>
+                    <!-- Add more table headers as needed -->
+                </tr>
+            </thead>
+            <tbody>
+                {{#each teams}}
+                    <tr style="border: 1px solid #ddd; height: 30px;">
+                        <td style="border: 1px solid #ddd;">{{this.name}}</td>
+                        <!-- Display other team information as needed -->
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    {{/each}}
+
+    <br><br>
+
+    <a href="/" style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Back to Main</a>
+</section>
