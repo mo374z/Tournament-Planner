@@ -17,9 +17,7 @@ app.use(bodyparser.json());
 
 
 app.get('/', (request, response) => {
-     response.render('home', {
-      name: 'John'
-    });
+     response.render('home');
 
    // response.send('<h2>Welcome</h2> <h3>Click here to get acess to <b> <a href="/student/list"> Database</a></h3></b>');
   });
