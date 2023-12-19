@@ -79,10 +79,11 @@ router.get('/grouplist', async (req, res) => {
     try {
         const teamsByGroup = await Team.aggregate([
             { $group: { _id: "$group", teams: { $push: "$$ROOT" } } },
+            { $project: { groupName: '$_id', teams: 1, _id: 0 } } // Renames _id to groupName
         ]);
 
         // Sort the teamsByGroup array by group name in alphabetical order
-        teamsByGroup.sort((a, b) => a._id.localeCompare(b._id));
+        teamsByGroup.sort((a, b) => a.groupName.localeCompare(b.groupName));
 
         res.render('layouts/grouplist', {
             teamsByGroup: teamsByGroup
