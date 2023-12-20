@@ -17,4 +17,5 @@ connectToMongo();
 
 require('./Team');
 require('./Game');
+require('./MainSettings');
 

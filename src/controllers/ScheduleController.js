@@ -1,16 +1,5 @@
 
 
-// // write a function, that given all the teams generates a schedule of games for the group phase
-// function generateGroupSchedule(teams) {
-//     // TODO
-// }
-
-// // generate a schedule for the k.o. phase given the results of the group phase
-// function generateKOSchedule(groupResults) {
-//     // TODO
-// }
-
-
 const express = require('express');
 var router = express.Router();
 
@@ -18,61 +7,35 @@ const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
 
+const MainSettings = mongoose.model('MainSettings');
 
-
-// router.get('/list', async (req, res) => {
-//     try {
-//         const Games = await Game.find({});
-//         res.render('layouts/schedulelist', {
-//             list: Games
-//         });
-
-
-//     } catch (err) {
-//         console.log('Error in retrieval: ' + err);
-//     }
-// });
 
 
 router.get('/list', async (req, res) => {
     renderScheduleList(req, res);
 });
 
+router.get('/generate', async (req, res) => {
 
-function renderScheduleList(req, res) {
-    fetchGamesData()
-        .then(games => {
-            res.render('layouts/schedulelist', {
-                list: games
-            });
-        })
-        .catch(err => {
-            console.log('Error rendering schedule list: ' + err);
-            // Handle the error appropriately, maybe by rendering an error page
-        });
-}
+    // Call the function to generate and save the group stage schedule
 
-async function fetchGamesData() {
-    try {
-        const games = await Game.find({});
+    const mainSettings = await MainSettings.findOne(); // Fetch Main Settings
 
-        for (const game of games) {
-            const opponents = game.opponents;
-            const opponentData = await Promise.all(opponents.map(async id => await getTeamDataById(id)));
-            const opponentsInfo = opponentData.map(opponent => `${opponent.name}`).join(' vs ');
-            game.opponents = opponentsInfo;
+    const startTime = mainSettings.TornamentStartTime;
+    const gameDuration = mainSettings.gameDurationGroupStage / (1000 * 60); // Convert milliseconds to minutes
+    const timeBetweenGames = mainSettings.timeBetweenGames / (1000 * 60); // Convert milliseconds to minutes
 
-            const groupData = opponentData.map(opponent => `${opponent.group}`).join(' vs ');
-            game.group = groupData;
-        }
+    const initialStatus = 'Scheduled'; // Replace with your desired initial status
 
-        return games;
-    } catch (err) {
-        console.log('Error in data retrieval: ' + err);
-        throw err;
-    }
-}
+    generateGroupStageSchedule(startTime, gameDuration, timeBetweenGames, initialStatus);
 
+
+    // Delay the redirect by 1 seconds to allow time for the schedule generation
+    setTimeout(() => {
+        res.redirect('/schedule/list');
+    }, 1000); // 1000 milliseconds (1 seconds) delay
+
+});
 
 
 router.get('/grouplist', async (req, res) => {
@@ -97,6 +60,155 @@ router.get('/grouplist', async (req, res) => {
 
 
 
+router.get('/:id', async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId).exec();
+        const teams = await Team.find({});
+
+        res.render('layouts/editGame', {
+            game: game,
+            teams: teams
+        });
+    } catch (err) {
+        console.error('Error fetching game for edit: ', err);
+        // Handle the error appropriately, maybe by rendering an error page
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+router.post('/:id/edit', async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const {
+            time,
+            duration,
+            status,
+            team1,
+            team2,
+            goals1,
+            goals2
+        } = req.body;
+
+        // Fetch existing game details to obtain the old game time
+        const existingGame = await Game.findById(gameId);
+        const oldGameTime = existingGame.time;
+        const oldGameduration = existingGame.duration;
+
+        const updatedGame = await Game.findByIdAndUpdate(gameId, {
+            time: new Date(time),
+            duration: parseInt(duration),
+            status: status,
+            opponents: [team1, team2],
+            goals: [parseInt(goals1), parseInt(goals2)]
+        }, {
+            new: true
+        }).exec();
+
+        console.log("New time" + updatedGame.time);
+
+        if (!updatedGame) {
+            res.status(404).send('Game not found');
+            return;
+        }
+
+        console.log("Updating other games...");
+        // Fetch subsequent games based on the updated game's time
+        const subsequentGames = await Game.find({
+            number: {
+                $gt: updatedGame.number
+            }
+        }).sort('number').exec();
+
+        // Calculate time difference between old game time and new input time
+        var gameDurationdifference = 0;
+        if(oldGameduration !== updatedGame.duration){
+            gameDurationdifference = updatedGame.duration - oldGameduration;      // 6 - 5 = 1 in minutes
+            console.log("Game duration difference (min): " + gameDurationdifference);
+            gameDurationdifference = gameDurationdifference * 60000; // calculate to min 1 minute = 60000 milliseconds
+        }
+        const timeDifference = updatedGame.time - oldGameTime;
+        console.log("Game Time difference: " + timeDifference/60000 + " min");
+
+        const MainTimeDifference = timeDifference + gameDurationdifference;
+
+        console.log("Game Time and duration difference: " + MainTimeDifference/60000 + " min");
+
+
+
+        for (const game of subsequentGames) {
+            const newStartTime = new Date(game.time.getTime() + MainTimeDifference);
+
+            await Game.findByIdAndUpdate(game._id, {
+                time: newStartTime
+            }).exec();
+        }
+
+        res.redirect('/schedule/list');
+    } catch (err) {
+        console.error('Error updating game: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+function renderScheduleList(req, res) {
+    fetchGamesData()
+    .then(({ games, timeBetweenGames }) => {
+            res.render('layouts/schedulelist', {
+                list: games,
+                timeBetweenGames: timeBetweenGames
+            });
+        })
+        .catch(err => {
+            console.log('Error rendering schedule list: ' + err);
+            // Handle the error appropriately, maybe by rendering an error page
+        });
+}
+
+async function fetchGamesData() {
+    try {
+        const games = await Game.find({});
+        const mainSettings = await fetchMainSettings(); // Fetch main settings
+
+        for (const game of games) {
+            const opponents = game.opponents;
+            const opponentData = await Promise.all(opponents.map(async id => await getTeamDataById(id)));
+            const opponentsInfo = opponentData.map(opponent => `${opponent.name}`).join(' vs ');
+            game.opponents = opponentsInfo;
+
+            const groupData = opponentData.map(opponent => `${opponent.group}`).join(' vs ');
+            game.group = groupData;
+        }
+
+        return { games, timeBetweenGames: mainSettings.timeBetweenGames/60000 };
+    } catch (err) {
+        console.log('Error in data retrieval: ' + err);
+        throw err;
+    }
+}
+
+async function fetchMainSettings() {
+    try {
+        const mainSettings = await MainSettings.findOne({});
+        return mainSettings;
+    } catch (err) {
+        console.log('Error fetching Main Settings: ' + err);
+        throw err;
+    }
+}
+
+
 
 async function getTeamDataById(teamId) {
     try {
@@ -107,35 +219,6 @@ async function getTeamDataById(teamId) {
         return { name: 'Error fetching team name', group: 'Error fetching group name' };
     }
 }
-
-
-
-
-router.get('/generate', async (req, res) => {
-
-    // Call the function to generate and save the group stage schedule
-
-
-    // Example usage: specify the start time, game duration in minutes, time between games in minutes, and initial status
-    const startTime = new Date('2024-01-01T08:00:00'); // Replace with your desired start time
-    const gameDuration = 5; // Replace with your desired game duration in minutes
-    const timeBetweenGames = 2; // Replace with your desired time between games in minutes
-    const initialStatus = 'Scheduled'; // Replace with your desired initial status
-
-    generateGroupStageSchedule(startTime, gameDuration, timeBetweenGames, initialStatus);
-
-
-    // Delay the redirect by 1 seconds to allow time for the schedule generation
-    setTimeout(() => {
-        res.redirect('/schedule/list');
-    }, 1000); // 1000 milliseconds (1 seconds) delay
-
-});
-
-
-
-
-
 
 
 async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus) {

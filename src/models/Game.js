@@ -38,7 +38,7 @@ var GameSchema = new mongoose.Schema({
         type: Number
     },
     time: {
-        type: Number,
+        type: Date,
     },
     duration: {
         type: String,
