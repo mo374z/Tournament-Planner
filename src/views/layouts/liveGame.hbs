@@ -1,0 +1,45 @@
+<!-- liveGame.handlebars -->
+<div style="text-align: center;">
+    <h1>Live Game</h1>
+    <div style="margin: 20px auto; width: 40%;">
+        <div style="background-color: #f2f2f2; padding: 15px; border-radius: 5px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="text-align: center;">
+                    <h2>{{ liveGame.opponents.[0] }}</h2>
+                    <h2>{{ liveGame.goals.[0] }}</h2>
+                </div>
+                <h2><span id="liveCountdownTimer" style="font-weight: bold;"> 00:00</span></h2>
+                <div style="text-align: center;">
+                    <h2>{{ liveGame.opponents.[1] }}</h2>
+                    <h2>{{ liveGame.goals.[1] }}</h2>
+                </div>
+            </div>
+            {{!-- <div style="font-size: 24px;">
+                <span id="liveCountdownTimer" style="font-weight: bold;"> 00:00</span>
+            </div> --}}
+
+            {{#if noActiveGame}}
+            <p>No active game</p>
+            {{/if}}
+        </div>
+        <div style="text-align: center;">
+            <p><strong>Game Time:</strong> {{ formatTime liveGame.time }}</p>
+            <p><strong>Status:</strong> {{ liveGame.status }}</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+
+<script>
+    const socket = io('http://localhost:4000');
+
+    socket.on('timerUpdate', (timerValue) => {
+        const minutes = Math.floor(timerValue / 60);
+        const seconds = timerValue % 60;
+        const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('liveCountdownTimer').innerText = formattedTime;
+    });
+
+    // Additional socket logic and event listeners can be added if needed
+</script>

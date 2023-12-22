@@ -73,12 +73,16 @@ const ScheduleController = require("./src/controllers/ScheduleController");
 
 const MainSettingController = require("./src/controllers/MainSettingController");
 
+const GameController = require("./src/controllers/GameController");
+
 
 app.use("/team", TeamController);
 
 app.use("/schedule", ScheduleController);
 
 app.use("/mainSettings", MainSettingController);
+
+app.use("/game", GameController);
 
 
 
