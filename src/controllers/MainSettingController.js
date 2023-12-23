@@ -4,12 +4,30 @@ var router = express.Router();
 const mongoose = require('mongoose');
 const MainSettings = mongoose.model('MainSettings');
 
+const defaultStartTime = new Date('2021-06-11T21:00:00.000Z');
+const defaultTimeBetweenGames = 2 * 60 * 1000; 
+const defaultGameDurationGroupStage = 10 * 60 * 1000; 
+const defaultGameDurationQuarterfinals = 15 * 60 * 1000;
 
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
     try {
         // Fetch the MainSettings data from the database
-        const mainSettings = await MainSettings.findOne({});
+        let mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = new MainSettings({
+                TornamentStartTime: defaultStartTime,
+                timeBetweenGames: defaultTimeBetweenGames,
+                gameDurationGroupStage: defaultGameDurationGroupStage,
+                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                // Add other default values if needed
+            });
+
+            // Save the default MainSettings to the database
+            await mainSettings.save();
+        }
 
         // Render the edit page with the MainSettings data
         res.render('layouts/editMainSettings', { mainSettings });
@@ -18,6 +36,7 @@ router.get('/', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 // POST route to handle form submission and update MainSettings
 router.post('/', async (req, res) => {
@@ -40,9 +59,18 @@ router.post('/', async (req, res) => {
         const mainSettings = await MainSettings.findOne({});
 
         
+        // If no MainSettings data found, create a new MainSettings with default values
         if (!mainSettings) {
-            res.status(404).send('MainSettings not found');
-            mainSettings = new MainSettings();
+            mainSettings = new MainSettings({
+                TornamentStartTime: defaultStartTime,
+                timeBetweenGames: defaultTimeBetweenGames,
+                gameDurationGroupStage: defaultGameDurationGroupStage,
+                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                // Add other default values if needed
+            });
+
+            // Save the default MainSettings to the database
+            await mainSettings.save();
         }
 
         mainSettings.TornamentStartTime = TornamentStartTime;
@@ -53,7 +81,7 @@ router.post('/', async (req, res) => {
         // Save the updated MainSettings
         await mainSettings.save();
 
-        res.redirect('/mainSettings'); // Redirect to the main settings page
+        res.redirect('/team/list'); // Redirect to the main settings page
     } catch (err) {
         console.error('Error updating MainSettings:', err);
         res.status(500).send('Internal Server Error');

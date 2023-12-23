@@ -2,7 +2,7 @@
     <h3>{{ viewTitle }}</h3>
     <form action="/mainSettings" method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
         <label for="TornamentStartTime">Tournament Start Time:</label><br>
-        <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime" value="{{ formatDateTime mainSettings.TornamentStartTime }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+        <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime" value="{{#if mainSettings.TornamentStartTime}}{{ formatDateTime mainSettings.TornamentStartTime }}{{/if}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
         <label for="timeBetweenGames">Time Between Games (minutes):</label><br>
         <input type="number" id="timeBetweenGames" name="timeBetweenGamesInMin" value="{{ milliToMin mainSettings.timeBetweenGames }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>

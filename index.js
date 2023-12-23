@@ -42,11 +42,6 @@ app.engine('hbs', exphbs.engine({
       return formattedTime;
     },
     eq: function (v1, v2) {
-      // console.log("Vergleiche");
-      // console.log(v1);
-      // console.log("mit");
-      // console.log(v2);
-      // if(v1.equals(v2)){ console.log("true");}
       return v1.equals(v2);
     },
     log: function (...args) {
