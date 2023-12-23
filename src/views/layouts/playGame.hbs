@@ -1,0 +1,200 @@
+
+<script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+
+
+<!-- gamePlay.handlebars -->
+<div style="text-align: center;">
+    <h1>Game Play Page </h1>
+    <h2> Game Nr. {{ game.number }}</h2>
+
+    <div style="margin-bottom: 20px;">
+        <p><strong>Game Start Time:</strong> {{formatTime game.time }}</p>
+        <p><strong>Game End Time:</strong> <span id="gameEndTime"></span></p>
+        <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
+        <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</span></p>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <h2>Timer</h2>
+        <div>
+            <span id="countdownTimer">{{ game.duration }}:00 min</span>
+        </div>
+        <div style="margin-top: 10px;">
+            <button id="startButton" style="margin-right: 10px;">Start Game</button>
+            <button id="pauseButton" style="margin-right: 10px;">Pause</button>
+            <button id="continueButton" style="margin-right: 10px;">Continue Game</button>
+            <button id="resetButton">Reset Timer</button>
+        </div>
+    </div>
+
+    <div>
+        <h2>Teams</h2>
+        <table style="margin: 0 auto;">
+            <tr>
+                <td style="padding: 10px;">
+                    <h3>Team 1: {{ game.opponents.[0] }}</h3>
+                    <p style="font-size: 24px;"><strong> <span id="team1Score">{{ game.goals.[0] }}</span> </strong></p>
+                    <div>
+                        <button onclick="incrementScore(1)" style="margin-right: 5px;">+</button>
+                        <button onclick="decrementScore(1)">-</button>
+                    </div>
+                </td>
+                <td style="padding: 10px;">
+                    <h3>Team 2: {{ game.opponents.[1] }}</h3>
+                    <p style="font-size: 24px;"><strong> <span id="team2Score">{{ game.goals.[1] }}</span> </strong></p>
+                    <div>
+                        <button onclick="incrementScore(2)" style="margin-right: 5px;">+</button>
+                        <button onclick="decrementScore(2)">-</button>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <a href="/schedule/list"
+        style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Back
+        to List</a>
+</div>
+
+<script>
+    // Handle functions for game operations (start, pause, scoring)
+    // Implement functionality to manipulate the game timer and scores
+
+
+    // create a function to update the date and time
+    function updateDateTime() {
+        // create a new `Date` object
+        const now = new Date();
+        // get the current date and time as a string
+        const currentDateTime = now.toLocaleTimeString();
+        // update the `textContent` property of the `span` element with the `id` of `datetime`
+        document.querySelector('#currentTime').textContent = currentDateTime;
+    }
+
+    // call the `updateDateTime` function every second
+    setInterval(updateDateTime, 1000);
+
+
+
+    function calculateEndTime(startTime, duration) {
+        const startTimestamp = new Date(startTime).getTime();
+        const durationInMillis = duration * 60 * 1000; // Convert minutes to milliseconds
+        const endTimestamp = startTimestamp + durationInMillis;
+        const endTime = new Date(endTimestamp);
+
+        const hours = endTime.getHours().toString().padStart(2, '0');
+        const minutes = endTime.getMinutes().toString().padStart(2, '0');
+
+        return `${hours}:${minutes}`;
+    }
+
+
+        // Function to update the game end time
+        function updateGameEndTime(startTime, duration) {
+            const endTime = calculateEndTime(startTime, duration);
+            document.querySelector('#gameEndTime').textContent = endTime;
+        }
+
+        // Update the game end time on page load
+        updateGameEndTime('{{ game.time }}', {{ game.duration }});
+        updateDateTime();
+        
+
+
+
+
+
+    async function incrementScore(teamId) {
+        try {
+            const gameId = '{{ game._id }}'; // Replace this with your game ID
+            const response = await fetch(`/game/${gameId}/increment-score/${teamId}`, {
+                method: 'POST',
+            });
+
+            if (response.ok) {
+                const updatedGame = await response.json(); // If your API sends back the updated game object, handle it here
+                // Update the displayed score on the page
+                document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
+            } else {
+                console.error('Failed to increment score');
+            }
+        } catch (err) {
+            console.error('Error incrementing score: ', err);
+        }
+    }
+
+        async function decrementScore(teamId) {
+        try {
+            const gameId = '{{ game._id }}'; // Replace this with your game ID
+            const response = await fetch(`/game/${gameId}/decrement-score/${teamId}`, {
+                method: 'POST',
+            });
+
+            if (response.ok) {
+                const updatedGame = await response.json(); // If your API sends back the updated game object, handle it here
+                // Update the displayed score on the page
+                document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
+            } else {
+                console.error('Failed to decrement score');
+            }
+        } catch (err) {
+            console.error('Error decrement score: ', err);
+        }
+    }
+
+
+    const socket = io('http://localhost:4000');
+
+    socket.on('timerUpdate', (timerValue) => {
+        const minutes = Math.floor(timerValue / 60);
+        const seconds = timerValue % 60;
+        const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('countdownTimer').innerText = formattedTime;
+    });
+
+    document.getElementById('startButton').addEventListener('click', () => {
+        const duration = {{ durationInMillis }} / 1000; // Convert milliseconds to seconds
+        socket.emit('startGame', duration);
+    });
+
+    document.getElementById('resetButton').addEventListener('click', () => {
+         const duration = {{ durationInMillis }} / 1000; // Convert milliseconds to seconds
+        socket.emit('resetGame', duration);
+    });
+
+    document.getElementById('pauseButton').addEventListener('click', () => {
+        socket.emit('pauseGame');
+    });
+
+    document.getElementById('continueButton').addEventListener('click', () => {
+    socket.emit('continueGame');
+    });
+
+
+
+document.getElementById('startButton').addEventListener('click', async () => {
+    try {
+        const gameId = '{{ game._id }}';
+        console.log(gameId);
+        const response = await fetch(`/game/start/${gameId}`, {
+            method: 'POST',
+        });
+
+        if (response.ok) {
+            console.log('Game started successfully');
+            // Optionally, perform any action on successful start
+        } else {
+            console.error('Failed to start game');
+        }
+    } catch (err) {
+        console.error('Error starting game: ', err);
+    }
+});
+
+// Existing socket logic and other event listeners...
+
+
+
+
+
+</script>

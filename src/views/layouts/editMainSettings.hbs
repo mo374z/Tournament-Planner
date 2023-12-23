@@ -1,0 +1,21 @@
+<div style="text-align: center;">
+    <h3>{{ viewTitle }}</h3>
+    <form action="/mainSettings" method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
+        <label for="TornamentStartTime">Tournament Start Time:</label><br>
+        <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime" value="{{#if mainSettings.TornamentStartTime}}{{ formatDateTime mainSettings.TornamentStartTime }}{{/if}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+        <label for="timeBetweenGames">Time Between Games (minutes):</label><br>
+        <input type="number" id="timeBetweenGames" name="timeBetweenGamesInMin" value="{{ milliToMin mainSettings.timeBetweenGames }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+        <label for="gameDurationGroupStage">Game Duration - Group Stage (minutes):</label><br>
+        <input type="number" id="gameDurationGroupStage" name="gameDurationGroupStageInMin" value="{{ milliToMin mainSettings.gameDurationGroupStage }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+        <label for="gameDurationQuarterfinals">Game Duration - Quarterfinals (minutes):</label><br>
+        <input type="number" id="gameDurationQuarterfinals" name="gameDurationQuarterfinalsInMin" value="{{ milliToMin mainSettings.gameDurationQuarterfinals }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+        <button type="submit" style="padding: 8px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px;">Save Changes</button>
+         <a href="/" style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Back to Main</a>
+    </form>
+
+   
+</div>
