@@ -21,9 +21,7 @@
             <span id="countdownTimer" style="font-size: 32px;">{{ game.duration }}:00 min</span>
         </div>
         <div style="margin-top: 10px;">
-            <button id="startButton" style="margin-right: 10px;">Start Game</button>
-            <button id="pauseButton" style="margin-right: 10px;">Pause</button>
-            <button id="continueButton" style="margin-right: 10px;">Continue Game</button>
+            <button id="startButton" style="margin-right: 10px;">Play/Pause Game</button>
             <button id="resetButton">Reset Timer</button>
             <br>
             <span id="timerStatus" style="margin-left: 10px;"></span>
@@ -176,40 +174,19 @@
         document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
     });
 
-    document.getElementById('startButton').addEventListener('click', () => {
-        const duration = {{ durationInMillis }} / 1000; // Convert milliseconds to seconds
-        socket.emit('startGame', duration);
-    });
-
     document.getElementById('resetButton').addEventListener('click', () => {
         const duration = {{ durationInMillis }} / 1000; // Convert milliseconds to seconds
         socket.emit('resetGame', duration);
     });
 
-    document.getElementById('pauseButton').addEventListener('click', () => {
-        socket.emit('pauseGame');
-    });
-
-    document.getElementById('continueButton').addEventListener('click', () => {
-        socket.emit('continueGame');
-    });
-
-
-
     document.getElementById('startButton').addEventListener('click', async () => {
         try {
+            const duration = {{ durationInMillis }} / 1000; // Convert milliseconds to seconds
+            socket.emit('playPauseGame');
             const gameId = '{{ game._id }}';
-            console.log(gameId);
             const response = await fetch(`/game/start/${gameId}`, {
                 method: 'POST',
             });
-
-            if (response.ok) {
-                console.log('Game started successfully');
-                // Optionally, perform any action on successful start
-            } else {
-                console.error('Failed to start game');
-            }
         } catch (err) {
             console.error('Error starting game: ', err);
         }

@@ -34,49 +34,10 @@ let isPaused = true;
 
 // WebSocket logic
 io.on('connection', (socket) => {
-    console.log('A user connected');
 
-    socket.on('startGame', (duration) => {
-        clearInterval(timerInterval);
-        console.log('Game Timer Started');
-
-        isPaused = false;
-        timer = duration; // Set the initial timer duration
-        io.emit('timerUpdate', timer, isPaused);
-
-        timerInterval = setInterval(() => {
-            if (timer > 0 && !isPaused) {
-                timer--;
-                io.emit('timerUpdate', timer, isPaused);
-            } else if (timer === 0) {
-                clearInterval(timerInterval);
-                io.emit('timerEnd');
-                io.emit('timerUpdate', timer, isPaused);
-                console.log('Game Timer Ended');
-            }
-        }, 1000);
-    });
-
-    socket.on('resetGame', (duration) => {
-        clearInterval(timerInterval);
-        console.log('Game Timer Reset');
-        timer = duration;
-        io.emit('timerUpdate', timer, isPaused);
-        isPaused = true;
-    });
-
-    socket.on('pauseGame', () => {
-        clearInterval(timerInterval);
-        console.log('Game Timer Paused');
-        isPaused = true; // Set the pause state
-        io.emit('timerUpdate', timer, isPaused);
-    });
-
-    socket.on('continueGame', () => {
+    socket.on('playPauseGame', () => {
         if (isPaused) {
-            io.emit('timerUpdate', timer, isPaused);
-            console.log('Game TimerContinued');
-            isPaused = false; // Reset the pause state
+            isPaused = false;
             timerInterval = setInterval(() => {
                 if (timer > 0 && !isPaused) {
                     timer--;
@@ -85,10 +46,20 @@ io.on('connection', (socket) => {
                     clearInterval(timerInterval);
                     io.emit('timerEnd');
                     io.emit('timerUpdate', timer, isPaused);
-                    console.log('Game Timer Ended');
                 }
             }, 1000);
+        } else {
+            clearInterval(timerInterval);
+            isPaused = true;
+            io.emit('timerUpdate', timer, isPaused);
         }
+});
+
+    socket.on('resetGame', (duration) => {
+        clearInterval(timerInterval);
+        timer = duration;
+        io.emit('timerUpdate', timer, isPaused);
+        isPaused = true;
     });
 
     socket.on('getData', () => {
@@ -209,11 +180,11 @@ router.get('/:id/endGame', async (req, res) => {
         // Set the game status to "ENDE" only if the status is "active"
         if (game.status == 'active') {
             await Game.findByIdAndUpdate(gameId, { status: 'ENDE' });
+            io.emit('resetGame');
             console.log('Game status set to ENDE successfully');
 
             // Increment the gamesPlayed counter                                        //Other Solution: count the games with status ENDE: await Game.countDocuments({ status: 'ENDE' });
             await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
-            console.log('gamesPlayed counter incremented successfully');
         }
 
         res.redirect('/schedule/list');
@@ -271,6 +242,3 @@ async function updateGenGoalsCounter(increment, teamId) {
         console.error('Error updating allGoals counter: ', err);
     }
 }
-
-
-
