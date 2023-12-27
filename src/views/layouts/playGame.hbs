@@ -1,75 +1,72 @@
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
-<div style="text-align: center;">
-    <h1>Game Play Page </h1>
-    <hr>
-    <h2> Game Nr. {{ game.number }}</h2>
+  <div class="container text-center">
+        <h1>Game Play Page</h1>
+        <hr>
 
-    <div style="margin-bottom: 10px;">
-        <p><strong>Game Start Time:</strong> {{formatTime game.time }}</p>
-        <p><strong>Game End Time:</strong> <span id="gameEndTime"></span></p>
-        <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
-        <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</span></p>
+        <div class="row mb-3">
+            <div class="col">
+                <h2>Game Nr. {{ game.number }}</h2>
+                <div class="mb-2">
+                    <p><strong>Game Start Time:</strong> {{formatTime game.time }}</p>
+                    <p><strong>Game End Time:</strong> <span id="gameEndTime"></span></p>
+                    <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
+                    <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</p>
 
-        <button id="updateLivePageButton" onclick="UpdateDataOnLivePage()"
-            style="margin-right: 5px; background-color: red;">Setzte Spiel auf Live Page</button>
-    </div>
-    <hr>
-
-    <div style="margin-bottom: 20px;">
-        <h2>Timer</h2>
-        <div>
-            <span id="countdownTimer" style="font-size: 32px;">{{ game.duration }}:00 min</span>
+                    <button id="updateLivePageButton" onclick="UpdateDataOnLivePage()" class="btn btn-danger">Set Game on Live Page</button>
+                    <div class="alert alert-success d-none mt-2" role="alert"> Game is now on Live Page </div>
+                </div>
+            </div>
+            <div class="col">
+                <h2>Timer</h2>
+                <div>
+                    <span id="countdownTimer" class="display-4">{{ game.duration }}:00 min</span>
+                </div>
+                <div class="mt-2">
+                    <button id="startButton" class="btn btn-primary me-2">Play/Pause Game</button>
+                    <button id="resetButton" class="btn btn-secondary">Reset Timer</button>
+                    <br>
+                    <span id="timerStatus" class="ms-2"></span>
+                </div>
+            </div>
         </div>
-        <div style="margin-top: 10px;">
-            <button id="startButton" style="margin-right: 10px;">Play/Pause Game</button>
-            <button id="resetButton">Reset Timer</button>
-            <br>
-            <span id="timerStatus" style="margin-left: 10px;"></span>
+
+        <hr>
+
+        <div class="row mb-3">
+            <div class="col">
+                <h2>Teams</h2>
+                <div class="row">
+                    <div class="col">
+                        <h3>{{ game.opponents.[0] }}</h3>
+                        <p class="display-5"><strong><span id="team1Score">{{ game.goals.[0] }}</span></strong></p>
+                        <div>
+                            <button onclick="changeScore(1,1)" class="btn btn-success me-2">+</button>
+                            <button onclick="changeScore(1,-1)" class="btn btn-danger">-</button>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3>{{ game.opponents.[1] }}</h3>
+                        <p class="display-5"><strong><span id="team2Score">{{ game.goals.[1] }}</span></strong></p>
+                        <div>
+                            <button onclick="changeScore(2,1)" class="btn btn-success me-2">+</button>
+                            <button onclick="changeScore(2,-1)" class="btn btn-danger">-</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <h2>Counters</h2>
+                <p class="mb-2"><strong>All Goals:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
+                <p class="mb-2"><strong>Games Played:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
+                <p class="mb-2"><strong>Sekt Counter:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
+            </div>
         </div>
+
+        <hr>
+
+        <a href="/schedule/list" class="btn btn-secondary me-2 mt-3">Back to List</a>
+        <a href="/game/{{ game._id }}/endGame" class="btn btn-danger mt-3">End Game</a>
     </div>
-    <hr>
-
-    <div>
-        <h2>Teams</h2>
-        <table style="margin: 0 auto;">
-            <tr>
-                <td style="padding: 10px;">
-                    <h3>Team 1: {{ game.opponents.[0] }}</h3>
-                    <p style="font-size: 24px;"><strong> <span id="team1Score">{{ game.goals.[0] }}</span> </strong></p>
-                    <div>
-                        <button onclick="changeScore(1,1)" style="margin-right: 5px;">+</button>
-                        <button onclick="changeScore(1,-1)">-</button>
-                    </div>
-                </td>
-                <td style="padding: 10px;">
-                    <h3>Team 2: {{ game.opponents.[1] }}</h3>
-                    <p style="font-size: 24px;"><strong> <span id="team2Score">{{ game.goals.[1] }}</span> </strong></p>
-                    <div>
-                        <button onclick="changeScore(2,1)" style="margin-right: 5px;">+</button>
-                        <button onclick="changeScore(2,-1)">-</button>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <hr>
-
-    <div style="margin-top: 20px; text-align: center;">
-        <h2>Counters</h2>
-        <p><strong>All Goals:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
-        <p><strong>Games Played:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
-        <p><strong>Sekt Counter:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
-    </div>
-    <hr>
-
-    <a href="/schedule/list"
-        style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Back
-        to List</a>
-
-    <a href="/game/{{ game._id }}/endGame"
-        style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #f30808; color: white; text-decoration: none; border-radius: 4px;">END
-        GAME</a>
-</div>
 
 <script>
     // update the date and time
@@ -149,12 +146,13 @@
                 method: 'POST',
             });
 
-            if (response.ok) {
-                document.getElementById('updateLivePageButton').style.backgroundColor = 'green';
-                console.log('Game Data on Live page Updated successfully');
-            } else {
-                console.error('Failed to Update Game Data on Live page');
-            }
+            // show  bootstrap alert for one second to indicate success
+            const alert = document.querySelector('.alert');
+            alert.classList.remove('d-none');
+            setTimeout(() => {
+                alert.classList.add('d-none');
+            }, 1000);
+
         } catch (err) {
             console.error('Error updating data on Live page: ', err);
         }
@@ -163,14 +161,11 @@
 
     const socket = io('http://localhost:4000');
 
-    socket.on('timerUpdate', (timerValue, isPaused) => {
+    socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
         const minutes = Math.floor(timerValue / 60);
         const seconds = timerValue % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         document.getElementById('countdownTimer').innerText = formattedTime;
-
-        // Update the timer status display
-        const timerStatus = isPaused ? 'Paused' : (timerValue === 0 ? 'Ended' : 'Running');
         document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
     });
 

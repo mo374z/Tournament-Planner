@@ -41,29 +41,29 @@ io.on('connection', (socket) => {
             timerInterval = setInterval(() => {
                 if (timer > 0 && !isPaused) {
                     timer--;
-                    io.emit('timerUpdate', timer, isPaused);
+                    io.emit('timerUpdate', timer, isPaused, 'Running');
                 } else if (timer === 0) {
                     clearInterval(timerInterval);
                     io.emit('timerEnd');
-                    io.emit('timerUpdate', timer, isPaused);
+                    io.emit('timerUpdate', timer, isPaused, 'Ended');
                 }
             }, 1000);
         } else {
             clearInterval(timerInterval);
             isPaused = true;
-            io.emit('timerUpdate', timer, isPaused);
+            io.emit('timerUpdate', timer, isPaused, 'Paused');
         }
 });
 
     socket.on('resetGame', (duration) => {
         clearInterval(timerInterval);
         timer = duration;
-        io.emit('timerUpdate', timer, isPaused);
         isPaused = true;
+        io.emit('timerUpdate', timer, isPaused, 'Ready');
     });
 
     socket.on('getData', () => {
-        io.emit('timerUpdate', timer, isPaused);
+        io.emit('timerUpdate', timer, isPaused, 'Ready');
     });
 
     socket.on('disconnect', () => {
