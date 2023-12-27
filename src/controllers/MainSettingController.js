@@ -62,8 +62,7 @@ router.post('/', async (req, res) => {
             timeBetweenGamesInMin,
             gameDurationGroupStageInMin,
             gameDurationQuarterfinalsInMin,
-            goalsforSekt, 
-            // Add other fields if needed
+            goalsforSekt
         } = req.body;
 
         // Convert minutes to milliseconds
@@ -72,10 +71,8 @@ router.post('/', async (req, res) => {
         const gameDurationQuarterfinals = parseInt(gameDurationQuarterfinalsInMin) * 60 * 1000; // minutes to milliseconds
 
         // Find the MainSettings document and update its values
-        
         const mainSettings = await MainSettings.findOne({});
 
-        
         // If no MainSettings data found, create a new MainSettings with default values
         if (!mainSettings) {
             mainSettings = new MainSettings({
@@ -84,11 +81,7 @@ router.post('/', async (req, res) => {
                 gameDurationGroupStage: defaultGameDurationGroupStage,
                 gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
                 goalsforSekt: defaultgoalsforSekt,
-                // Add other default values if needed
             });
-
-            // Save the default MainSettings to the database
-            await mainSettings.save();
         }
 
         mainSettings.TornamentStartTime = TornamentStartTime;
@@ -100,8 +93,8 @@ router.post('/', async (req, res) => {
         // Save the updated MainSettings
         await mainSettings.save();
 
-        // Redirect to the main settings page
-        res.redirect('/mainSettings');
+        // Redirect to the main settings page after resetting counters
+        res.redirect('/');
     } catch (err) {
         console.error('Error updating MainSettings:', err);
         res.status(500).send('Internal Server Error');
