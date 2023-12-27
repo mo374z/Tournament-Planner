@@ -116,6 +116,25 @@ router.get('/delete/:id', async (req, res) => {
     }
 });
 
+// return the team name based on the id
+router.get('/getTeamName/:id', async (req, res) => {
+    const team = await Team.findById(req.params.id).exec();
+    if (team) {
+        // return status 200 and the team name
+        res.status(200).send(team.name);
+    } else {
+        // Handle scenario where the team with the given ID wasn't found
+        res.status(404).send('Team not found');
+    }
+    try {
+
+    } catch (err) {
+        console.log('Error: ' + err);
+        // Handle the error, maybe render an error page
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 
 
 module.exports = router;

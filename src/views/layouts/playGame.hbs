@@ -74,17 +74,10 @@
 </div>
 
 <script>
-    // Handle functions for game operations (start, pause, scoring)
-    // Implement functionality to manipulate the game timer and scores
-
-
-    // create a function to update the date and time
+    // update the date and time
     function updateDateTime() {
-        // create a new `Date` object
         const now = new Date();
-        // get the current date and time as a string
         const currentDateTime = now.toLocaleTimeString();
-        // update the `textContent` property of the `span` element with the `id` of `datetime`
         document.querySelector('#currentTime').textContent = currentDateTime;
     }
 
@@ -123,7 +116,6 @@
             const response = await fetch(`/game/${gameId}/change-score/${teamNum}/${i}`, {
                 method: 'POST',
             });
-            console.log(response.status);
 
             if (response.ok) {
                 const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
@@ -135,54 +127,6 @@
             }
         } catch (err) {
             console.error('Error changing score: ', err);
-        }
-    }
-
-
-
-    async function incrementScore(teamId) {
-    try {
-        const gameId = '{{ game._id }}'; 
-        const response = await fetch(`/game/${gameId}/increment-score/${teamId}`, {
-            method: 'POST',
-        });
-
-        if (response.ok) {
-            const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
-            // Update the displayed score on the page
-            document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
-
-            updateCounters(updatedCounters); // Update the displayed counters on the page
-        } else {
-            console.error('Failed to increment score');
-        }
-    } catch (err) {
-        console.error('Error incrementing score: ', err);
-    }
-}
-
-
-
-
-
-    async function decrementScore(teamId) {
-        try {
-            const gameId = '{{ game._id }}'; // Replace this with your game ID
-            const response = await fetch(`/game/${gameId}/decrement-score/${teamId}`, {
-                method: 'POST',
-            });
-
-            if (response.ok) {
-                const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
-                // Update the displayed score on the page
-                document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
-
-                updateCounters(updatedCounters); // Update the displayed counters on the page
-            } else {
-                console.error('Failed to decrement score');
-            }
-        } catch (err) {
-            console.error('Error decrement score: ', err);
         }
     }
 
@@ -270,7 +214,4 @@
             console.error('Error starting game: ', err);
         }
     });
-
-
-
 </script>
