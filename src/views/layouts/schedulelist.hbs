@@ -14,6 +14,7 @@
                 <th style="width: 15%; border: 1px solid #ddd;">Duration</th>
                 <th style="width: 10%; border: 1px solid #ddd;">Group</th>
                 <th style="width: 10%; border: 1px solid #ddd;">Status</th>
+                <th style="width: 10%; border: 1px solid #ddd;">Game Phase</th>
                 <th style="width: 5%; border: 1px solid #ddd;">Actions</th>
             </tr>
         </thead>
@@ -27,6 +28,7 @@
                 <td style="border: 1px solid #ddd;">{{this.duration}} minutes</td>
                 <td style="border: 1px solid #ddd;">{{this.group}}</td>
                 <td style="border: 1px solid #ddd;">{{this.status}}</td>
+                <td style="border: 1px solid #ddd;">{{this.gamePhase}}</td>
    
          <td style="border: 1px solid #ddd;">
             <div style="white-space: nowrap;">
@@ -45,13 +47,7 @@
     <a href="/" style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Zurück zu Main</a>
 </section>
 
-<script>
-    // Helper function to format time in "hh:mm" format
-    Handlebars.registerHelper('formatTime', function(time) {
-        const formattedTime = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return formattedTime;
-    });
-</script>
+
 
 
 

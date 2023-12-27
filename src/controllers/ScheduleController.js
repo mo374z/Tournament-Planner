@@ -27,7 +27,7 @@ router.get('/generate', async (req, res) => {
 
     const initialStatus = 'Scheduled'; // Replace with your desired initial status
 
-    generateGroupStageSchedule(startTime, gameDuration, timeBetweenGames, initialStatus);
+    generateGroupStageSchedule(startTime, gameDuration, timeBetweenGames, initialStatus, "Group_Stage");
 
 
     // Delay the redirect by 1 seconds to allow time for the schedule generation
@@ -88,7 +88,8 @@ router.post('/:id/edit', async (req, res) => {
             team1,
             team2,
             goals1,
-            goals2
+            goals2,
+            gamePhase
         } = req.body;
 
         // Fetch existing game details to obtain the old game time
@@ -101,7 +102,8 @@ router.post('/:id/edit', async (req, res) => {
             duration: parseInt(duration),
             status: status,
             opponents: [team1, team2],
-            goals: [parseInt(goals1), parseInt(goals2)]
+            goals: [parseInt(goals1), parseInt(goals2)],
+            gamePhase: gamePhase
         }, {
             new: true
         }).exec();
@@ -221,7 +223,7 @@ async function getTeamDataById(teamId) {
 }
 
 
-async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus) {
+async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase) {
 
 
     try {
@@ -259,7 +261,8 @@ async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeB
                         duration: gameDuration,
                         status: initialStatus,
                         opponents: [teamsInGroup[i]._id, teamsInGroup[j]._id],
-                        goals: [0, 0] // Setting initial goals as [0, 0]
+                        goals: [0, 0], // Setting initial goals as [0, 0]
+                        gamePhase: gamePhase
                     });
 
                     await newGame.save();

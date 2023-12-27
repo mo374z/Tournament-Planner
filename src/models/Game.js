@@ -52,6 +52,9 @@ var GameSchema = new mongoose.Schema({
     goals: {
       type: Array,
     },
+    gamePhase: {
+      type: String,
+    },
 
 });
 

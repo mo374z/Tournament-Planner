@@ -5,27 +5,36 @@
 <!-- gamePlay.handlebars -->
 <div style="text-align: center;">
     <h1>Game Play Page </h1>
+    <hr>
     <h2> Game Nr. {{ game.number }}</h2>
 
-    <div style="margin-bottom: 20px;">
+    <div style="margin-bottom: 10px;">
         <p><strong>Game Start Time:</strong> {{formatTime game.time }}</p>
         <p><strong>Game End Time:</strong> <span id="gameEndTime"></span></p>
         <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
         <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</span></p>
+
+         <button id="updateLivePageButton" onclick="UpdateDataOnLivePage()" style="margin-right: 5px; background-color: red;">Setzte Spiel auf Live Page</button>
+        
     </div>
+    <hr>
 
     <div style="margin-bottom: 20px;">
         <h2>Timer</h2>
         <div>
-            <span id="countdownTimer">{{ game.duration }}:00 min</span>
+            <span id="countdownTimer" style="font-size: 32px;">{{ game.duration }}:00 min</span>
+            
         </div>
         <div style="margin-top: 10px;">
             <button id="startButton" style="margin-right: 10px;">Start Game</button>
             <button id="pauseButton" style="margin-right: 10px;">Pause</button>
             <button id="continueButton" style="margin-right: 10px;">Continue Game</button>
             <button id="resetButton">Reset Timer</button>
+            <br>
+            <span id="timerStatus" style="margin-left: 10px;"></span>        
         </div>
     </div>
+    <hr>
 
     <div>
         <h2>Teams</h2>
@@ -50,10 +59,22 @@
             </tr>
         </table>
     </div>
+    <hr>
+
+    <div style="margin-top: 20px; text-align: center;">
+        <h2>Counters</h2>
+        <p><strong>All Goals:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
+        <p><strong>Games Played:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
+        <p><strong>Sekt Counter:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
+    </div>
+    <hr>
 
     <a href="/schedule/list"
         style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Back
         to List</a>
+
+        <a href="/game/{{ game._id }}/endGame"
+        style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #f30808; color: white; text-decoration: none; border-radius: 4px;">END GAME</a>
 </div>
 
 <script>
@@ -112,9 +133,11 @@
             });
 
             if (response.ok) {
-                const updatedGame = await response.json(); // If your API sends back the updated game object, handle it here
+                 const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
                 // Update the displayed score on the page
                 document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
+
+                 updateCounters(updatedCounters); // Update the displayed counters on the page
             } else {
                 console.error('Failed to increment score');
             }
@@ -123,7 +146,10 @@
         }
     }
 
-        async function decrementScore(teamId) {
+
+    
+
+    async function decrementScore(teamId) {
         try {
             const gameId = '{{ game._id }}'; // Replace this with your game ID
             const response = await fetch(`/game/${gameId}/decrement-score/${teamId}`, {
@@ -131,9 +157,11 @@
             });
 
             if (response.ok) {
-                const updatedGame = await response.json(); // If your API sends back the updated game object, handle it here
+                const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
                 // Update the displayed score on the page
                 document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
+
+                updateCounters(updatedCounters); // Update the displayed counters on the page
             } else {
                 console.error('Failed to decrement score');
             }
@@ -142,14 +170,50 @@
         }
     }
 
+    // Function to update and display the counters
+    function updateCounters(counters) {
+        const allGoalsCounter = document.querySelector('#allGoalsCounter');
+        const gamesPlayedCounter = document.querySelector('#gamesPlayedCounter');
+        const goalSektCounter = document.querySelector('#goalSektCounter');
+
+        if (allGoalsCounter && gamesPlayedCounter && goalSektCounter) {
+            allGoalsCounter.textContent = counters.allGoals !== 0 ? counters.allGoals : 0;
+            gamesPlayedCounter.textContent = counters.gamesPlayed !== 0 ? counters.gamesPlayed : 0;
+            goalSektCounter.textContent = counters.goalSektCounter !== 0 ? counters.goalSektCounter : 0;
+        }
+    }
+
+
+    async function UpdateDataOnLivePage() {
+        try {
+            const gameId = '{{ game._id }}'; // Replace this with your game ID
+            const response = await fetch(`/game/${gameId}/updateLivePage`, {
+                method: 'POST',
+            });
+
+            if (response.ok) {
+                document.getElementById('updateLivePageButton').style.backgroundColor = 'green';
+                console.log('Game Data on Live page Updated successfully');
+            } else {
+                console.error('Failed to Update Game Data on Live page');
+            }
+        } catch (err) {
+            console.error('Error updating data on Live page: ', err);
+        }
+    }
+
 
     const socket = io('http://localhost:4000');
 
-    socket.on('timerUpdate', (timerValue) => {
+    socket.on('timerUpdate', (timerValue, isPaused) => {
         const minutes = Math.floor(timerValue / 60);
         const seconds = timerValue % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         document.getElementById('countdownTimer').innerText = formattedTime;
+
+        // Update the timer status display
+        const timerStatus = isPaused ? 'Paused' : (timerValue === 0 ? 'Ended' : 'Running');
+        document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
     });
 
     document.getElementById('startButton').addEventListener('click', () => {
@@ -190,10 +254,6 @@ document.getElementById('startButton').addEventListener('click', async () => {
         console.error('Error starting game: ', err);
     }
 });
-
-// Existing socket logic and other event listeners...
-
-
 
 
 

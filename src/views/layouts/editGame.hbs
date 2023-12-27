@@ -1,51 +1,5 @@
 <!-- layouts/editGame.handlebars -->
 
-{{!-- <div style="text-align: center;">
-    <form action="/schedule/{{game._id}}/edit" method="POST">
-        <label for="time">Game Time:</label>
-
-        <input type="datetime-local" id="time" name="time" value="{{formatDateTime  game.time}}" required><br>
-
-        <label for="duration">Duration (minutes):</label>
-        <input type="number" id="duration" name="duration" value="{{game.duration}}" required><br>
-
-        <label for="status">Status:</label>
-        <input type="text" id="status" name="status" value="{{game.status}}" required><br>
-
-
-        <label for="team1">Team 1:</label>
-        <select id="team1" name="team1" required>
-
-            {{#each teams}}
-            {{#if (eq this._id (lookup ../game.opponents 0))}}
-            <option value="{{this._id}}" selected>{{this.name}}</option>
-            {{else}}
-            <option value="{{this._id}}">{{this.name}}</option>
-            {{/if}}
-            {{/each}}
-        </select><br>
-
-        <label for="team2">Team 2:</label>
-        <select id="team2" name="team2" required>
-            {{#each teams}}
-            {{log "Value: " this._id " Game Opponent2: " (lookup ../game.opponents 1)}}
-            {{#if (eq this._id (lookup ../game.opponents 1))}}
-            <option value="{{this._id}}" selected>{{this.name}}</option>
-            {{else}}
-            <option value="{{this._id}}">{{this.name}}</option>
-            {{/if}}
-            {{/each}}
-        </select><br>
-
-        <label for="goals">Goals (x:y):</label>
-        <input type="text" id="goals" name="goals" value="{{game.goals.[0]}}:{{game.goals.[1]}}" required><br>
-
-        <button type="submit">Save Changes</button>
-    </form>
-
-    <a href="/schedule/list">Back to Schedule List</a>
-
-</div> --}}
 
 
 <div style="text-align: center;">
@@ -89,6 +43,9 @@
 
         <label for="goals">Goals (Team 2):</label><br>
         <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;" min="0"><br>
+
+        <label for="gamePhase">Game Phase:</label><br>
+        <input type="text" id="gamePhase" name="gamePhase" value="{{game.gamePhase}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
         <button type="submit" style="padding: 8px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px;">Save Changes</button>
         <a href="/schedule/list" style="padding: 8px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px; margin-top: 10px;">Back to List</a>

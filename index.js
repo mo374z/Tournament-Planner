@@ -57,7 +57,7 @@ app.engine('hbs', exphbs.engine({
 app.set('view engine', 'hbs');
 
 app.listen(3000, () => {
-  console.log("server started at localhost port 3000");
+  console.log("Webserver started at localhost port 3000");
 });
 
 

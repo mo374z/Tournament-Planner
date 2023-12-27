@@ -18,4 +18,5 @@ connectToMongo();
 require('./Team');
 require('./Game');
 require('./MainSettings');
+require('./GeneralCounters');
 

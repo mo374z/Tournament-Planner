@@ -4,10 +4,13 @@ var router = express.Router();
 const mongoose = require('mongoose');
 const MainSettings = mongoose.model('MainSettings');
 
+const genCounters = mongoose.model('generalCounters');
+
 const defaultStartTime = new Date('2021-06-11T21:00:00.000Z');
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
 const defaultGameDurationGroupStage = 10 * 60 * 1000; 
 const defaultGameDurationQuarterfinals = 15 * 60 * 1000;
+const defaultgoalsforSekt = 10;
 
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
@@ -22,6 +25,7 @@ router.get('/', async (req, res) => {
                 timeBetweenGames: defaultTimeBetweenGames,
                 gameDurationGroupStage: defaultGameDurationGroupStage,
                 gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                goalsforSekt: defaultgoalsforSekt,
                 // Add other default values if needed
             });
 
@@ -29,8 +33,20 @@ router.get('/', async (req, res) => {
             await mainSettings.save();
         }
 
+        
+
+        let generalCounters = await genCounters.findOne({});
+        if (!generalCounters) {
+            generalCounters = new generalCounters({
+                allGoals: 0,
+                gamesPlayed: 0,
+                goalSektCounter: 0,
+            });
+            await generalCounters.save();
+        }
+
         // Render the edit page with the MainSettings data
-        res.render('layouts/editMainSettings', { mainSettings });
+        res.render('layouts/editMainSettings', { mainSettings, generalCounters });
     } catch (err) {
         console.error('Error fetching MainSettings data:', err);
         res.status(500).send('Internal Server Error');
@@ -45,7 +61,8 @@ router.post('/', async (req, res) => {
             TornamentStartTime,
             timeBetweenGamesInMin,
             gameDurationGroupStageInMin,
-            gameDurationQuarterfinalsInMin
+            gameDurationQuarterfinalsInMin,
+            goalsforSekt, 
             // Add other fields if needed
         } = req.body;
 
@@ -66,6 +83,7 @@ router.post('/', async (req, res) => {
                 timeBetweenGames: defaultTimeBetweenGames,
                 gameDurationGroupStage: defaultGameDurationGroupStage,
                 gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                goalsforSekt: defaultgoalsforSekt,
                 // Add other default values if needed
             });
 
@@ -77,13 +95,36 @@ router.post('/', async (req, res) => {
         mainSettings.timeBetweenGames = timeBetweenGames;
         mainSettings.gameDurationGroupStage = gameDurationGroupStage;
         mainSettings.gameDurationQuarterfinals = gameDurationQuarterfinals;
+        mainSettings.goalsforSekt = goalsforSekt;
 
         // Save the updated MainSettings
         await mainSettings.save();
 
-        res.redirect('/team/list'); // Redirect to the main settings page
+        // Redirect to the main settings page
+        res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error updating MainSettings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
+// POST route to reset general counters /mainSettings/resetCounters
+router.get('/resetCounters', async (req, res) => {
+    try {
+        // Find and update general counters to reset them to zero
+        const updatedCounters = await genCounters.findOneAndUpdate({}, {
+            allGoals: 0,
+            gamesPlayed: 0,
+            goalSektCounter: 0,
+            // Add other fields and their reset values if needed
+        }, { new: true });
+
+        // Redirect to the main settings page after resetting counters
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error resetting counters:', err);
         res.status(500).send('Internal Server Error');
     }
 });

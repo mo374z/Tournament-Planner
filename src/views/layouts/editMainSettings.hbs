@@ -13,9 +13,30 @@
         <label for="gameDurationQuarterfinals">Game Duration - Quarterfinals (minutes):</label><br>
         <input type="number" id="gameDurationQuarterfinals" name="gameDurationQuarterfinalsInMin" value="{{ milliToMin mainSettings.gameDurationQuarterfinals }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
+        <label for="goalsforSekt">Nr. Goals for Flasche Sekt:</label><br>
+        <input type="number" id="goalsforSekt" name="goalsforSekt" value="{{ mainSettings.goalsforSekt }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+
+            <!-- Add the counters display -->
+    <div>
+        <h4>General Counters</h4>
+        <p>All Goals: {{ generalCounters.allGoals }}</p>
+        <p>Games Played: {{ generalCounters.gamesPlayed }}</p>
+        <p>Goal Sekt Counter: {{ generalCounters.goalSektCounter }}</p>
+        
+        <!-- Add the button to reset counters -->
+        <a href="mainSettings/resetCounters" style="text-decoration: none; color: #fff; background-color: #dc3545; padding: 8px 15px; border-radius: 3px; margin-right: 5px;">Clear Counters</a>
+
+        <br><br>
+    </div>
+
+
         <button type="submit" style="padding: 8px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px;">Save Changes</button>
          <a href="/" style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Back to Main</a>
     </form>
+
+
+    
 
    
 </div>

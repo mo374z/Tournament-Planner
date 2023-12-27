@@ -5,19 +5,23 @@ var MainSettingsSchema = new mongoose.Schema({
         type: Date,
         required: 'This field is required'
     },
-    timeBetweenGames: {     //milliseconds
+    timeBetweenGames: {     //minutes
         type: Number,
         required: 'This field is required'
     },
-    gameDurationGroupStage: {   //milliseconds
+    gameDurationGroupStage: {   //minutes
         type: Number,
         required: 'This field is required'
     },
-    gameDurationGroupStage: {   //milliseconds
+    gameDurationGroupStage: {   //minutes
         type: Number,
         required: 'This field is required'
     },
-    gameDurationQuarterfinals: {    //milliseconds
+    gameDurationQuarterfinals: {    //minutes
+        type: Number,
+        required: 'This field is required'
+    },
+    goalsforSekt: {
         type: Number,
         required: 'This field is required'
     },
