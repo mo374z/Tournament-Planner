@@ -4,24 +4,22 @@ var router = express.Router();
 const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
+const MainSettings = mongoose.model('MainSettings');
 
 const genCounters = mongoose.model('generalCounters');
-
-
 const http = require('http');
 const socketIo = require('socket.io');
 const app = express();
 const server = http.createServer(app);
-//const io = new Server(server);
 
+module.exports = router;
 const cors = require('cors'); // Import cors middleware
 
 // Enable CORS for Socket.IO
 const io = socketIo(server, {
     cors: {
-      origin: '*', //'http://localhost:3000',   //'*', // Change this to your actual frontend URL in production for security
+      origin: '*', //'http://localhost:3000',  // Change this to your actual frontend URL in production for security - we changed this to * to handle a CORS error
       methods: ['GET', 'POST'], // Add the allowed methods
-     // allowedHeaders: ['my-custom-header'],
       credentials: true,
     }
   });
@@ -93,27 +91,17 @@ io.on('connection', (socket) => {
         }
     });
 
-
-
     socket.on('getData', () => {
         console.log('getData');
         io.emit('timerUpdate', timer, isPaused);
     });
-
-
 
     socket.on('disconnect', () => {
         //clearInterval(timerInterval);
         console.log('A user disconnected');
     });
 
-
-
-
-
 });
-
-
 
 // Start the Websocet server on port 4000
 const PORT = process.env.PORT || 4000;
@@ -122,9 +110,7 @@ server.listen(PORT, () => {
 });
 
 
-
-
-// GET /play/:id - Render the game play page
+// Render the game play page
 router.get('/:id/play', async (req, res) => {
     try {
         const gameId = req.params.id;
@@ -140,7 +126,6 @@ router.get('/:id/play', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
 
-        
         await Game.updateMany({ status: 'waiting' }, { status: 'Scheduled' }); // Set other waiting games to Scheduled When new game is loaded
 
         // Set the game status to "waiting" only if the status is not already "active"
@@ -159,8 +144,7 @@ router.get('/:id/play', async (req, res) => {
 });
 
 
-
-// POST /game/start/:id - Start the game and update game statuses
+// Start the game and update game stati
 router.post('/start/:id', async (req, res) => {
     try {
         const gameId = req.params.id;
@@ -181,11 +165,6 @@ router.post('/start/:id', async (req, res) => {
         game.opponents[1] = team2 ? team2.name : 'Team not found';
 
         io.emit('updateLiveGame', game);
-
-        
-
-        
-
         res.status(200).send('Game status set to active successfully');
     } catch (err) {
         console.error('Error starting game: ', err);
@@ -193,102 +172,32 @@ router.post('/start/:id', async (req, res) => {
     }
 });
 
-
-
-// POST /game/:id/increment-score/:teamId
-router.post('/:id/increment-score/:teamId', async (req, res) => {
+// change the game score
+router.post('/:id/change-score/:teamId/:i', async (req, res) => {
     try {
-        const gameId = req.params.id;
-        const teamId = req.params.teamId;
-
         // Find the game by ID
-        const game = await Game.findById(gameId).exec();
+        const game = await Game.findById(req.params.id).exec();
 
-        // Increment the score for the specified team
-        if (teamId === '1') {
-            game.goals[0] += 1;
-        } else if (teamId === '2') {
-            game.goals[1] += 1;
+        // check wheter the goals will be decremented below 0 and if so, dont decrement
+        if (game.goals[req.params.teamId-1] < 1 && req.params.i == -1) {
+            res.status(304).send('Goals cannot be decremented below 0');
+        } else {
+            // Increment the score for the specified team
+            game.goals[req.params.teamId-1] += parseInt(req.params.i);
+            const updatedGame = await game.save();
+
+            await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
+
+            const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
+
+            res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
+
+            io.emit('updateLiveGame', updatedGame);
         }
-   
-        
-
-        // Save the updated game with the new scores
-        const updatedGame = await game.save();
-
-        // Fetch team names using the team IDs from the game object
-        const team1 = await Team.findById(updatedGame.opponents[0]).exec();
-        const team2 = await Team.findById(updatedGame.opponents[1]).exec();
-
-        updatedGame.opponents[0] = team1 ? team1.name : 'Team not found';
-        updatedGame.opponents[1] = team2 ? team2.name : 'Team not found';
-
-
-        const SektforTeam = await updateGenGoalsCounter(true, teamId);; // Increment/decrement Goals counter
-
-        if(SektforTeam != 0){
-            console.log('SektforTeam: ', updatedGame.opponents[SektforTeam - 1]);
-        }
-
-
-        const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
-        res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
-
-        io.emit('updateLiveGame', updatedGame);
-        
-
-
     } catch (err) {
-        console.error('Error incrementing score: ', err);
         res.status(500).send('Internal Server Error');
     }
 });
-
-// POST /game/:id/decrement-score/:teamId
-router.post('/:id/decrement-score/:teamId', async (req, res) => {
-    try {
-        const gameId = req.params.id;
-        const teamId = req.params.teamId;
-
-        // Find the game by ID
-        const game = await Game.findById(gameId).exec();
-
-        // Increment the score for the specified team
-        if (teamId === '1') {
-            game.goals[0] -= 1;
-        } else if (teamId === '2') {
-            game.goals[1] -= 1;
-        }
-
-        
-        // Save the updated game with the new scores
-        const updatedGame = await game.save();
-
-        // Fetch team names using the team IDs from the game object
-        const team1 = await Team.findById(updatedGame.opponents[0]).exec();
-        const team2 = await Team.findById(updatedGame.opponents[1]).exec();
-
-        updatedGame.opponents[0] = team1 ? team1.name : 'Team not found';
-        updatedGame.opponents[1] = team2 ? team2.name : 'Team not found';
-
-
-        const SektforTeam = await updateGenGoalsCounter(false, teamId);; // Increment/decrement Goals counter
-
-        if(SektforTeam != 0){
-            console.log('SektforTeam: ', updatedGame.opponents[SektforTeam - 1]);
-        }
-
-
-        const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
-        res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
-
-        io.emit('updateLiveGame', updatedGame);
-    } catch (err) {
-        console.error('Error incrementing score: ', err);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
 
 
 // POST /game/:id/decrement-score/:teamId
@@ -341,11 +250,6 @@ router.get('/:id/endGame', async (req, res) => {
     }
 });
 
-
-
-
-
-
 // GET /live - Render the live game view
 router.get('/live', async (req, res) => {
     try {
@@ -371,7 +275,7 @@ router.get('/live', async (req, res) => {
 
 
 
-const MainSettings = mongoose.model('MainSettings');
+
 
 
 // Function to update allGoals counter
@@ -382,35 +286,25 @@ async function updateGenGoalsCounter(increment, teamId) {
         if (!counters) {
             counters = new genCounters({ allGoals: 0 , gamesPlayed:0 , goalSektCounter: 0}); // Create a new counters document with allGoals set to 0
         }
-
-        if (increment) {
-            counters.allGoals += 1; // Increment allGoals counter
-            counters.goalSektCounter -= 1; // Decrement goalSektCounter counter
-        } else {
-            counters.allGoals -= 1; // Decrement allGoals counter
-            counters.goalSektCounter += 1; // Increment goalSektCounter counter
-        }
-
+    
+        counters.allGoals += increment; // Increment allGoals counter
+        counters.goalSektCounter -= increment; // Decrement goalSektCounter counter
+    
         if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less, reset it to default value
             const mainSettings = await MainSettings.findOne({}); // Fetch main settings
             const defaultgoalsforSekt = mainSettings.goalsforSekt; // Fetch default value for goalSektCounter from main settings
-
             counters.goalSektCounter = defaultgoalsforSekt;
-            console.log('goalSektCounter counter reset to default value');
-
             await counters.save(); // Save the updated counter value            
             return teamId;
         }
         else{
             await counters.save(); // Save the updated counter value
             return 0;
-        }
-        
-
-        
+        }        
     } catch (err) {
         console.error('Error updating allGoals counter: ', err);
     }
 }
 
-module.exports = router;
+
+

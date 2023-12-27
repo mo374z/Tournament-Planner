@@ -1,8 +1,4 @@
-
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
-
-
-<!-- gamePlay.handlebars -->
 <div style="text-align: center;">
     <h1>Game Play Page </h1>
     <hr>
@@ -14,8 +10,8 @@
         <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
         <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</span></p>
 
-         <button id="updateLivePageButton" onclick="UpdateDataOnLivePage()" style="margin-right: 5px; background-color: red;">Setzte Spiel auf Live Page</button>
-        
+        <button id="updateLivePageButton" onclick="UpdateDataOnLivePage()"
+            style="margin-right: 5px; background-color: red;">Setzte Spiel auf Live Page</button>
     </div>
     <hr>
 
@@ -23,7 +19,6 @@
         <h2>Timer</h2>
         <div>
             <span id="countdownTimer" style="font-size: 32px;">{{ game.duration }}:00 min</span>
-            
         </div>
         <div style="margin-top: 10px;">
             <button id="startButton" style="margin-right: 10px;">Start Game</button>
@@ -31,7 +26,7 @@
             <button id="continueButton" style="margin-right: 10px;">Continue Game</button>
             <button id="resetButton">Reset Timer</button>
             <br>
-            <span id="timerStatus" style="margin-left: 10px;"></span>        
+            <span id="timerStatus" style="margin-left: 10px;"></span>
         </div>
     </div>
     <hr>
@@ -44,16 +39,16 @@
                     <h3>Team 1: {{ game.opponents.[0] }}</h3>
                     <p style="font-size: 24px;"><strong> <span id="team1Score">{{ game.goals.[0] }}</span> </strong></p>
                     <div>
-                        <button onclick="incrementScore(1)" style="margin-right: 5px;">+</button>
-                        <button onclick="decrementScore(1)">-</button>
+                        <button onclick="changeScore(1,1)" style="margin-right: 5px;">+</button>
+                        <button onclick="changeScore(1,-1)">-</button>
                     </div>
                 </td>
                 <td style="padding: 10px;">
                     <h3>Team 2: {{ game.opponents.[1] }}</h3>
                     <p style="font-size: 24px;"><strong> <span id="team2Score">{{ game.goals.[1] }}</span> </strong></p>
                     <div>
-                        <button onclick="incrementScore(2)" style="margin-right: 5px;">+</button>
-                        <button onclick="decrementScore(2)">-</button>
+                        <button onclick="changeScore(2,1)" style="margin-right: 5px;">+</button>
+                        <button onclick="changeScore(2,-1)">-</button>
                     </div>
                 </td>
             </tr>
@@ -73,8 +68,9 @@
         style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Back
         to List</a>
 
-        <a href="/game/{{ game._id }}/endGame"
-        style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #f30808; color: white; text-decoration: none; border-radius: 4px;">END GAME</a>
+    <a href="/game/{{ game._id }}/endGame"
+        style="margin-top: 20px; display: inline-block; padding: 8px 20px; background-color: #f30808; color: white; text-decoration: none; border-radius: 4px;">END
+        GAME</a>
 </div>
 
 <script>
@@ -110,44 +106,64 @@
     }
 
 
-        // Function to update the game end time
-        function updateGameEndTime(startTime, duration) {
-            const endTime = calculateEndTime(startTime, duration);
-            document.querySelector('#gameEndTime').textContent = endTime;
-        }
+    // Function to update the game end time
+    function updateGameEndTime(startTime, duration) {
+        const endTime = calculateEndTime(startTime, duration);
+        document.querySelector('#gameEndTime').textContent = endTime;
+    }
 
-        // Update the game end time on page load
-        updateGameEndTime('{{ game.time }}', {{ game.duration }});
-        updateDateTime();
-        
+    // Update the game end time on page load
+    updateGameEndTime('{{ game.time }}', {{ game.duration }});
+    updateDateTime();
 
-
-
-
-
-    async function incrementScore(teamId) {
+    // change the score of a team
+    async function changeScore(teamNum, i){
         try {
-            const gameId = '{{ game._id }}'; // Replace this with your game ID
-            const response = await fetch(`/game/${gameId}/increment-score/${teamId}`, {
+            const gameId = '{{ game._id }}';
+            const response = await fetch(`/game/${gameId}/change-score/${teamNum}/${i}`, {
                 method: 'POST',
             });
+            console.log(response.status);
 
             if (response.ok) {
-                 const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
+                const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
                 // Update the displayed score on the page
-                document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
-
-                 updateCounters(updatedCounters); // Update the displayed counters on the page
-            } else {
-                console.error('Failed to increment score');
+                document.querySelector(`#team${teamNum}Score`).textContent = updatedGame.goals[teamNum-1];
+                updateCounters(updatedCounters); // Update the displayed counters on the page
+            } else if (response.status === 304) {
+                console.log('Score not modified due to constraints.');
             }
         } catch (err) {
-            console.error('Error incrementing score: ', err);
+            console.error('Error changing score: ', err);
         }
     }
 
 
-    
+
+    async function incrementScore(teamId) {
+    try {
+        const gameId = '{{ game._id }}'; 
+        const response = await fetch(`/game/${gameId}/increment-score/${teamId}`, {
+            method: 'POST',
+        });
+
+        if (response.ok) {
+            const { updatedGame, updatedCounters } = await response.json(); // Fetch updated game and counters
+            // Update the displayed score on the page
+            document.querySelector(`#team${teamId}Score`).textContent = updatedGame.goals[teamId - 1];
+
+            updateCounters(updatedCounters); // Update the displayed counters on the page
+        } else {
+            console.error('Failed to increment score');
+        }
+    } catch (err) {
+        console.error('Error incrementing score: ', err);
+    }
+}
+
+
+
+
 
     async function decrementScore(teamId) {
         try {
@@ -222,7 +238,7 @@
     });
 
     document.getElementById('resetButton').addEventListener('click', () => {
-         const duration = {{ durationInMillis }} / 1000; // Convert milliseconds to seconds
+        const duration = {{ durationInMillis }} / 1000; // Convert milliseconds to seconds
         socket.emit('resetGame', duration);
     });
 
@@ -231,29 +247,29 @@
     });
 
     document.getElementById('continueButton').addEventListener('click', () => {
-    socket.emit('continueGame');
+        socket.emit('continueGame');
     });
 
 
 
-document.getElementById('startButton').addEventListener('click', async () => {
-    try {
-        const gameId = '{{ game._id }}';
-        console.log(gameId);
-        const response = await fetch(`/game/start/${gameId}`, {
-            method: 'POST',
-        });
+    document.getElementById('startButton').addEventListener('click', async () => {
+        try {
+            const gameId = '{{ game._id }}';
+            console.log(gameId);
+            const response = await fetch(`/game/start/${gameId}`, {
+                method: 'POST',
+            });
 
-        if (response.ok) {
-            console.log('Game started successfully');
-            // Optionally, perform any action on successful start
-        } else {
-            console.error('Failed to start game');
+            if (response.ok) {
+                console.log('Game started successfully');
+                // Optionally, perform any action on successful start
+            } else {
+                console.error('Failed to start game');
+            }
+        } catch (err) {
+            console.error('Error starting game: ', err);
         }
-    } catch (err) {
-        console.error('Error starting game: ', err);
-    }
-});
+    });
 
 
 

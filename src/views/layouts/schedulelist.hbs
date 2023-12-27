@@ -2,7 +2,10 @@
     <title>Schedule List</title>
     <h1>Schedule List</h1>
     <h3>
-        <a href="/schedule/generate" style="text-decoration: none; color: #fff; background-color: #007bff; padding: 5px 10px; border-radius: 3px;" onclick="return confirm('Are you sure you want to clear the Schedule and create new?');">Generate Schedule from Teams</a>
+        <a href="/schedule/generate"
+            style="text-decoration: none; color: #fff; background-color: #007bff; padding: 5px 10px; border-radius: 3px;"
+            onclick="return confirm('Are you sure you want to clear the Schedule and create new?');">Generate Schedule
+            from Teams</a>
     </h3>
     <table style="margin: 0 auto; width: 80%; border-collapse: collapse;">
         <thead>
@@ -29,14 +32,17 @@
                 <td style="border: 1px solid #ddd;">{{this.group}}</td>
                 <td style="border: 1px solid #ddd;">{{this.status}}</td>
                 <td style="border: 1px solid #ddd;">{{this.gamePhase}}</td>
-   
-         <td style="border: 1px solid #ddd;">
-            <div style="white-space: nowrap;">
-                <a href="/schedule/{{this.id}}" style="text-decoration: none; color: #fff; background-color: #007bff; padding: 8px 15px; border-radius: 3px; margin-right: 5px;">Edit Game</a>
-                <a href="/game/{{this.id}}/play" style="text-decoration: none; color: #fff; background-color: #178f0c; padding: 8px 15px; border-radius: 3px;">Start Game</a>
-            </div>
-        </td>
 
+                <td style="border: 1px solid #ddd;">
+                    <div style="white-space: nowrap;">
+                        <a href="/schedule/{{this.id}}"
+                            style="text-decoration: none; color: #fff; background-color: #007bff; padding: 8px 15px; border-radius: 3px; margin-right: 5px;">Edit
+                            Game</a>
+                        <a href="/game/{{this.id}}/play"
+                            style="text-decoration: none; color: #fff; background-color: #178f0c; padding: 8px 15px; border-radius: 3px;">Start
+                            Game</a>
+                    </div>
+                </td>
             </tr>
             {{/each}}
         </tbody>
@@ -44,10 +50,7 @@
 
     <br><br>
 
-    <a href="/" style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Zurück zu Main</a>
+    <a href="/"
+        style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Zurück
+        zu Main</a>
 </section>
-
-
-
-
-

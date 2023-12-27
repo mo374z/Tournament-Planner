@@ -6,7 +6,7 @@ const Team = mongoose.model('Team');
 
 
 router.get('/', (req,res) => {
-    res.render('layouts/team_addOrEdit', {
+    res.render('layouts/createUpdateTeam', {
         viewTitle: 'Insert Team'
     });
 
@@ -30,8 +30,6 @@ async function insertRecord(req, res) {
     team.name = req.body.name;
     team.group = req.body.group;
     team.goals = req.body.goals;
-
-
     try {
         const doc = await team.save();
         res.redirect('team/list');
@@ -51,8 +49,6 @@ async function updateRecord(req, res) {
         };
 
         const updatedTeam = await Team.findOneAndUpdate({ _id: teamId }, updatedData, { new: true }).exec();
-
-
         if (updatedTeam) {
             res.redirect('team/list');
         } else {
@@ -86,7 +82,7 @@ router.get('/list', async (req, res) => {
     try {
         const team = await Team.findById(req.params.id).exec();
         if (team) {
-            res.render('layouts/team_addOrEdit', {
+            res.render('layouts/createUpdateTeam', {
                 viewTitle: "Update Team With id: " + req.params.id + " !",
                 team: team,
             });
