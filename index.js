@@ -44,6 +44,9 @@ app.engine('hbs', exphbs.engine({
     },
     milliToMin: function (milliseconds) {
       return milliseconds / (1000 * 60); // Convert milliseconds to minutes
+    },
+    streq: function (a, b, options) {
+      return a === b ? options.fn(this) : options.inverse(this);
     }
   }
 }));

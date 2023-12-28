@@ -95,13 +95,6 @@ router.get('/:id/play', async (req, res) => {
 
         const durationInMillis = game.duration * 60 * 1000; // Convert minutes to milliseconds
 
-        await Game.updateMany({ status: 'waiting' }, { status: 'Scheduled' }); // Set other waiting games to Scheduled When new game is loaded
-
-        // Set the game status to "waiting" only if the status is not already "active"
-        if (game.status !== 'active') {
-            await Game.findByIdAndUpdate(gameId, { status: 'waiting' });
-        }
-
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
 
@@ -179,11 +172,8 @@ router.get('/:id/endGame', async (req, res) => {
         
         // Set the game status to "ENDE" only if the status is "active"
         if (game.status == 'active') {
-            await Game.findByIdAndUpdate(gameId, { status: 'ENDE' });
+            await Game.findByIdAndUpdate(gameId, { status: 'Ended' });
             io.emit('resetGame');
-            console.log('Game status set to ENDE successfully');
-
-            // Increment the gamesPlayed counter                                        //Other Solution: count the games with status ENDE: await Game.countDocuments({ status: 'ENDE' });
             await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
         }
 

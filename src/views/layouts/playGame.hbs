@@ -11,13 +11,15 @@
                     <p><strong>Game End Time:</strong> <span id="gameEndTime"></span></p>
                     <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
                     <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</p>
+                    <p><strong>Status:</strong> {{ game.status }}</p>
 
-                    <button id="updateLivePageButton" onclick="UpdateDataOnLivePage()" class="btn btn-danger">Set Game on Live Page</button>
-                    <div class="alert alert-success d-none mt-2" role="alert"> Game is now on Live Page </div>
+                    <button id="updateLivePageButton" onclick="UpdateDataOnLivePage()" class="btn btn-danger">Set game to active</button>
+                    <div class="alert alert-success d-none mt-2" role="alert"> Game is now active and on Live Page.</div>
                 </div>
             </div>
             <div class="col">
                 <h2>Timer</h2>
+                {{#streq game.status 'active'}}
                 <div>
                     <span id="countdownTimer" class="display-4">{{ game.duration }}:00 min</span>
                 </div>
@@ -27,6 +29,10 @@
                     <br>
                     <span id="timerStatus" class="ms-2"></span>
                 </div>
+                {{else}}
+                
+A user disconnected
+                {{/streq}}
             </div>
         </div>
 
@@ -101,7 +107,7 @@
     }
 
     // Update the game end time on page load
-    updateGameEndTime('{{ game.time }}', {{ game.duration }});
+    updateGameEndTime('{{ game.time }}', '{{ game.duration }}');
     updateDateTime();
 
     // change the score of a team
@@ -145,18 +151,34 @@
             const response = await fetch(`/game/${gameId}/updateLivePage`, {
                 method: 'POST',
             });
+            await fetch(`/game/start/${gameId}`, {
+                method: 'POST',
+            })
+            socket.emit('resetGame', '{{ game.duration }}');
+
+            const updateButton = document.getElementById('updateLivePageButton');
+            updateButton.disabled = true;
+
+            // TODO: this is just a temporary solution - should be replaced with re-rendering of specific parts instead of reloading the page
+            location.reload();
 
             // show  bootstrap alert for one second to indicate success
             const alert = document.querySelector('.alert');
             alert.classList.remove('d-none');
             setTimeout(() => {
                 alert.classList.add('d-none');
-            }, 1000);
+            }, 2000);
 
         } catch (err) {
             console.error('Error updating data on Live page: ', err);
         }
     }
+
+    function disableActiveGameButton(status) {
+        const updateButton = document.getElementById('updateLivePageButton');
+        updateButton.disabled = status === 'active';
+    }
+    disableActiveGameButton('{{ game.status }}');
 
 
     const socket = io('http://localhost:4000');
