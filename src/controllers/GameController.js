@@ -38,13 +38,13 @@ io.on('connection', (socket) => {
     socket.on('playPauseGame', () => {
         if (isPaused) {
             isPaused = false;
-            timerInterval = setInterval(() => {
+            timerInterval = setInterval(() => {             //Timer resuluion is 1 second !! (timer Variable is in seconds)
                 if (timer > 0 && !isPaused) {
                     timer--;
                     io.emit('timerUpdate', timer, isPaused, 'Running');
                 } else if (timer === 0) {
                     clearInterval(timerInterval);
-                    io.emit('timerEnd');
+                    //io.emit('timerEnd');
                     io.emit('timerUpdate', timer, isPaused, 'Ended');
                 }
             }, 1000);
@@ -55,15 +55,14 @@ io.on('connection', (socket) => {
         }
 });
 
-    socket.on('resetGame', (duration) => {
-        clearInterval(timerInterval);
-        timer = duration;
-        isPaused = true;
-        io.emit('timerUpdate', timer, isPaused, 'Ready');
+    socket.on('resetGame', (duration) => {                  //duration is in seconds
+        resetTimer(duration);
     });
 
     socket.on('getData', () => {
-        io.emit('timerUpdate', timer, isPaused, 'Ready');
+        if(isPaused) io.emit('timerUpdate', timer, isPaused, 'Paused');
+        if(!isPaused && timer > 0) io.emit('timerUpdate', timer, isPaused, 'Running');
+        if(timer === 0) io.emit('timerUpdate', timer, isPaused, 'Ended');
     });
 
     socket.on('disconnect', () => {
@@ -72,6 +71,21 @@ io.on('connection', (socket) => {
     });
 
 });
+
+
+function resetTimer(duration) {
+    clearInterval(timerInterval);
+    console.log('Resetting timer to: ', duration);
+    timer = duration;
+    isPaused = true;
+    
+    if (duration === 0) {                                //if duration is 0, the game is ended
+        io.emit('timerUpdate', timer, isPaused, 'Ended');
+    }
+    else {                                              //if duration is not 0, the game is ready to start                   
+        io.emit('timerUpdate', timer, isPaused, 'Ready');
+    }
+}
 
 // Start the Websocet server on port 4000
 const PORT = process.env.PORT || 4000;
@@ -112,9 +126,12 @@ router.post('/start/:id', async (req, res) => {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
 
-        // Set the game status to "active"
-        await Game.updateMany({ status: 'active' }, { status: 'ENDE' }); // Set other active games to END When new game starts
-        await Game.findByIdAndUpdate(gameId, { status: 'active' });
+        
+        await Game.updateMany({ status: 'active' }, { status: 'ENDE' });    // Set other active games to END When new game starts
+        await Game.findByIdAndUpdate(gameId, { status: 'active' });         // Set the game status to "active"
+
+        console.log('Game set to active: ', gameId);
+        resetTimer(game.duration*60);  // Reset the timer to the value 0 in seconds
 
         res.status(200).send('Game status set to active successfully');
     } catch (err) {
@@ -170,14 +187,19 @@ router.get('/:id/endGame', async (req, res) => {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
         
-        // Set the game status to "ENDE" only if the status is "active"
+        // Set the game status to "Ended" only if the status is "active"
         if (game.status == 'active') {
             await Game.findByIdAndUpdate(gameId, { status: 'Ended' });
-            io.emit('resetGame');
-            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
-        }
+            console.log('Game set to Ended');    
+             
+            
+            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment gamesPlayed counter
 
+            resetTimer(0);  // Reset the timer to the value 0 in seconds
+           
+        }
         res.redirect('/schedule/list');
+    
     } catch (err) {
         console.error('Error fetching game for END: ', err);
         res.status(500).send('Internal Server Error');
