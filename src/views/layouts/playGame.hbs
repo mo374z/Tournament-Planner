@@ -64,6 +64,11 @@
                 <p class="mb-2"><strong>All Goals:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
                 <p class="mb-2"><strong>Games Played:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
                 <p class="mb-2"><strong>Sekt Counter:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
+
+
+                <div class="alert alert-info d-none mt-2" role="alert">
+                        This is a info alert—check it out!
+                </div>
             </div>
         </div>
 
@@ -167,7 +172,7 @@
             location.reload();
 
             // show  bootstrap alert for one second to indicate success
-            const alert = document.querySelector('.alert');
+            const alert = document.querySelector('.alert-success');
             alert.classList.remove('d-none');
             setTimeout(() => {
                 alert.classList.add('d-none');
@@ -213,5 +218,22 @@
        // } catch (err) {
             // console.error('Error starting game: ', err);
        // }
+    });
+
+    const gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
+
+    socket.on('Sekt', (teamNum) => {
+
+        console.log('Sekt for Team: ' + teamNum);
+        console.log('Sekt for Team: ' + gameOppNames[teamNum-1]);    // teamNum is 1 or 2, but array index is 0 or 1
+
+        // show  bootstrap info-alert for 60 seconds to indicate Sekt
+        const alert = document.querySelector('.alert-info');
+        alert.textContent = 'Sekt für ' + gameOppNames[teamNum-1]; // Set the Sekt-alert message
+        alert.classList.remove('d-none');
+        setTimeout(() => {
+            alert.classList.add('d-none');
+        }, 60000); // 60 seconds
+        
     });
 </script>

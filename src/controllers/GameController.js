@@ -154,11 +154,20 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
             game.goals[req.params.teamId-1] += parseInt(req.params.i);
             const updatedGame = await game.save();
 
-            await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
+            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
+
 
             const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
 
+
+
             res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
+
+            if(Sekt_Team_ID != 0){
+                console.log('Sekt Team ID: ', Sekt_Team_ID);
+
+                io.emit('Sekt', Sekt_Team_ID);
+            }
 
             io.emit('updateLiveGame', updatedGame);
         }
@@ -252,5 +261,6 @@ async function updateGenGoalsCounter(increment, teamId) {
         }        
     } catch (err) {
         console.error('Error updating allGoals counter: ', err);
+        return 0;
     }
 }
