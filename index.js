@@ -1,5 +1,3 @@
-// this is the main entry point of our application and should only contain the absolute minimum code needed to start our application
-
 const path = require('path');
 const express = require('express');
 const handlebars = require('handlebars');
@@ -18,10 +16,7 @@ app.use(bodyparser.json());
 
 app.get('/', (request, response) => {
   response.render('home');
-
-  // response.send('<h2>Welcome</h2> <h3>Click here to get acess to <b> <a href="/student/list"> Database</a></h3></b>');
 });
-
 
 app.set('views', path.join(__dirname, '/src/views/'));
 
@@ -37,7 +32,6 @@ app.engine('hbs', exphbs.engine({
     },
     formatDateTime: function (time) {
       time.setHours(time.getHours() + 1);
-
       const formattedTime = new Date(time).toISOString().slice(0, 16); // Adjust the slice based on your datetime-local format
       return formattedTime;
     },
@@ -50,6 +44,9 @@ app.engine('hbs', exphbs.engine({
     },
     milliToMin: function (milliseconds) {
       return milliseconds / (1000 * 60); // Convert milliseconds to minutes
+    },
+    streq: function (a, b, options) {
+      return a === b ? options.fn(this) : options.inverse(this);
     }
   }
 }));
@@ -60,23 +57,15 @@ app.listen(3000, () => {
   console.log("Webserver started at localhost port 3000");
 });
 
-
-
+// import the necessary script for the application
 const TeamController = require("./src/controllers/TeamController");
-
 const ScheduleController = require("./src/controllers/ScheduleController");
-
 const MainSettingController = require("./src/controllers/MainSettingController");
-
 const GameController = require("./src/controllers/GameController");
 
-
 app.use("/team", TeamController);
-
 app.use("/schedule", ScheduleController);
-
 app.use("/mainSettings", MainSettingController);
-
 app.use("/game", GameController);
 
 

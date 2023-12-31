@@ -4,24 +4,22 @@ var router = express.Router();
 const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
+const MainSettings = mongoose.model('MainSettings');
 
 const genCounters = mongoose.model('generalCounters');
-
-
 const http = require('http');
 const socketIo = require('socket.io');
 const app = express();
 const server = http.createServer(app);
-//const io = new Server(server);
 
+module.exports = router;
 const cors = require('cors'); // Import cors middleware
 
 // Enable CORS for Socket.IO
 const io = socketIo(server, {
     cors: {
-      origin: '*', //'http://localhost:3000',   //'*', // Change this to your actual frontend URL in production for security
+      origin: '*', //'http://localhost:3000',  // Change this to your actual frontend URL in production for security - we changed this to * to handle a CORS error
       methods: ['GET', 'POST'], // Add the allowed methods
-     // allowedHeaders: ['my-custom-header'],
       credentials: true,
     }
   });
@@ -36,84 +34,58 @@ let isPaused = true;
 
 // WebSocket logic
 io.on('connection', (socket) => {
-    console.log('A user connected');
 
-    socket.on('startGame', (duration) => {
-        clearInterval(timerInterval);
-        console.log('Game Timer Started');
-
-        isPaused = false;
-        timer = duration; // Set the initial timer duration
-        io.emit('timerUpdate', timer, isPaused);
-
-        timerInterval = setInterval(() => {
-            if (timer > 0 && !isPaused) {
-                timer--;
-                io.emit('timerUpdate', timer, isPaused);
-            } else if (timer === 0) {
-                clearInterval(timerInterval);
-                io.emit('timerEnd');
-                io.emit('timerUpdate', timer, isPaused);
-                console.log('Game Timer Ended');
-            }
-        }, 1000);
-    });
-
-    socket.on('resetGame', (duration) => {
-        clearInterval(timerInterval);
-        console.log('Game Timer Reset');
-        timer = duration;
-        io.emit('timerUpdate', timer, isPaused);
-        isPaused = true;
-    });
-
-    socket.on('pauseGame', () => {
-        clearInterval(timerInterval);
-        console.log('Game Timer Paused');
-        isPaused = true; // Set the pause state
-        io.emit('timerUpdate', timer, isPaused);
-    });
-
-    socket.on('continueGame', () => {
+    socket.on('playPauseGame', () => {
         if (isPaused) {
-            io.emit('timerUpdate', timer, isPaused);
-            console.log('Game TimerContinued');
-            isPaused = false; // Reset the pause state
-            timerInterval = setInterval(() => {
+            isPaused = false;
+            timerInterval = setInterval(() => {             //Timer resuluion is 1 second !! (timer Variable is in seconds)
                 if (timer > 0 && !isPaused) {
                     timer--;
-                    io.emit('timerUpdate', timer, isPaused);
+                    io.emit('timerUpdate', timer, isPaused, 'Running');
                 } else if (timer === 0) {
                     clearInterval(timerInterval);
-                    io.emit('timerEnd');
-                    io.emit('timerUpdate', timer, isPaused);
-                    console.log('Game Timer Ended');
+                    //io.emit('timerEnd');
+                    io.emit('timerUpdate', timer, isPaused, 'Ended');
                 }
             }, 1000);
+        } else {
+            clearInterval(timerInterval);
+            isPaused = true;
+            io.emit('timerUpdate', timer, isPaused, 'Paused');
         }
+});
+
+    socket.on('resetGame', (duration) => {                  //duration is in seconds
+        resetTimer(duration);
     });
-
-
 
     socket.on('getData', () => {
-        console.log('getData');
-        io.emit('timerUpdate', timer, isPaused);
+        if(isPaused) io.emit('timerUpdate', timer, isPaused, 'Paused');
+        if(!isPaused && timer > 0) io.emit('timerUpdate', timer, isPaused, 'Running');
+        if(timer === 0) io.emit('timerUpdate', timer, isPaused, 'Ended');
     });
-
-
 
     socket.on('disconnect', () => {
         //clearInterval(timerInterval);
         console.log('A user disconnected');
     });
 
-
-
-
-
 });
 
 
+function resetTimer(duration) {
+    clearInterval(timerInterval);
+    console.log('Resetting timer to: ', duration);
+    timer = duration;
+    isPaused = true;
+    
+    if (duration === 0) {                                //if duration is 0, the game is ended
+        io.emit('timerUpdate', timer, isPaused, 'Ended');
+    }
+    else {                                              //if duration is not 0, the game is ready to start                   
+        io.emit('timerUpdate', timer, isPaused, 'Ready');
+    }
+}
 
 // Start the Websocet server on port 4000
 const PORT = process.env.PORT || 4000;
@@ -122,16 +94,11 @@ server.listen(PORT, () => {
 });
 
 
-
-
-// GET /play/:id - Render the game play page
+// Render the game play page
 router.get('/:id/play', async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
-
-        const durationInMinutes = game.duration;
-        const durationInMillis = durationInMinutes * 60 * 1000; // Convert minutes to milliseconds
 
         // Fetch team names using the team IDs from the game object
         const team1 = await Team.findById(game.opponents[0]).exec();
@@ -140,13 +107,7 @@ router.get('/:id/play', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
 
-        
-        await Game.updateMany({ status: 'waiting' }, { status: 'Scheduled' }); // Set other waiting games to Scheduled When new game is loaded
-
-        // Set the game status to "waiting" only if the status is not already "active"
-        if (game.status !== 'active') {
-        await Game.findByIdAndUpdate(gameId, { status: 'waiting' });
-        }
+        const durationInMillis = game.duration * 60 * 1000; // Convert minutes to milliseconds
 
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
@@ -159,32 +120,18 @@ router.get('/:id/play', async (req, res) => {
 });
 
 
-
-// POST /game/start/:id - Start the game and update game statuses
+// Start the game and update game stati
 router.post('/start/:id', async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
 
-        // Set the game status to "active"
-        await Game.updateMany({ status: 'active' }, { status: 'ENDE' }); // Set other active games to END When new game start
-        await Game.findByIdAndUpdate(gameId, { status: 'active' });
-
-        // Send a success response
-        console.log('Game status set to active successfully');
-
-        // Fetch team names using the team IDs from the game object
-        const team1 = await Team.findById(game.opponents[0]).exec();
-        const team2 = await Team.findById(game.opponents[1]).exec();
-
-        game.opponents[0] = team1 ? team1.name : 'Team not found';
-        game.opponents[1] = team2 ? team2.name : 'Team not found';
-
-        io.emit('updateLiveGame', game);
-
         
+        await Game.updateMany({ status: 'active' }, { status: 'ENDE' });    // Set other active games to END When new game starts
+        await Game.findByIdAndUpdate(gameId, { status: 'active' });         // Set the game status to "active"
 
-        
+        console.log('Game set to active: ', gameId);
+        resetTimer(game.duration*60);  // Reset the timer to the value 0 in seconds
 
         res.status(200).send('Game status set to active successfully');
     } catch (err) {
@@ -193,124 +140,49 @@ router.post('/start/:id', async (req, res) => {
     }
 });
 
-
-
-// POST /game/:id/increment-score/:teamId
-router.post('/:id/increment-score/:teamId', async (req, res) => {
+// change the game score
+router.post('/:id/change-score/:teamId/:i', async (req, res) => {
     try {
-        const gameId = req.params.id;
-        const teamId = req.params.teamId;
-
         // Find the game by ID
-        const game = await Game.findById(gameId).exec();
+        const game = await Game.findById(req.params.id).exec();
 
-        // Increment the score for the specified team
-        if (teamId === '1') {
-            game.goals[0] += 1;
-        } else if (teamId === '2') {
-            game.goals[1] += 1;
+        // check wheter the goals will be decremented below 0 and if so, dont decrement
+        if (game.goals[req.params.teamId-1] < 1 && req.params.i == -1) {
+            res.status(304).send('Goals cannot be decremented below 0');
+        } else {
+            // Increment the score for the specified team
+            game.goals[req.params.teamId-1] += parseInt(req.params.i);
+            const updatedGame = await game.save();
+
+            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
+
+
+            const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
+
+
+
+            res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
+
+            if(Sekt_Team_ID != 0){
+                console.log('Sekt Team ID: ', Sekt_Team_ID);
+
+                io.emit('Sekt', Sekt_Team_ID);
+            }
+
+            io.emit('updateLiveGame', updatedGame);
         }
-   
-        
-
-        // Save the updated game with the new scores
-        const updatedGame = await game.save();
-
-        // Fetch team names using the team IDs from the game object
-        const team1 = await Team.findById(updatedGame.opponents[0]).exec();
-        const team2 = await Team.findById(updatedGame.opponents[1]).exec();
-
-        updatedGame.opponents[0] = team1 ? team1.name : 'Team not found';
-        updatedGame.opponents[1] = team2 ? team2.name : 'Team not found';
-
-
-        const SektforTeam = await updateGenGoalsCounter(true, teamId);; // Increment/decrement Goals counter
-
-        if(SektforTeam != 0){
-            console.log('SektforTeam: ', updatedGame.opponents[SektforTeam - 1]);
-        }
-
-
-        const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
-        res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
-
-        io.emit('updateLiveGame', updatedGame);
-        
-
-
     } catch (err) {
-        console.error('Error incrementing score: ', err);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-// POST /game/:id/decrement-score/:teamId
-router.post('/:id/decrement-score/:teamId', async (req, res) => {
-    try {
-        const gameId = req.params.id;
-        const teamId = req.params.teamId;
-
-        // Find the game by ID
-        const game = await Game.findById(gameId).exec();
-
-        // Increment the score for the specified team
-        if (teamId === '1') {
-            game.goals[0] -= 1;
-        } else if (teamId === '2') {
-            game.goals[1] -= 1;
-        }
-
-        
-        // Save the updated game with the new scores
-        const updatedGame = await game.save();
-
-        // Fetch team names using the team IDs from the game object
-        const team1 = await Team.findById(updatedGame.opponents[0]).exec();
-        const team2 = await Team.findById(updatedGame.opponents[1]).exec();
-
-        updatedGame.opponents[0] = team1 ? team1.name : 'Team not found';
-        updatedGame.opponents[1] = team2 ? team2.name : 'Team not found';
-
-
-        const SektforTeam = await updateGenGoalsCounter(false, teamId);; // Increment/decrement Goals counter
-
-        if(SektforTeam != 0){
-            console.log('SektforTeam: ', updatedGame.opponents[SektforTeam - 1]);
-        }
-
-
-        const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
-        res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
-
-        io.emit('updateLiveGame', updatedGame);
-    } catch (err) {
-        console.error('Error incrementing score: ', err);
         res.status(500).send('Internal Server Error');
     }
 });
 
 
-
-// POST /game/:id/decrement-score/:teamId
 router.post('/:id/updateLivePage', async (req, res) => {
     try {
-        const gameId = req.params.id;
-        const teamId = req.params.teamId;
-
-        // Find the game by ID
-        const game = await Game.findById(gameId).exec();
-
-        // Fetch team names using the team IDs from the game object
-        const team1 = await Team.findById(game.opponents[0]).exec();
-        const team2 = await Team.findById(game.opponents[1]).exec();
-
-        game.opponents[0] = team1 ? team1.name : 'Team not found';
-        game.opponents[1] = team2 ? team2.name : 'Team not found';
-
+        const game = await Game.findById(req.params.id).exec();
         res.status(200).send('Game send to Live page successfully');
         io.emit('updateLiveGame', game);
         io.emit('timerUpdate', timer, isPaused);
-        
     } catch (err) {
         console.error('Error Updatng Live Page: ', err);
         res.status(500).send('Internal Server Error');
@@ -318,99 +190,77 @@ router.post('/:id/updateLivePage', async (req, res) => {
 });
 
 
-// GET /play/:id - Render the game play page
+// end a game
 router.get('/:id/endGame', async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
         
-        // Set the game status to "ENDE" only if the status is "active"
+        // Set the game status to "Ended" only if the status is "active"
         if (game.status == 'active') {
-            await Game.findByIdAndUpdate(gameId, { status: 'ENDE' });
-            console.log('Game status set to ENDE successfully');
+            await Game.findByIdAndUpdate(gameId, { status: 'Ended' });
+            console.log('Game set to Ended');    
+             
+            
+            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment gamesPlayed counter
 
-            // Increment the gamesPlayed counter                                        //Other Solution: count the games with status ENDE: await Game.countDocuments({ status: 'ENDE' });
-            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
-            console.log('gamesPlayed counter incremented successfully');
+            resetTimer(0);  // Reset the timer to the value 0 in seconds
+           
         }
-
         res.redirect('/schedule/list');
+    
     } catch (err) {
         console.error('Error fetching game for END: ', err);
         res.status(500).send('Internal Server Error');
     }
 });
 
-
-
-
-
-
-// GET /live - Render the live game view
+// render the live game view
 router.get('/live', async (req, res) => {
     try {
-        const liveGame = await Game.findOne({ status: 'active' }).exec();
+        const game = await Game.findOne({ status: 'active' }).exec();
 
-        if (!liveGame) {
-            return res.render('layouts/liveGame', { liveGame: null, noActiveGame: true });
+        if (!game) {
+            return res.render('layouts/liveGame', { game: null, noActiveGame: true });
         }
 
         // Fetch team names using the team IDs from the game object
-        const team1 = await Team.findById(liveGame.opponents[0]).exec();
-        const team2 = await Team.findById(liveGame.opponents[1]).exec();
+        const team1 = await Team.findById(game.opponents[0]).exec();
+        const team2 = await Team.findById(game.opponents[1]).exec();
 
-        liveGame.opponents[0] = team1 ? team1.name : 'Team not found';
-        liveGame.opponents[1] = team2 ? team2.name : 'Team not found';
-
-        res.render('layouts/liveGame', { liveGame, noActiveGame: false });
+        // set them instead of the id - ATTENTION: dont change the db data
+        game.opponents[0] = team1 ? team1.name : 'Team not found';
+        game.opponents[1] = team2 ? team2.name : 'Team not found';
+        
+        res.render('layouts/liveGame', { game, noActiveGame: false });
     } catch (err) {
         console.error('Error fetching live games: ', err);
         res.status(500).send('Internal Server Error');
     }
 });
 
-
-
-const MainSettings = mongoose.model('MainSettings');
-
-
 // Function to update allGoals counter
 async function updateGenGoalsCounter(increment, teamId) {
     try {
         let counters = await genCounters.findOne({}); // Assuming you have a single document for counters
-
         if (!counters) {
             counters = new genCounters({ allGoals: 0 , gamesPlayed:0 , goalSektCounter: 0}); // Create a new counters document with allGoals set to 0
         }
-
-        if (increment) {
-            counters.allGoals += 1; // Increment allGoals counter
-            counters.goalSektCounter -= 1; // Decrement goalSektCounter counter
-        } else {
-            counters.allGoals -= 1; // Decrement allGoals counter
-            counters.goalSektCounter += 1; // Increment goalSektCounter counter
-        }
-
+        counters.allGoals += increment; // Increment allGoals counter
+        counters.goalSektCounter -= increment; // Decrement goalSektCounter counter
+    
         if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less, reset it to default value
             const mainSettings = await MainSettings.findOne({}); // Fetch main settings
-            const defaultgoalsforSekt = mainSettings.goalsforSekt; // Fetch default value for goalSektCounter from main settings
-
-            counters.goalSektCounter = defaultgoalsforSekt;
-            console.log('goalSektCounter counter reset to default value');
-
+            counters.goalSektCounter = mainSettings.goalsforSekt;
             await counters.save(); // Save the updated counter value            
             return teamId;
         }
         else{
             await counters.save(); // Save the updated counter value
             return 0;
-        }
-        
-
-        
+        }        
     } catch (err) {
         console.error('Error updating allGoals counter: ', err);
+        return 0;
     }
 }
-
-module.exports = router;

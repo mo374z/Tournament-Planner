@@ -1,0 +1,26 @@
+<div style="text-align: center;">
+    <h3>{{viewTitle}}</h3>
+    <form action='/team' method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
+        <input type="hidden" name="_id" value="{{team._id}}"> 
+        
+        <div style="margin-bottom: 10px;">
+            <label for="name">Name</label><br>
+            <input type="text" name="name" placeholder="Team Name" value="{{team.name}}" style="width: 100%; padding: 5px;">
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label for="group">Gruppe</label><br>
+            <input type="text" name="group" placeholder="Gruppe" value="{{team.group}}" style="width: 100%; padding: 5px;">
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label for="goals">Tore</label><br>
+            <input type="number" name="goals" placeholder="Tore" value="{{team.goals}}" style="width: 100%; padding: 5px;">
+        </div>
+        
+        <div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <a href="/team/list" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
