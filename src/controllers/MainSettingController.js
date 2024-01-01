@@ -12,6 +12,24 @@ const defaultGameDurationGroupStage = 10 * 60 * 1000;
 const defaultGameDurationQuarterfinals = 15 * 60 * 1000;
 const defaultgoalsforSekt = 10;
 
+
+//Code part to enable the authentication for all the following routes
+const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
+const cookieParser = require('cookie-parser'); 
+router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
+
+router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
+router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+  });
+
+  router.use(isAdmin);                       // Alle nachfolgenden Routen sind nur für Admins zugänglich
+//--------------------------------------------------------------
+
+
+
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
     try {

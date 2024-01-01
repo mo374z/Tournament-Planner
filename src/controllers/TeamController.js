@@ -5,6 +5,21 @@ const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 
 
+//Code part to enable the authentication for all the following routes
+const  {verifyToken, checkLoginStatus , isAdmin}=  require('../middleware/auth'); // Pfad zur auth.js-Datei
+const cookieParser = require('cookie-parser'); 
+router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
+
+router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
+router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+  });
+//--------------------------------------------------------------
+
+
+
 router.get('/', (req,res) => {
     res.render('layouts/createUpdateTeam', {
         viewTitle: 'Insert Team'
@@ -64,7 +79,10 @@ async function updateRecord(req, res) {
 
 
 
+
+
 router.get('/list', async (req, res) => {
+
     try {
       const Teams = await Team.find({ });
       res.render('layouts/teamlist', {

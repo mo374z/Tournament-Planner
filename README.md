@@ -11,6 +11,14 @@ npm install socket.io
 
 npm install cors
 
+## NEU !!!!!
+
+npm install bcrypt
+
+npm install jsonwebtoken
+
+npm install cookie-parser
+
 
 
 
