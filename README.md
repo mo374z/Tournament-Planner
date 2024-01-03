@@ -11,7 +11,16 @@ npm install socket.io
 
 npm install cors
 
+## NEW Please install !!!!!
 
+npm install bcrypt
+
+npm install jsonwebtoken
+
+npm install cookie-parser
+
+
+> :warning: Team Structre changed please create new Teams in your DB !!!!!
 
 
 

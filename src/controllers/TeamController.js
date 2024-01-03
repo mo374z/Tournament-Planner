@@ -5,9 +5,25 @@ const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 
 
+//Code part to enable the authentication for all the following routes
+const  {verifyToken, checkLoginStatus , isAdmin}=  require('../middleware/auth'); // Pfad zur auth.js-Datei
+const cookieParser = require('cookie-parser'); 
+router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
+
+router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
+router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+  });
+//--------------------------------------------------------------
+
+
+
 router.get('/', (req,res) => {
     res.render('layouts/createUpdateTeam', {
-        viewTitle: 'Insert Team'
+        viewTitle: 'Insert Team',
+        isNew: true,
     });
 
 });
@@ -29,7 +45,14 @@ async function insertRecord(req, res) {
     var team = new Team();
     team.name = req.body.name;
     team.group = req.body.group;
-    team.goals = req.body.goals;
+    team.gamesPlayed = 0;
+    team.gamesWon = 0;
+    team.gamesLost = 0;
+    team.gamesDraw = 0;
+    team.goals = [0,0];    
+    team.sektWon = 0;
+    team.points = 0;
+
     try {
         const doc = await team.save();
         res.redirect('team/list');
@@ -39,13 +62,12 @@ async function insertRecord(req, res) {
     }
 }
 
+
 async function updateRecord(req, res) {
     try {
         const teamId = req.body._id;
         const updatedData = {
             name: req.body.name,
-            group: req.body.group,
-            goals: req.body.goals
         };
 
         const updatedTeam = await Team.findOneAndUpdate({ _id: teamId }, updatedData, { new: true }).exec();
@@ -64,11 +86,20 @@ async function updateRecord(req, res) {
 
 
 
+
+
 router.get('/list', async (req, res) => {
+
     try {
       const Teams = await Team.find({ });
+      
+        Teams.forEach(team => {                 //calculate goals difference
+            team.goalsDifference = team.goals[0] - team.goals[1];
+        });
+
       res.render('layouts/teamlist', {
-            list: Teams
+            list: Teams,
+
         });
 
 
@@ -78,10 +109,33 @@ router.get('/list', async (req, res) => {
   });
 
 
-  router.get('/:id', async (req, res) => {
+  
+router.get('/clearTeamCounters', isAdmin, async (req, res) => {   //Clear Team Counters only for Admins
+    try {
+        const teams = await Team.find({}).exec();
+        teams.forEach(async team => {
+            team.gamesPlayed = 0;
+            team.gamesWon = 0;
+            team.gamesLost = 0;
+            team.gamesDraw = 0;
+            team.goals = [0,0];    
+            team.sektWon = 0;
+            team.points = 0;
+            await team.save();
+        });
+        res.redirect('/team/list');
+    } catch (err) {
+        console.log('Error in deletion: ' + err);
+        // Handle the error, maybe render an error page
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+  router.get('/:id', isAdmin, async (req, res) => {     //Create and Update Team only for Admins
     try {
         const team = await Team.findById(req.params.id).exec();
-        if (team) {
+        if (team) {                                                             // If the team was found
             res.render('layouts/createUpdateTeam', {
                 viewTitle: "Update Team With id: " + req.params.id + " !",
                 team: team,
@@ -99,11 +153,11 @@ router.get('/list', async (req, res) => {
 });
 
 
-router.get('/delete/:id', async (req, res) => {
+router.get('/delete/:id' , isAdmin, async (req, res) => {   //Delete Team only for Admins
     try {
-        const deletedStudent = await Team.findByIdAndDelete(req.params.id).exec();
+        const deletedTeam = await Team.findByIdAndDelete(req.params.id).exec();
         
-        if (deletedStudent) {
+        if (deletedTeam) {
             res.redirect('/team/list');
         } else {
             // Handle scenario where the student with the given ID wasn't found
@@ -134,6 +188,8 @@ router.get('/getTeamName/:id', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+
 
 
 

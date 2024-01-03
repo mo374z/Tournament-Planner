@@ -15,6 +15,27 @@ const server = http.createServer(app);
 module.exports = router;
 const cors = require('cors'); // Import cors middleware
 
+
+
+
+//Code part to enable the authentication for all the following routes
+const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
+const cookieParser = require('cookie-parser'); 
+router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
+
+router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
+router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+  });
+//--------------------------------------------------------------
+
+
+
+
+
+
 // Enable CORS for Socket.IO
 const io = socketIo(server, {
     cors: {
@@ -165,6 +186,10 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
 
             if(Sekt_Team_ID != 0){
                 console.log('Sekt Team ID: ', Sekt_Team_ID);
+                const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
+                team.sektWon += 1; // Increment the sektWon counter for the team
+                console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
+                await team.save(); // Save the updated team
 
                 io.emit('Sekt', Sekt_Team_ID);
             }
@@ -199,7 +224,10 @@ router.get('/:id/endGame', async (req, res) => {
         // Set the game status to "Ended" only if the status is "active"
         if (game.status == 'active') {
             await Game.findByIdAndUpdate(gameId, { status: 'Ended' });
-            console.log('Game set to Ended');    
+            console.log('Game set to Ended');
+
+            // Update the team data with the game results
+            await writeGameDataToTeams(game);   
              
             
             await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment gamesPlayed counter
@@ -214,6 +242,51 @@ router.get('/:id/endGame', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+
+async function writeGameDataToTeams(game) {
+    try {
+        // Update the team data with the game results
+        let team1 = await Team.findById(game.opponents[0]);
+        let team2 = await Team.findById(game.opponents[1]);
+
+        // Update the team data with the game results
+        team1.gamesPlayed += 1;
+        team2.gamesPlayed += 1;
+
+        if (game.goals[0] > game.goals[1]) {
+            team1.gamesWon += 1;
+            team2.gamesLost += 1;
+            team1.points += 3;
+        } else if (game.goals[0] < game.goals[1]) {
+            team2.gamesWon += 1;
+            team1.gamesLost += 1;
+            team2.points += 3;
+        } else {
+            team1.gamesDraw += 1;
+            team2.gamesDraw += 1;
+            team1.points += 1;
+            team2.points += 1;
+        }
+
+        team1.goals[0] += game.goals[0];
+        team1.goals[1] += game.goals[1];
+        team2.goals[0] += game.goals[1];
+        team2.goals[1] += game.goals[0];
+
+        let updatedTeam1 = await team1.save();
+        console.log('Team 1 updated: ', updatedTeam1);
+
+        let updatedTeam2 = await team2.save();
+        console.log('Team 2 updated: ', updatedTeam2);
+
+    } catch (err) {
+        console.error('Error updating teams: ', err);
+    }
+}//end writeGameDataToTeams
+
+
+
 
 // render the live game view
 router.get('/live', async (req, res) => {
@@ -248,6 +321,8 @@ async function updateGenGoalsCounter(increment, teamId) {
         }
         counters.allGoals += increment; // Increment allGoals counter
         counters.goalSektCounter -= increment; // Decrement goalSektCounter counter
+
+        if(counters.allGoals <= -1){counters.allGoals = 0;} // If allGoals can not be negative, set it to 0
     
         if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less, reset it to default value
             const mainSettings = await MainSettings.findOne({}); // Fetch main settings

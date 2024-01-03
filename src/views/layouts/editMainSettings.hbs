@@ -1,5 +1,6 @@
-<div style="text-align: center;">
-    <h3>{{ viewTitle }}</h3>
+<div style="text-align: center;" style="width: 100px; margin: 0 auto;">
+
+    <h4>Tournament Settings</h4>
     <form action="/mainSettings" method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
         <label for="TornamentStartTime">Tournament Start Time:</label><br>
         <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime" value="{{#if mainSettings.TornamentStartTime}}{{ formatDateTime mainSettings.TornamentStartTime }}{{/if}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
@@ -15,18 +16,77 @@
 
         <label for="goalsforSekt">Nr. Goals for Flasche Sekt:</label><br>
         <input type="number" id="goalsforSekt" name="goalsforSekt" value="{{ mainSettings.goalsforSekt }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+        <div>    
+            <button id="saveSettings" type="submit" class="btn btn-primary">Save Tournament Settings</button>
+        </div>
+    </form>
     <div>
+         <hr>
+
         <h4>General Counters</h4>
         <p>All Goals: {{ generalCounters.allGoals }}</p>
         <p>Games Played: {{ generalCounters.gamesPlayed }}</p>
         <p>Goal Sekt Counter: {{ generalCounters.goalSektCounter }}</p>
         
         <!-- Add the button to reset counters -->
-        <a href="mainSettings/resetCounters" class="btn btn-danger">Clear Counters</a>
-
-        <br><br>
+        <a href="mainSettings/resetCounters" class="btn btn-danger" onclick="return confirm('Willst du wirklich alle Zähler löschen ?');">Clear Counters</a>
     </div>
-        <button id="saveSettings" type="submit" class="btn btn-primary">Save Changes</button>
-    </form>
+
+    <hr>
+
+    <div>
+        <h4>Users</h4>
+        <a href="user/register" class="btn btn-secondary">Register New User</a> <a href="user/list" class="btn btn-secondary">List Users</a> 
+        <a href="user/deleteAdmin" class="btn btn-secondary">Admin (admin) user löschen</a>
+
+
+    </div>
+     <hr>
+    <div>
+        <h4>Databases on this Device</h4>
+        <p><strong><span style="color: red;">Current DB: "{{dbName}}"</span></strong></p>
+
+        <table class="mx-auto" style="margin-left: auto; margin-right: auto;">
+            <thead>
+                <tr>
+                    <th>Index</th>
+                    <th>Database Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each dbs}}
+                <tr>
+                    <td>{{@index}}</td>
+                    <td>{{this.name}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        <br></br>
+
+        <form action="/mainSettings/createDb" method="post">
+        <label for="dbName"><strong>Name für Neue Datenbank:</strong></label><br>
+        <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required autocomplete="off" maxlength="20" style="margin-bottom: 10px;"><br> <!-- pattern="^[^\s]+$" - no spaces allowed-->
+        <input type="submit" value="Neue Datenbank erstellen" onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
+        </form>  
+
+        <br></br>
+
+        <form action="/mainSettings/switchDb" method="post">
+        <label for="dbName"><strong>Datenbank wechseln:</strong></label><br>
+        <select id="dbName" name="dbName" required style="margin-bottom: 10px;">
+            {{#each dbs}}
+            <option value="{{this.name}}">{{this.name}}</option>
+            {{/each}}
+        </select>
+        <br>
+        <input type="submit" value="Datenbank wechseln" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+        </form>
+        
+                 
+    </div>
+     <hr>
+
    
 </div>

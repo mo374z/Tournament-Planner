@@ -9,10 +9,27 @@ var TeamSchema = new mongoose.Schema({
         type: String,
         required: 'This field is required'
     },
-    goals: {
+    gamesPlayed: {
         type: Number,
-        required: 'This field is required'
-    }
+    },
+    gamesWon: {
+        type: Number,
+    },
+    gamesLost: {
+        type: Number,
+    },
+    gamesDraw: {
+        type: Number,
+    },
+    goals: { // Tore (geschossene Tore [0] - erhaltene Tore[1])
+        type: Array,
+    },
+    sektWon: {
+        type: Number,
+    },
+    points: {
+        type: Number,
+    },
 
 });
 

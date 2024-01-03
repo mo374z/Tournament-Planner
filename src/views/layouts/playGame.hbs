@@ -75,7 +75,10 @@
         <hr>
 
         <a href="/schedule/list" class="btn btn-secondary me-2 mt-3">Back to List</a>
-        <a href="/game/{{ game._id }}/endGame" class="btn btn-danger mt-3">End Game</a>
+
+        {{#streq game.status 'active'}}
+        <a href="/game/{{ game._id }}/endGame" class="btn btn-danger mt-3" onclick="return confirm('Willst du wirklich das Spiel ({{ game.opponents.[0] }} vs {{ game.opponents.[1] }}) beenden ?');">End Game</a>
+        {{/streq}}
     </div>
 
 <script>
@@ -155,11 +158,13 @@
     async function SetGameToActive() {      //Set game to active and update the live page
         try {
             const gameId = '{{ game._id }}';
-            const response = await fetch(`/game/${gameId}/updateLivePage`, {
+
+
+            await fetch(`/game/start/${gameId}`, {
                 method: 'POST',
             });
 
-            await fetch(`/game/start/${gameId}`, {
+            const response = await fetch(`/game/${gameId}/updateLivePage`, {
                 method: 'POST',
             });
             
@@ -172,11 +177,11 @@
             location.reload();
 
             // show  bootstrap alert for one second to indicate success
-            const alert = document.querySelector('.alert-success');
-            alert.classList.remove('d-none');
-            setTimeout(() => {
-                alert.classList.add('d-none');
-            }, 2000);
+            //const alert = document.querySelector('.alert-success');
+            //alert.classList.remove('d-none');
+            //setTimeout(() => {
+            //    alert.classList.add('d-none');
+            //}, 2000);
 
         } catch (err) {
             console.error('Error updating data on Live page: ', err);

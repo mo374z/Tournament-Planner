@@ -12,6 +12,26 @@ const defaultGameDurationGroupStage = 10 * 60 * 1000;
 const defaultGameDurationQuarterfinals = 15 * 60 * 1000;
 const defaultgoalsforSekt = 10;
 
+
+//Code part to enable the authentication for all the following routes
+const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
+const cookieParser = require('cookie-parser'); 
+router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
+
+router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
+router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+  });
+
+  router.use(isAdmin);                       // Alle nachfolgenden Routen sind nur für Admins zugänglich
+//--------------------------------------------------------------
+
+
+
+const { listDbs } = require('../models/db'); // Import the listDbs function from the db.js file
+
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
     try {
@@ -45,13 +65,53 @@ router.get('/', async (req, res) => {
             await generalCounters.save();
         }
 
+        
+        const dbs = await listDbs();  // Get a list of all databases
+
+        const dbName = mongoose.connection.db.databaseName;
+
         // Render the edit page with the MainSettings data
-        res.render('layouts/editMainSettings', { mainSettings, generalCounters });
+        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName });
     } catch (err) {
         console.error('Error fetching MainSettings data:', err);
         res.status(500).send('Internal Server Error');
     }
 });
+
+
+
+const { createDb } = require('../models/db');
+
+router.post('/createDb', async (req, res) => {      // Create a new database for the tournament
+    try {
+        const dbName = req.body.dbName;
+        const dbs = await listDbs();
+        if (dbs.some(db => db.name === dbName)) {
+          res.status(400).send('A database with this name already exists');
+        } else {
+          await createDb(dbName);
+          res.redirect('/mainSettings');
+        }
+      } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating database');
+      }
+    });
+
+
+const { switchDb } = require('../models/db');
+
+router.post('/switchDb', async (req, res) => {      // Switch to a different database
+    try {
+        const dbName = req.body.dbName;
+        console.log('Switching to database:', dbName);
+        await switchDb(dbName);
+        res.redirect('/mainSettings');
+        } catch (err) {
+        console.error(err);
+        res.status(500).send('Error switching database');
+        }
+}); 
 
 
 // POST route to handle form submission and update MainSettings
@@ -106,11 +166,14 @@ router.post('/', async (req, res) => {
 // POST route to reset general counters /mainSettings/resetCounters
 router.get('/resetCounters', async (req, res) => {
     try {
+
+        const mainSettings = await MainSettings.findOne({});
+
         // Find and update general counters to reset them to zero
         const updatedCounters = await genCounters.findOneAndUpdate({}, {
             allGoals: 0,
             gamesPlayed: 0,
-            goalSektCounter: 0,
+            goalSektCounter: mainSettings.goalsforSekt,
             // Add other fields and their reset values if needed
         }, { new: true });
 
@@ -121,6 +184,8 @@ router.get('/resetCounters', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+
 
 
 module.exports = router;
