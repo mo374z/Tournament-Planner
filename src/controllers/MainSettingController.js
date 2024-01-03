@@ -166,11 +166,14 @@ router.post('/', async (req, res) => {
 // POST route to reset general counters /mainSettings/resetCounters
 router.get('/resetCounters', async (req, res) => {
     try {
+
+        const mainSettings = await MainSettings.findOne({});
+
         // Find and update general counters to reset them to zero
         const updatedCounters = await genCounters.findOneAndUpdate({}, {
             allGoals: 0,
             gamesPlayed: 0,
-            goalSektCounter: 0,
+            goalSektCounter: mainSettings.goalsforSekt,
             // Add other fields and their reset values if needed
         }, { new: true });
 
