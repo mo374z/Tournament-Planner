@@ -96,7 +96,7 @@ router.get('/list', async (req, res) => {
   });
 
 
-  router.get('/:id', async (req, res) => {
+  router.get('/:id', isAdmin, async (req, res) => {     //Create ans Update Team only for Admins
     try {
         const team = await Team.findById(req.params.id).exec();
         if (team) {
@@ -117,7 +117,7 @@ router.get('/list', async (req, res) => {
 });
 
 
-router.get('/delete/:id', async (req, res) => {
+router.get('/delete/:id' , isAdmin, async (req, res) => {   //Delete Team only for Admins
     try {
         const deletedStudent = await Team.findByIdAndDelete(req.params.id).exec();
         

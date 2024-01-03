@@ -28,7 +28,7 @@ router.get('/list', async (req, res) => {
     renderScheduleList(req, res);
 });
 
-router.get('/generate', async (req, res) => {
+router.get('/generate', isAdmin, async (req, res) => {
 
     // Call the function to generate and save the group stage schedule
 
@@ -73,7 +73,7 @@ router.get('/grouplist', async (req, res) => {
 
 
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
@@ -91,7 +91,7 @@ router.get('/:id', async (req, res) => {
 });
 
 
-router.post('/:id/edit', async (req, res) => {
+router.post('/:id/edit', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
         const {

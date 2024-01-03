@@ -1,11 +1,30 @@
 
 
+    <style>
+        #capsLockIndicator {
+            color: red;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var capsLockIndicator = document.getElementById('capsLockIndicator');
+            var passwordInput = document.getElementById('password');
+
+            passwordInput.addEventListener('keyup', function(event) {
+                var capsLockOn = event.getModifierState && event.getModifierState('CapsLock');
+                capsLockIndicator.style.display = capsLockOn ? 'block' : 'none';
+            });
+        });
+    </script>
+
     <h1>Login Page</h1>
     <form action="/user/login" method="POST">
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required><br><br>
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required><br><br>
+        <div id="capsLockIndicator" style="display: none;">Caps Lock is on</div>
         <button type="submit">Login</button>
+        
     </form>
 

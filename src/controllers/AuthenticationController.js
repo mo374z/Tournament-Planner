@@ -19,7 +19,10 @@ const  {verifyToken, checkLoginStatus , isAdmin} = require('../middleware/auth')
 const jwtSecretkey =
   "4715aed3c946f7b0a38e6b534a8583628d84e96d10fbc04700770d572af3dce43625dd";
 
-  
+
+
+
+
 
 router.get('/register',verifyToken, isAdmin,  (req, res) => {
     const username = req.username;
@@ -122,15 +125,19 @@ router.post('/login', async (req, res) => {
         }
 
         // Generate a JWT token upon successful login, including the role
-        const token = jwt.sign({ 
-            username: user.username,
-            role: user.role // Include the role in the token payload
-        }, jwtSecretkey, { expiresIn: '1h' });
+        const token = jwt.sign(
+            {
+                username: user.username,
+                role: user.role, // Include the role in the token payload
+            },
+            jwtSecretkey,
+            { expiresIn: '15h' } // Set token expiration to 15 hours
+        );
 
         // Save the token in a cookie
-        res.cookie("jwt", token, {
+        res.cookie('jwt', token, {
             httpOnly: true,
-            maxAge: 3600000, // 1 hour in milliseconds
+            maxAge: 54000000, // 15 hours in milliseconds
         });
 
         //res.status(200).json({ token }); // Send the token as a response
@@ -149,6 +156,21 @@ router.get('/logout', (req, res) => {
 });
 
 
+// POST route to delete admin user /mainSettings/deleteAdmin
+router.get('/deleteAdmin', async (req, res) => {
+    try {
+        // Find and delete the admin user
+        await User.deleteOne({ username: 'admin' });
+
+        // Redirect to the main settings page after deleting the admin user
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error deleting admin user:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
 
 
 
@@ -159,7 +181,6 @@ router.get('/logout', (req, res) => {
     
     res.status(200).send('You have access to this protected admin route: ' + req.username + ' role: ' + req.userRole);
 }); */
-
 
 
 

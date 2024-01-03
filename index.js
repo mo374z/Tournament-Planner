@@ -71,6 +71,7 @@ const  {verifyToken, checkLoginStatus , isAdmin} =  require('./src/middleware/au
 
 
 
+app.use(express.static(path.join(__dirname, 'src/public'))); // Statische Dateien wie CSS, Bilder, JS, etc. werden aus dem Ordner "public" geladen
 
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());

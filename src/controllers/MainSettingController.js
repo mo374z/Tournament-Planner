@@ -30,6 +30,8 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 
 
 
+const { listDbs } = require('../models/db'); // Import the listDbs function from the db.js file
+
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
     try {
@@ -63,13 +65,53 @@ router.get('/', async (req, res) => {
             await generalCounters.save();
         }
 
+        
+        const dbs = await listDbs();  // Get a list of all databases
+
+        const dbName = mongoose.connection.db.databaseName;
+
         // Render the edit page with the MainSettings data
-        res.render('layouts/editMainSettings', { mainSettings, generalCounters });
+        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName });
     } catch (err) {
         console.error('Error fetching MainSettings data:', err);
         res.status(500).send('Internal Server Error');
     }
 });
+
+
+
+const { createDb } = require('../models/db');
+
+router.post('/createDb', async (req, res) => {      // Create a new database for the tournament
+    try {
+        const dbName = req.body.dbName;
+        const dbs = await listDbs();
+        if (dbs.some(db => db.name === dbName)) {
+          res.status(400).send('A database with this name already exists');
+        } else {
+          await createDb(dbName);
+          res.redirect('/mainSettings');
+        }
+      } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating database');
+      }
+    });
+
+
+const { switchDb } = require('../models/db');
+
+router.post('/switchDb', async (req, res) => {      // Switch to a different database
+    try {
+        const dbName = req.body.dbName;
+        console.log('Switching to database:', dbName);
+        await switchDb(dbName);
+        res.redirect('/mainSettings');
+        } catch (err) {
+        console.error(err);
+        res.status(500).send('Error switching database');
+        }
+}); 
 
 
 // POST route to handle form submission and update MainSettings
@@ -139,6 +181,8 @@ router.get('/resetCounters', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+
 
 
 module.exports = router;

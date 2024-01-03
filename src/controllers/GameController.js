@@ -15,6 +15,27 @@ const server = http.createServer(app);
 module.exports = router;
 const cors = require('cors'); // Import cors middleware
 
+
+
+
+//Code part to enable the authentication for all the following routes
+const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
+const cookieParser = require('cookie-parser'); 
+router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
+
+router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
+router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+  });
+//--------------------------------------------------------------
+
+
+
+
+
+
 // Enable CORS for Socket.IO
 const io = socketIo(server, {
     cors: {

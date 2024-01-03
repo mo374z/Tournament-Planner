@@ -16,7 +16,7 @@
         </div>
 
         {{#if noActiveGame}}
-        <p class="mt-3">No active game</p>
+        <p class="mt-3" id="noActiveGameMessage">No active game</p>
         {{/if}}
 
         <span id="timerStatus" class="ml-2"></span>
@@ -47,6 +47,17 @@
         updateScore('team2Score', game.goals[1]);
         updateName('team1Name', game.opponents[0]);
         updateName('team2Name', game.opponents[1]);
+        SetActiveGameMessage(game.status);
+    }
+
+    function SetActiveGameMessage(status) {        
+        if (status === 'active') {
+            NoActiveGameMessage = document.getElementById('noActiveGameMessage');
+            NoActiveGameMessage.style.display = 'none';
+        } else {
+            NoActiveGameMessage = document.getElementById('noActiveGameMessage');
+            NoActiveGameMessage.style.display = 'block';
+        }        
     }
 
     function updateScore(elementId, score) {
