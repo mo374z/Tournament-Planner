@@ -8,6 +8,8 @@ npm install
 
 > :warning: Team Structre changed please create new Teams in your DB !!!!!
 
+> :warning: MainSettings Structre changed please delet Main Settings document in collection then open MainSetting this schould generate new default Settings !!!!!
+
 
 
 ## Programm starten
