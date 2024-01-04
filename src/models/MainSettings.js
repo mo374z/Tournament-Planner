@@ -21,6 +21,18 @@ var MainSettingsSchema = new mongoose.Schema({
         type: Number,
         required: 'This field is required'
     },
+    gameDurationSemifinals: {    //minutes  gameDurationSemifinals
+        type: Number,
+        required: 'This field is required'
+    },
+    gameDurationFinal: {    //minutes
+        type: Number,
+        required: 'This field is required'
+    },
+    timeBetweenGamePhases: {    //minutes
+        type: Number,
+        required: 'This field is required'
+    },
     goalsforSekt: {
         type: Number,
         required: 'This field is required'

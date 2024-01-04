@@ -6,10 +6,13 @@ const MainSettings = mongoose.model('MainSettings');
 
 const genCounters = mongoose.model('generalCounters');
 
-const defaultStartTime = new Date('2021-06-11T21:00:00.000Z');
+const defaultStartTime = new Date('2024-01-20T09:00:00.000Z');
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
 const defaultGameDurationGroupStage = 10 * 60 * 1000; 
 const defaultGameDurationQuarterfinals = 15 * 60 * 1000;
+const defaultGameDurationSemiFinals = 20 * 60 * 1000;
+const defaultGameDurationFinal = 25 * 60 * 1000;
+const defaultTimeBetweenGamePhases = 5 * 60 * 1000;
 const defaultgoalsforSekt = 10;
 
 
@@ -45,6 +48,9 @@ router.get('/', async (req, res) => {
                 timeBetweenGames: defaultTimeBetweenGames,
                 gameDurationGroupStage: defaultGameDurationGroupStage,
                 gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                gameDurationSemifinals: defaultGameDurationSemiFinals,
+                gameDurationFinal: defaultGameDurationFinal,
+                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
                 goalsforSekt: defaultgoalsforSekt,
                 // Add other default values if needed
             });
@@ -122,6 +128,9 @@ router.post('/', async (req, res) => {
             timeBetweenGamesInMin,
             gameDurationGroupStageInMin,
             gameDurationQuarterfinalsInMin,
+            gameDurationSemifinalsInMin,
+            gameDurationFinalInMin,
+            timeBetweenGamePhasesInMin,            
             goalsforSekt
         } = req.body;
 
@@ -129,6 +138,9 @@ router.post('/', async (req, res) => {
         const timeBetweenGames = parseInt(timeBetweenGamesInMin) * 60 * 1000; // minutes to milliseconds
         const gameDurationGroupStage = parseInt(gameDurationGroupStageInMin) * 60 * 1000; // minutes to milliseconds
         const gameDurationQuarterfinals = parseInt(gameDurationQuarterfinalsInMin) * 60 * 1000; // minutes to milliseconds
+        const gameDurationSemifinals = parseInt(gameDurationSemifinalsInMin) * 60 * 1000; // minutes to milliseconds
+        const gameDurationFinal = parseInt(gameDurationFinalInMin) * 60 * 1000; // minutes to milliseconds
+        const timeBetweenGamePhases = parseInt(timeBetweenGamePhasesInMin) * 60 * 1000; // minutes to milliseconds
 
         // Find the MainSettings document and update its values
         const mainSettings = await MainSettings.findOne({});
@@ -140,6 +152,9 @@ router.post('/', async (req, res) => {
                 timeBetweenGames: defaultTimeBetweenGames,
                 gameDurationGroupStage: defaultGameDurationGroupStage,
                 gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                gameDurationSemifinals: defaultGameDurationSemiFinals,
+                gameDurationFinal: defaultGameDurationFinal,
+                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
                 goalsforSekt: defaultgoalsforSekt,
             });
         }
@@ -148,6 +163,9 @@ router.post('/', async (req, res) => {
         mainSettings.timeBetweenGames = timeBetweenGames;
         mainSettings.gameDurationGroupStage = gameDurationGroupStage;
         mainSettings.gameDurationQuarterfinals = gameDurationQuarterfinals;
+        mainSettings.gameDurationSemifinals = gameDurationSemifinals;
+        mainSettings.gameDurationFinal = gameDurationFinal;
+        mainSettings.timeBetweenGamePhases = timeBetweenGamePhases;
         mainSettings.goalsforSekt = goalsforSekt;
 
         // Save the updated MainSettings

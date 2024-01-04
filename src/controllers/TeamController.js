@@ -170,12 +170,15 @@ router.get('/delete/:id' , isAdmin, async (req, res) => {   //Delete Team only f
     }
 });
 
-// return the team name based on the id
+// return the team ID based on the id
 router.get('/getTeamName/:id', async (req, res) => {
     const team = await Team.findById(req.params.id).exec();
     if (team) {
-        // return status 200 and the team name
-        res.status(200).send(team.name);
+        if (team._id.toString().includes("von")) {      // if the team is a placeholder    
+            res.status(200).send(req.params.id); // return the team ID
+        } else {                                 // if the team is not a placeholder
+            res.status(200).send(team.name);     // return the team name
+        }
     } else {
         // Handle scenario where the team with the given ID wasn't found
         res.status(404).send('Team not found');
@@ -188,8 +191,6 @@ router.get('/getTeamName/:id', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-
-
 
 
 

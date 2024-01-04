@@ -130,10 +130,15 @@ router.get('/:id/play', async (req, res) => {
 
         const durationInMillis = game.duration * 60 * 1000; // Convert minutes to milliseconds
 
+        // set this to true if there are other games active
+        const areOthergamesActive = await Game.exists({ status: 'active', _id: { $ne: gameId } }); // Check if there are other active games but not the current one
+        const areOtherGamesActiveBool = Boolean(areOthergamesActive); // Convert to boolean
+        console.log('areOtherGamesActive: ', areOtherGamesActiveBool);
+
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
 
-        res.render('layouts/playGame', { game, durationInMillis, generalCounters: counters });
+        res.render('layouts/playGame', { game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
     } catch (err) {
         console.error('Error fetching game for play: ', err);
         res.status(500).send('Internal Server Error');

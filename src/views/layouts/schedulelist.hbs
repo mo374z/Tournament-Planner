@@ -7,15 +7,15 @@
             onclick="return confirm('Are you sure you want to clear the Schedule and create new?');">
             Generate Schedule from Teams</a>
     </h3>
-    <table class="mx-auto table table-bordered" style="margin-left: auto; margin-right: auto; text-align: center;">
+    <table class="mx-auto table table-bordered" style="margin-left: auto; margin-right: auto; text-align: center;"> 
         <thead>
             <tr>
                 <th>Number</th>
                 <th>Time ({{timeBetweenGames}} min Abstand)</th>
-                <th>Team Opponents</th>
+                <th colspan="2">Team Opponents</th>
                 <th>Goals</th>
                 <th>Duration</th>
-                <th>Group</th>
+                <th colspan="2">Groups</th>
                 <th>Status</th>
                 <th>Game Phase</th>
                 <th>Actions</th>
@@ -23,13 +23,15 @@
         </thead>
         <tbody>
             {{#each list}}
-            <tr>
+            <tr {{#streq this.gamePhase 'Quarterfinals'}}style="background-color: yellow" {{else}}class="bg-danger"{{/streq}}></tr>
                 <td>{{this.number}}</td>
                 <td>{{formatTime this.time}}</td>
-                <td>{{this.opponents}}</td>
+                <td>{{this.opponents.[0]}}</td>
+                <td>{{this.opponents.[1]}}</td>
                 <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
                 <td>{{this.duration}} minutes</td>
-                <td>{{this.group}}</td>
+                <td>{{this.group.[0]}}</td>
+                <td>{{this.group.[1]}}</td>
                 <td>{{this.status}}</td>
                 <td>{{this.gamePhase}}</td>
 
@@ -43,4 +45,7 @@
             {{/each}}
         </tbody>
     </table>
+
+
+    <a href="/schedule/updateQuarterFinals" class="btn btn-success">Update  Quarter Final Games </a>
 </section>
