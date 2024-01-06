@@ -172,16 +172,21 @@ router.get('/delete/:id' , isAdmin, async (req, res) => {   //Delete Team only f
 
 // return the team ID based on the id
 router.get('/getTeamName/:id', async (req, res) => {
-    const team = await Team.findById(req.params.id).exec();
-    if (team) {
-        if (team._id.toString().includes("von")) {      // if the team is a placeholder    
-            res.status(200).send(req.params.id); // return the team ID
-        } else {                                 // if the team is not a placeholder
+
+    if(req.params.isDummy){
+        res.status(200).send(req.params.name);
+    }
+    else{
+        const team = await Team.findById(req.params.id).exec();
+
+        if (team) {
             res.status(200).send(team.name);     // return the team name
         }
-    } else {
-        // Handle scenario where the team with the given ID wasn't found
-        res.status(404).send('Team not found');
+        else {
+            // Handle scenario where the team with the given ID wasn't found
+            res.status(404).send('Team not found');
+        }
+
     }
     try {
 

@@ -256,8 +256,8 @@ async function fetchMainSettings() {
 
 async function getTeamDataById(teamId) {
     try {
-        if (teamId.toString().includes("von")) {
-            return { name: teamId, group: '-' };
+        if (teamId.isDummy) {
+            return { name: teamId.name, group: teamId.group };
         } else {
             const team = await Team.findById(teamId);
             return team ? { name: team.name, group: team.group } : { name: 'Team not found', group: 'Group not found' };
@@ -335,18 +335,14 @@ async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeB
 }
 
 
+
+// Funktion um die Viertelfinalspiele zu generieren
 async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase) {
-
     try {
-        //generate Quarterfinals schedule: 1A vs 2B, 1B vs 2A, 1C vs 2D, 1D vs 2C
-        //use team Data to get the 2 teams with the highest points from each group
-        //sort the team Data by points
-        //use the first 2 teams from each group
-
         const teams = await Team.find({});
         const groupedTeams = {};
 
-        //group all the teams by group
+        // Gruppiere die Teams nach ihren Gruppen
         teams.forEach(team => {
             if (!groupedTeams[team.group]) {
                 groupedTeams[team.group] = [];
@@ -354,73 +350,143 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
             groupedTeams[team.group].push(team);
         });
 
-        //sort the teams in each group by points
+        // Sortiere die Teams in jeder Gruppe nach Punkten
         for (const group in groupedTeams) {
             groupedTeams[group].sort((a, b) => b.points - a.points);
         }
 
 
-        //get the first 2 teams from each group wich have the highest points and more than 0 games played
         const teamsInQuarterFinals = [];
+
+        // Bestimme die Teams für die Viertelfinals
         for (const group in groupedTeams) {
             if (groupedTeams[group].length >= 2 && groupedTeams[group][0].gamesPlayed > 0) {
                 teamsInQuarterFinals.push(groupedTeams[group][0]);
                 teamsInQuarterFinals.push(groupedTeams[group][1]);
-                //console.log("Group: " + group + " Team 1: " + groupedTeams[group][0].name + " Team 2: " + groupedTeams[group][1].name);
             } else if (groupedTeams[group].length === 1 && groupedTeams[group][0].gamesPlayed > 0) {
                 teamsInQuarterFinals.push(groupedTeams[group][0]);
-                teamsInQuarterFinals.push(`1. von Gruppe ${group}`);
-                //console.log("Group: " + group + " Team 1: " + groupedTeams[group][0].name + " Team 2: 1. von Gruppe " + group);
+                
+                const dummyTeam1 = {
+                    name: `2. aus Gruppe ${group}`,
+                    group: group,
+                    isDummy: true,
+                    gamesPlayed: 0,
+                };
+                teamsInQuarterFinals.push(dummyTeam1);
             } else {
-                teamsInQuarterFinals.push(`1. von Gruppe ${group}`);
-                teamsInQuarterFinals.push(`2. von Gruppe ${group}`);
-                //console.log("Group: " + group + " Team 1: 1. von Gruppe " + group + " Team 2: 2. von Gruppe " + group);
+                const dummyTeam1 = {
+                    name: `1. aus Gruppe ${group}`,
+                    group: group,
+                    isDummy: true,
+                    gamesPlayed: 0,
+                };
+                const dummyTeam2 = {
+                    name: `2. aus Gruppe ${group}`,
+                    group: group,
+                    isDummy: true,
+                    gamesPlayed: 0,
+                };
+                teamsInQuarterFinals.push(dummyTeam1);
+                teamsInQuarterFinals.push(dummyTeam2);
             }
         }
 
-        console.log("Teams in Quarterfinals: " + teamsInQuarterFinals);
+        //Log teams in Quarterfinals
+        console.log("Teams in Quarterfinals: ");
+        teamsInQuarterFinals.forEach(team => {
+            console.log("Team: " + team.name + " Group: " + team.group);
+        });
+        console.log("Teams in Quarterfinals: " + teamsInQuarterFinals.length);
+
 
         const FirstgameNumber = gameNumber;
+        let gamePhase_m_NR = "Quarterfinals";
+
         
-        //gameNumber = 1; gameNumber is already set from the group stage schedule
-        //generate the games
-        for (let i = 0; i < teamsInQuarterFinals.length; i++) {
-            for (let j = i + 1; j < teamsInQuarterFinals.length; j++) {
-                const gameStartTime = new Date(scheduleStartTime);
-                if (gameNumber > FirstgameNumber) {
-                    gameStartTime.setMinutes(
-                        gameStartTime.getMinutes() + (gameNumber - FirstgameNumber) * (gameDuration + timeBetweenGames)
-                    );
-                }
+        Number_of_groups = Object.keys(groupedTeams).length;
+        console.log("Number of groups: " + Number_of_groups);
 
-                const newGame = new Game({
-                    number: gameNumber,
-                    time: gameStartTime,
-                    duration: gameDuration,
-                    status: initialStatus,
-                    opponents: [teamsInQuarterFinals[i], teamsInQuarterFinals[j]],
-                    goals: [0, 0], // Setting initial goals as [0, 0]
-                    gamePhase: gamePhase
-                });
+        if(Number_of_groups === 4){
+            // Erzeuge die Viertelfinalspiele für 4 Gruppen
+            for (let i = 0; i < teamsInQuarterFinals.length - 2; i += 4) { // -2 weil immer 2 gleichzeitig erzeugt werden
 
-
-                await newGame.save();
+                let team1 = teamsInQuarterFinals[i];       // 1. Team A
+                let team2 = teamsInQuarterFinals[i + 3];   // 2. Team B
+                gamePhase_m_NR = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString(); //gamePhase_m_NR = "Quarterfinals 1"
+                console.log(gamePhase_m_NR) ;
+                await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase_m_NR, FirstgameNumber);
+                gameNumber++;
+            
+                team1 = teamsInQuarterFinals[i + 1];       // 2. Team A
+                team2 = teamsInQuarterFinals[i + 2];       // 1. Team B
+                gamePhase_m_NR = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString(); //gamePhase_m_NR = "Quarterfinals 2"
+                console.log(gamePhase_m_NR) ;
+                await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase_m_NR, FirstgameNumber);
                 gameNumber++;
             }
+            console.log('Quarterfinals schedule for 4 groups generated and saved successfully!');
+        }
+        else if(Number_of_groups === 3){
+            // Erzeuge die Viertelfinalspiele für 3 Gruppen
+            console.log("Games for 3 groups arent implemented yet");
+        }
+        else if (Number_of_groups === 2){
+            // Erzeuge die Viertelfinalspiele für 2 Gruppen
+            console.log("Games for 2 groups arent implemented yet");
         }
 
+        
     } catch (err) {
-        console.error('Error generating Quaterfinals schedule: ', err);
+        console.error('Error generating Quarterfinals schedule: ', err);
     }
-
-}
-
+}//end of generateQuarterFinalsSchedule
 
 
+
+
+// Funktion um die Viertelfinalspiele zu speichern
+async function SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, FirstgameNumber) {
+    if (team1 && team2 && team1.group !== team2.group) {
+        console.log(`Spiel generiert: Team 1: ${team1.name} vs. Team 2: ${team2.name}`);
+
+        const gameStartTime = new Date(scheduleStartTime);
+        if (gameNumber > FirstgameNumber) {
+            gameStartTime.setMinutes(
+                gameStartTime.getMinutes() + (gameNumber - FirstgameNumber) * (gameDuration + timeBetweenGames)
+            );
+        }
+
+        let newGame = new Game({
+            number: gameNumber,
+            time: gameStartTime,
+            duration: gameDuration,
+            status: initialStatus,
+            opponents: [team1, team2],
+            goals: [0, 0],
+            gamePhase: gamePhase
+        });
+
+        // Ersetze echte Teams durch ihre IDs und Dummy-Teams bleiben
+        if (!newGame.opponents[0].isDummy) {
+            newGame.opponents[0] = team1._id;
+        }
+        if (!newGame.opponents[1].isDummy) {
+            newGame.opponents[1] = team2._id;
+        }
+
+        await newGame.save();
+       
+    } else {
+        console.log(`Spiel nicht generiert da gleiche Gruppe: Team 1: ${team1.name} vs. Team 2: ${team2.name}`);
+    }
+}//end of SaveQuarterfinalsGame
+
+
+// Funktion um die Viertelfinalspiele zu aktualisieren
 async function updateQuarterFinalsSchedule() {
 
     try {
-        //seach for the games in the game schedule with gamePhase Quarterfinals and update them with the new teams when team data is updated
+        //seach for the games in the game schedule with gamePhase Quarterfinals and update them with the new teams when team data was updated
         
         const teams = await Team.find({});
         const groupedTeams = {};
@@ -448,63 +514,59 @@ async function updateQuarterFinalsSchedule() {
 
         console.log("Updating Quarterfinals schedule...");
 
+        const games = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } }); // Find all games with gamePhase starting with 'Quarterfinals'
 
-        const games = await Game.find({gamePhase: "Quarterfinals"});
-
-        //get the first 2 teams from each group wich have the highest points and more than 0 games played
         for (const group in groupedTeams) {
             if (groupedTeams[group][0].gamesPlayed > 0 || groupedTeams[group][1].gamesPlayed > 0) { //check if the first 2 teams in the group have played at least 1 game
-
-                //search for the game with the Placeholders from the group and update the game with the new teams
                 for (const game of games) {
-
-                    if (game.opponents[0] === `1. von Gruppe ${group}`) {   //check if first opponent is a placeholder 1. von Gruppe
-                        console.log("Updating Placeholder 1. von Gruppe " + group + " with " + groupedTeams[group][0].name + " in game " + game.number);
+                    if (game.opponents[0].isDummy && game.opponents[0].group === group) {       //check if the first team in the game is a dummy team and if it is in the group
+                        const teamIndex = game.opponents[0].name.startsWith('1.') ? 0 : 1;
                         await Game.findByIdAndUpdate(game._id, {
-                            opponents: [groupedTeams[group][0]._id, game.opponents[1]]
+                            opponents: [
+                                groupedTeams[group][teamIndex]._id,
+                                game.opponents[1] // Keep the second team
+                            ]
                         });
-                    }
-                    else if (game.opponents[0] === `2. von Gruppe ${group}`) { //check if first opponent is a placeholder 2. von Gruppe
-                        console.log("Updating Placeholder 2. von Gruppe " + group + " with " + groupedTeams[group][1].name + " in game " + game.number);
+                        console.log("Updated " + game.opponents[0].name + " with " + groupedTeams[group][teamIndex].name);
+                    } else if (game.opponents[1].isDummy && game.opponents[1].group === group) { //check if the second team in the game is a dummy team and if it is in the group
+                        const teamIndex = game.opponents[1].name.startsWith('1.') ? 0 : 1;
                         await Game.findByIdAndUpdate(game._id, {
-                            opponents: [groupedTeams[group][1]._id, game.opponents[1]]
+                            opponents: [
+                                game.opponents[0], // Keep the first team
+                                groupedTeams[group][teamIndex]._id
+                            ]
                         });
-                    }
-                    if (game.opponents[1] === `1. von Gruppe ${group}`) {      //check if second opponent is a placeholder 1. von Gruppe                   
-                        console.log("Updating Placeholder 1. von Gruppe " + group + " with " + groupedTeams[group][0].name + " in game " + game.number);
-                        await Game.findByIdAndUpdate(game._id, {
-                            opponents: [game.opponents[0], groupedTeams[group][0]._id]
-                        });
-                    }
-                    else if (game.opponents[1] === `2. von Gruppe ${group}`) {      //check if second opponent is a placeholder 2. von Gruppe
-                        console.log("Updating Placeholder 2. von Gruppe " + group + " with " + groupedTeams[group][1].name + " in game " + game.number);
-                        await Game.findByIdAndUpdate(game._id, {
-                            opponents: [game.opponents[0], groupedTeams[group][1]._id]
-                        });
-                    }
-
-                    else {
-                        console.log("No more Placeholder updated for group " + group +" in game " + game.number);
+                        console.log("Updated " + game.opponents[1].name + " with " + groupedTeams[group][teamIndex].name);
                     }
                 }
-
-            }
-            else {
-                console.log("Keine eindeutigen Daten in Gruppe " + group);
+            } else {
+                console.log(`Insufficient data in Group ${group}`);
             }
         }
 
+        console.log('Quarterfinals schedule updated successfully!');
+    } catch (err) {
+        console.error('Error updating Quarterfinals schedule: ', err);
+    }
+}//end of updateQuarterFinalsSchedule
+
+
+
+
+// Funktion um die Halbfinalspiele zu generieren
+async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase) {
+
+    try {
+        //generate Semifinals schedule: Verlierer 1. Viertelfinale/2B vs 1B/2A, 1C/2D vs 1D/2C
+
+
+
 
     } catch (err) {
-        console.error('Error updating Quaterfinals schedule: ', err);
+        console.error('Error generating Semifinals schedule: ', err);
     }
 
 }
-
-
-
-
-
 
 
 
