@@ -103,8 +103,8 @@ function resetTimer(duration) {
     if (duration === 0) {                                //if duration is 0, the game is ended
         io.emit('timerUpdate', timer, isPaused, 'Ended');
     }
-    else {                                              //if duration is not 0, the game is ready to start                   
-        io.emit('timerUpdate', timer, isPaused, 'Ready');
+    else {                                              //if duration is not 0, the game is ready to start and is paused                   
+        io.emit('timerUpdate', timer, isPaused, 'Paused');
     }
 }
 
@@ -259,19 +259,37 @@ async function writeGameDataToTeams(game) {
         team1.gamesPlayed += 1;
         team2.gamesPlayed += 1;
 
+        // points_Group_Stage: {
+        //     type: Number,
+        // },
+        // points_General: {
+        //     type: Number,
+        // },
+
+
         if (game.goals[0] > game.goals[1]) {
             team1.gamesWon += 1;
             team2.gamesLost += 1;
-            team1.points += 3;
+            if(game.gamePhase == 'Group_Stage'){ //if game is in group stage, add 3 points the group stage points
+                team1.points_Group_Stage += 3;
+            }
+            team1.points_General += 3; //add 3 points to the general points
         } else if (game.goals[0] < game.goals[1]) {
             team2.gamesWon += 1;
             team1.gamesLost += 1;
-            team2.points += 3;
+            if(game.gamePhase == 'Group_Stage'){ //if game is in group stage, add 3 points the group stage points
+                team2.points_Group_Stage += 3;
+            }
+            team2.points_General += 3; //add 3 points to the general points
         } else {
             team1.gamesDraw += 1;
             team2.gamesDraw += 1;
-            team1.points += 1;
-            team2.points += 1;
+            if(game.gamePhase == 'Group_Stage'){ //if game is in group stage, add 1 points the group stage points
+                team1.points_Group_Stage += 1;
+                team2.points_Group_Stage += 1;
+            }
+            team1.points_General += 1; //add 1 points to the general points
+            team2.points_General += 1; //add 1 points to the general points
         }
 
         team1.goals[0] += game.goals[0];

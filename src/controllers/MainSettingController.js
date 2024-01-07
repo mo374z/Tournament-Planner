@@ -8,10 +8,10 @@ const genCounters = mongoose.model('generalCounters');
 
 const defaultStartTime = new Date('2024-01-20T09:00:00.000Z');
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
-const defaultGameDurationGroupStage = 10 * 60 * 1000; 
-const defaultGameDurationQuarterfinals = 15 * 60 * 1000;
-const defaultGameDurationSemiFinals = 20 * 60 * 1000;
-const defaultGameDurationFinal = 25 * 60 * 1000;
+const defaultGameDurationGroupStage = 8 * 60 * 1000; 
+const defaultGameDurationQuarterfinals = 10 * 60 * 1000;
+const defaultGameDurationSemiFinals = 10 * 60 * 1000;
+const defaultGameDurationFinal = 10 * 60 * 1000;
 const defaultTimeBetweenGamePhases = 5 * 60 * 1000;
 const defaultgoalsforSekt = 10;
 

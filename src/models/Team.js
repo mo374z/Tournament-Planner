@@ -27,7 +27,10 @@ var TeamSchema = new mongoose.Schema({
     sektWon: {
         type: Number,
     },
-    points: {
+    points_Group_Stage: {
+        type: Number,
+    },
+    points_General: {
         type: Number,
     },
 

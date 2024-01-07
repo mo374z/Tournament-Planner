@@ -51,7 +51,8 @@ async function insertRecord(req, res) {
     team.gamesDraw = 0;
     team.goals = [0,0];    
     team.sektWon = 0;
-    team.points = 0;
+    team.points_Group_Stage = 0;
+    team.points_General = 0;
 
     try {
         const doc = await team.save();
@@ -61,6 +62,13 @@ async function insertRecord(req, res) {
         // Handle the error here, maybe send an error response or render an error page
     }
 }
+
+// points_Group_Stage: {
+//     type: Number,
+// },
+// points_General: {
+//     type: Number,
+// },
 
 
 async function updateRecord(req, res) {
@@ -120,7 +128,8 @@ router.get('/clearTeamCounters', isAdmin, async (req, res) => {   //Clear Team C
             team.gamesDraw = 0;
             team.goals = [0,0];    
             team.sektWon = 0;
-            team.points = 0;
+            team.points_Group_Stage = 0;
+            team.points_General = 0;
             await team.save();
         });
         res.redirect('/team/list');

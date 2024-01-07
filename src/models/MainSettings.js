@@ -25,6 +25,10 @@ var MainSettingsSchema = new mongoose.Schema({
         type: Number,
         required: 'This field is required'
     },
+    // gameDurationRankings: {    //minutes
+    //     type: Number,
+    //     required: 'This field is required'
+    // },
     gameDurationFinal: {    //minutes
         type: Number,
         required: 'This field is required'
