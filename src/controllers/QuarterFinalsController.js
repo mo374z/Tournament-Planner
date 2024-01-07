@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
 
+module.exports = {
+    generateQuarterFinalsSchedule,
+    updateQuarterFinalsSchedule
+};
+
 
 // Funktion um die Viertelfinalspiele zu generieren
 async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, gameNumber) {
@@ -125,10 +130,7 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
             returnGameNumber: gameNumber
         };
     }
-}//end of generateQuarterFinalsSchedule
-
-
-
+}
 
 // Funktion um die Viertelfinalspiele zu speichern
 async function SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, FirstgameNumber, gameNumber) {
@@ -168,8 +170,7 @@ async function SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDurati
         console.log(`Spiel nicht generiert da gleiche Gruppe: Team 1: ${team1.name} vs. Team 2: ${team2.name}`);
         return 0;
     }
-}//end of SaveQuarterfinalsGame
-
+}
 
 // Funktion um die Viertelfinalspiele zu aktualisieren
 async function updateQuarterFinalsSchedule() {
@@ -237,12 +238,4 @@ async function updateQuarterFinalsSchedule() {
     } catch (err) {
         console.error('Error updating Quarterfinals schedule: ', err);
     }
-}//end of updateQuarterFinalsSchedule
-
-
-
-// Exportieren Sie die Funktionen
-module.exports = {
-    generateQuarterFinalsSchedule,
-    updateQuarterFinalsSchedule
-};
+}
