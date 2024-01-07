@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 var router = express.Router();
 
@@ -9,6 +7,7 @@ const Team = mongoose.model('Team');
 
 const MainSettings = mongoose.model('MainSettings');
 
+module.exports = router;
 
 //Code part to enable the authentication for all the following routes
 const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
@@ -304,11 +303,10 @@ async function getTeamDataById(teamId) {
 let gameNumber;
 
 async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase) {
-
     let lastGameEndTime = 0; // This will be returned as the last game end time
+    gameNumber = 1;
 
     try {
-
         await clearGamesCollection(); // Clear existing games before generating new ones
 
         const teams = await Team.find({});
@@ -321,110 +319,52 @@ async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeB
             groupedTeams[team.group].push(team);
         });
 
-        gameNumber = 1;
+        const groups = Object.values(groupedTeams);
 
-        for (const group in groupedTeams) {
-            const teamsInGroup = groupedTeams[group];
+        let maxGamesInGroup = 0;
+        groups.forEach(group => {
+            maxGamesInGroup = Math.max(maxGamesInGroup, group.length);
+        });
 
-            for (let i = 0; i < teamsInGroup.length; i++) {
-                for (let j = i + 1; j < teamsInGroup.length; j++) {
-                    const gameStartTime = new Date(scheduleStartTime);
-                    if (gameNumber > 1) {
-                        gameStartTime.setMinutes(
-                            gameStartTime.getMinutes() + (gameNumber - 1) * (gameDuration + timeBetweenGames)
-                        );
-                    }
+        for (let i = 0; i < maxGamesInGroup; i++) {
+            for (const group of groups) {
+                const team1 = group[i % group.length];
+                const team2 = group[(i + 1) % group.length];
 
-
-                    const newGame = new Game({
-                        number: gameNumber,
-                        time: gameStartTime,
-                        duration: gameDuration,
-                        status: initialStatus,
-                        opponents: [teamsInGroup[i]._id, teamsInGroup[j]._id],
-                        goals: [0, 0], // Setting initial goals as [0, 0]
-                        gamePhase: gamePhase
-                    });
-
-                    await newGame.save();
-
-                    lastGameEndTime = new Date(newGame.time.getTime() + newGame.duration * 60000);
-                    gameNumber++;
+                const gameStartTime = new Date(scheduleStartTime);
+                if (gameNumber > 1) {
+                    gameStartTime.setMinutes(
+                        gameStartTime.getMinutes() + (gameNumber - 1) * (gameDuration + timeBetweenGames)
+                    );
                 }
+
+                const newGame = new Game({
+                    number: gameNumber,
+                    time: gameStartTime,
+                    duration: gameDuration,
+                    status: initialStatus,
+                    opponents: [team1._id, team2._id],
+                    goals: [0, 0], // Setting initial goals as [0, 0]
+                    gamePhase: gamePhase
+                });
+
+                await newGame.save();
+
+                lastGameEndTime = new Date(newGame.time.getTime() + newGame.duration * 60000);
+                gameNumber++;
             }
         }
 
-        console.log('Group stage schedule generated and saved successfully!');        
+        console.log('Group stage schedule generated and saved successfully!');
         console.log("Last game end time: " + lastGameEndTime);
 
-        return lastGameEndTime;        
-
+        return lastGameEndTime;
 
     } catch (err) {
         console.error('Error generating Group stage schedule: ', err);
         return lastGameEndTime;
     }
 }
-
-
-
-
-
-// Funktion um die Platzierungsspiele zu generieren
-async function generatePlacementGamesSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase) {
-
-    try {
-        //generate PlacementGames schedule:
-        // Spiel um 7. Platz: Verlierer 3. Halbfinale - Verlierer 4.Halbfinale
-        // Spiel um 5. Platz: Sieger 3. Halbfinale - Sieger 4.Halbfinale
-        // Spiel um 3. Platz: Verlierer 1. Halbfinale - Verlierer 2.Halbfinale
-
-
-    } catch (err) {
-        console.error('Error generating Semifinals schedule: ', err);
-    }
-}
-
-
-
-
-
-
-
-    // const mongoose = require('mongoose');
-
-    // var TeamSchema = new mongoose.Schema({
-    //     name:{
-    //         type: String,
-    //         required: 'This field is required'
-    //     },
-    //     group: {
-    //         type: String,
-    //         required: 'This field is required'
-    //     },
-    //     gamesPlayed: {
-    //         type: Number,
-    //     },
-    //     gamesWon: {
-    //         type: Number,
-    //     },
-    //     gamesLost: {
-    //         type: Number,
-    //     },
-    //     gamesDraw: {
-    //         type: Number,
-    //     },
-    //     goals: { // Tore (geschossene Tore [0] - erhaltene Tore[1])
-    //         type: Array,
-    //     },
-    //     sektWon: {
-    //         type: Number,    //nicht relevant für Plazierung
-    //     },
-    //     points: {
-    //         type: Number,
-    //     },
-    
-    // });
 
 
 async function clearGamesCollection() {
@@ -435,9 +375,3 @@ async function clearGamesCollection() {
         console.error('Error clearing Games collection: ', err);
     }
 }
-
-
-
-
-
-module.exports = router;
