@@ -37,8 +37,25 @@
 
                 <td>
                     <div style="white-space: nowrap;">
-                        <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>
-                        <a href="/game/{{this.id}}/play" class="btn btn-success">Open Game</a>
+                    <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>
+                    <!--Sorry for this ugly if AND construct - maybe change the handlebars helper to avoid this :D-->
+                    {{#streq this.status 'Ended'}}
+                        <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                    {{else}}
+                    {{#streq this.group.[0] '-'}}
+                        {{#streq this.group.[1] '-'}}
+                            <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                        {{else}}
+                            <a href="/game/{{this.id}}/play" class="btn btn-success">Open Game</a>
+                        {{/streq}}
+                    {{else}}
+                        {{#streq this.group.[1] '-'}}
+                            <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                        {{else}}
+                            <a href="/game/{{this.id}}/play" class="btn btn-success">Open Game</a>
+                        {{/streq}}
+                    {{/streq}}
+                    {{/streq}}
                     </div>
                 </td>
             </tr>
