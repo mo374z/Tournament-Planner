@@ -1,18 +1,26 @@
-<section style="text-align: center; margin-top: 20px; margin-bottom: 40px;">
-    <h1 style="font-size: 36px; margin-bottom: 20px;">Groups List</h1>
+<section class="text-center mt-5 mb-5">
+    <h1 class"mb-4">Groups List</h1>
 
     {{#each teamsByGroup}}
-        <h2 style="font-size: 28px; margin-bottom: 10px;">Group {{groupName}}</h2>
-        <table style="margin: 0 auto; width: 80%; border-collapse: collapse;">
-            <thead>
-                <tr style="background-color: #f2f2f2; height: 40px;">
-                    <th style="width: 50%; border: 1px solid #ddd; font-size: 18px;">Team Name</th>
+        <h2 class="h4 mb-3">Group {{groupName}}</h2>
+        <table class="table table-bordered table-striped mx-auto" style="width: 80%;">
+            <thead class="thead-light">
+                <tr>
+                    <th scope="col" class="w-10">Rank</th>
+                    <th scope="col" class="w-40">Team Name</th>
+                    <th scope="col" class="w-20">Games Played</th>
+                    <th scope="col" class="w-20">Goals Difference</th>
+                    <th scope="col" class="w-20">Points</th>
                 </tr>
             </thead>
             <tbody>
                 {{#each teams}}
-                    <tr style="border: 1px solid #ddd; height: 30px;">
-                        <td style="border: 1px solid #ddd; font-size: 16px;">{{this.name}}</td>
+                    <tr>
+                        <td>{{this.rank}}</td>
+                        <td>{{this.name}}</td>
+                        <td>{{this.gamesPlayed}}</td>
+                        <td>{{this.goalsDifference}}</td>
+                        <td>{{this.points_Group_Stage}}</td>
                     </tr>
                 {{/each}}
             </tbody>
