@@ -27,41 +27,49 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
     <div class="container-fluid bg-dark text-light p-3 mb-3">
-        <ul class="nav justify-content-between">
-            <li class="nav-item">
-                <a class="nav-link" href="/"><i class="fas fa-trophy"></i>Tournament-Planner</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/team/list">Manschaften</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/schedule/list">Spielplan</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/schedule/grouplist">Gruppen</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/game/live">Live Game</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/mainSettings"><i class="fas fa-cogs"></i></a>
-            </li>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <a class="navbar-brand" href="/">
+                <span class="align-middle ms-5"><i class="fas fa-trophy"></i> Tournament-Planner</span>
+            </a>
 
-            <li class="nav-item">
-                {{#if username}}
-                <a class="nav-link" href="/user/logout"><i class='fas fa-sign-out-alt'></i></a>  
-                <p>Eingeloggt als: {{username}} - {{userrole}}</p>
-                
-                {{else}}
-                <p>Nicht eingeloggt</p>
-                <a class="nav-link" href="/user/login"><i class="fas fa-user"></i></a> 
-                {{/if}}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-                
-            </li>
-
-            
-        </ul>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link ms-5" href="/team/list">Manschaften</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link ms-5" href="/schedule/list">Spielplan</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link ms-5" href="/schedule/grouplist">Gruppen</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link ms-5" href="/game/live">Live Game</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
+                    </li>
+                    <li class="nav-item">
+                        {{#if username}}
+                            <a class="nav-link ms-5" href="/user/logout"><i class='fas fa-sign-out-alt'></i></a>
+                        {{else}}
+                            <a class="nav-link ms-5" href="/user/login"><i class="fas fa-user"></i></a>
+                        {{/if}}
+                    </li>
+                    <li class="nav-item">
+                        {{#if username}}
+                            <p class="navbar-text ms-5">Signed in: {{username}} - {{userrole}}</p>
+                        {{else}}
+                            <p class="navbar-text ms-5">Not signed in</p>
+                        {{/if}}
+                    </li>
+                </ul>
+            </div>
+        </nav>
     </div>
 
 

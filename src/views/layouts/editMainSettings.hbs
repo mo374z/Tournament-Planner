@@ -75,22 +75,22 @@
         <br></br>
 
         <form action="/mainSettings/createDb" method="post">
-        <label for="dbName"><strong>Name für Neue Datenbank:</strong></label><br>
+        <label for="dbName"><strong>Name for the new database:</strong></label><br>
         <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required autocomplete="off" maxlength="20" style="margin-bottom: 10px;"><br> <!-- pattern="^[^\s]+$" - no spaces allowed-->
-        <input type="submit" value="Neue Datenbank erstellen" onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
+        <input type="submit" class="btn btn-primary" value="Create new database" onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
         </form>  
 
         <br></br>
 
         <form action="/mainSettings/switchDb" method="post">
-        <label for="dbName"><strong>Datenbank wechseln:</strong></label><br>
+        <label for="dbName"><strong>Switch database:</strong></label><br>
         <select id="dbName" name="dbName" required style="margin-bottom: 10px;">
             {{#each dbs}}
             <option value="{{this.name}}">{{this.name}}</option>
             {{/each}}
         </select>
         <br>
-        <input type="submit" value="Datenbank wechseln" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+        <input type="submit" value="Switch database" class="btn btn-primary" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
         </form>
         
                  
