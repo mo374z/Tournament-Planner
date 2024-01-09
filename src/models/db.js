@@ -69,7 +69,7 @@ async function insertDefaultUser(db) { // Create a default user for the database
 
 async function insertDefaultValues(db) { // Insert default values into the new database
 
-  const defaultStartTime = new Date('2024-01-20T09:00:00.000Z');
+  const defaultStartTime = new Date('2024-01-20T08:00:00.000Z'); //in unserer Zeitzone: 20.01.2024 09:00 Uhr
   const defaultTimeBetweenGames = 2 * 60 * 1000; 
   const defaultGameDurationGroupStage = 8 * 60 * 1000; 
   const defaultGameDurationQuarterfinals = 10 * 60 * 1000;
