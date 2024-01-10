@@ -11,6 +11,11 @@ npm install
 > :warning: MainSettings Structure changed ! Please delete Main Settings document in collection - then open Main Settings: This should generate new default Settings !!!!!
 
 
+install mongo DB Tools:
+https://www.mongodb.com/docs/database-tools/installation/installation-windows/
+
+
+
 
 ## Programm starten
 node index.js
@@ -37,3 +42,5 @@ npm install bcrypt
 npm install jsonwebtoken
 
 npm install cookie-parser
+
+npm install fs

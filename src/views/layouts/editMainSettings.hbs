@@ -56,6 +56,9 @@
         <h4>Databases on this Device</h4>
         <p><strong><span style="color: red;">Current DB: "{{dbName}}"</span></strong></p>
 
+        <a href="/mainSettings/backupDB" class="btn btn-dark">Erstelle Backup</a>
+
+
         <table class="mx-auto" style="margin-left: auto; margin-right: auto;">
             <thead>
                 <tr>
@@ -91,6 +94,19 @@
         </select>
         <br>
         <input type="submit" value="Switch database" class="btn btn-primary" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+        </form>
+
+
+
+        <form action="/mainSettings/restoreDB" method="post">
+        <label for="dbRestoreName"><strong>Restore database:</strong></label><br>
+        <select id="dbRestoreName" name="dbRestoreName" required style="margin-bottom: 10px;">
+            {{#each backupDbs}}
+            <option value="{{this}}">{{this}}</option>
+            {{/each}}
+        </select>
+        <br>
+        <input type="submit" value="Restore database" class="btn btn-primary" onclick="return confirm('Are you sure you want to restore the database?')">
         </form>
         
                  

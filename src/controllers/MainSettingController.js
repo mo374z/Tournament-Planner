@@ -33,7 +33,7 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 
 
 
-const { listDbs } = require('../models/db'); // Import the listDbs function from the db.js file
+const { listDbs, listBackups } = require('../models/db'); // Import the listDbs function from the db.js file
 
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
@@ -76,8 +76,11 @@ router.get('/', async (req, res) => {
 
         const dbName = mongoose.connection.db.databaseName;
 
+        const backupDbs = listBackups();  // Get a list of all backups
+        console.log('backupDbs:', backupDbs);
+
         // Render the edit page with the MainSettings data
-        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName });
+        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName, backupDbs });
     } catch (err) {
         console.error('Error fetching MainSettings data:', err);
         res.status(500).send('Internal Server Error');
@@ -118,6 +121,42 @@ router.post('/switchDb', async (req, res) => {      // Switch to a different dat
         res.status(500).send('Error switching database');
         }
 }); 
+
+
+
+
+const { backupDb } = require('../models/db');
+
+router.get('/backupDB', async (req, res) => {      // Backup the current database
+    try {
+        backupDb();
+        setTimeout(() => {
+            res.redirect('/mainSettings');
+        }, 1000); // 1000 milliseconds (1 seconds) delay
+        } catch (err) {
+            console.error(err);
+            res.status(500).send('Error backing up database');
+        }
+});
+
+const { restoreDb } = require('../models/db');
+
+router.post('/restoreDB', async (req, res) => {      // Restore the current database
+    const DbName = req.body.dbRestoreName;
+    try {
+        restoreDb(DbName);
+        setTimeout(() => {
+            res.redirect('/mainSettings');
+        }, 1000);
+        } catch (err) {
+            console.error(err);
+            res.status(500).send('Error restoring database');
+        }
+});
+
+
+
+
 
 
 // POST route to handle form submission and update MainSettings

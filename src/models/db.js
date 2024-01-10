@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
-const mongoURI = "mongodb://0.0.0.0:27017/TournamentDB2024"
+const fs = require('fs');
+const mongoURI = "mongodb://0.0.0.0:27017/TournamentDB2024";
+
 
 const connectToMongo = async () => {
 try {
@@ -114,11 +116,88 @@ async function insertDefaultValues(db) { // Insert default values into the new d
     }
   }
 
+
+
+
+
+  const { exec } = require('child_process');
+  const backupPathArchive = './backup/archive';
+  const backupPathJSON = './backup/JSON';
+
+
+  function backupDb() {
+    //fetch the name of the current database
+    const dbName = mongoose.connection.db.databaseName;
+    const backupFile = `${backupPathArchive}/mongodump-${dbName}`;
+    const backupURI = 'mongodb://0.0.0.0:27017/' + dbName;
+    
+
+    const command = `mongodump --uri=${backupURI} --db=${dbName} --archive="${backupFile}"`;
+
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Fehler beim Erstellen des Backups: ${error}`);
+            return;
+        }
+
+        console.log(`Backup erfolgreich erstellt unter: ${backupFile}`);
+    });
+
+
+
+    const commandJSON = `mongodump --uri=${backupURI} --out=${backupPathJSON}`;
+
+    exec(commandJSON, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Fehler beim Erstellen des Backups als JSON: ${error}`);
+            return;
+        }
+
+        console.log(`BackupJSON erfolgreich erstellt unter: ${backupPathJSON}`);
+    });
+}
+
+function restoreDb(dbName) {
+  //look for the newest created db
+    console.log('Restoring database:', dbName);
+    const dbNameRestored = `${dbName}Restored`;
+    const backupFile = `${backupPathArchive}/mongodump-${dbName}`;
+    const backupURI = 'mongodb://0.0.0.0:27017/' + dbName;
+
+    const command = `mongorestore --uri=${backupURI} --archive="${backupFile}" --nsFrom="${dbName}.*" --nsTo="${dbNameRestored}.*"`;
+
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Fehler beim Wiederherstellen des Backups: ${error}`);
+            return;
+        }
+
+        console.log(`Backup erfolgreich wiederhergestellt von: ${backupFile}`);
+    });
+}
+
+ function listBackups() {
+  try {
+    let filenames = fs.readdirSync(backupPathArchive);
+    filenames = filenames.map((file) => file.replace(/^mongodump-/, ''));
+    return filenames;
+  } catch (err) {
+    console.error('Error reading directory:', err);
+    return [];
+  }
+}
+
+
+
+
 module.exports = {
   connectToMongo,
   listDbs,
   createDb,
   switchDb,
+  backupDb,
+  restoreDb,
+  listBackups,
 };
 
 
