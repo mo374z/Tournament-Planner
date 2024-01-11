@@ -109,21 +109,15 @@ router.post('/createDb', async (req, res) => {      // Create a new database for
 
 
 const { switchDb } = require('../models/db');
-
-router.post('/switchDb', async (req, res) => {      // Switch to a different database
+// Switch to a different database
+router.post('/switchDb', async (req, res) => {      
     try {
-        const dbName = req.body.dbName;
-        console.log('Switching to database:', dbName);
-        await switchDb(dbName);
+        await switchDb(req.body.dbName);
         res.redirect('/mainSettings');
-        } catch (err) {
-        console.error(err);
+    } catch (err) {
         res.status(500).send('Error switching database');
-        }
+    }
 }); 
-
-
-
 
 const { backupDb } = require('../models/db');
 
@@ -153,11 +147,6 @@ router.post('/restoreDB', async (req, res) => {      // Restore the current data
             res.status(500).send('Error restoring database');
         }
 });
-
-
-
-
-
 
 // POST route to handle form submission and update MainSettings
 router.post('/', async (req, res) => {

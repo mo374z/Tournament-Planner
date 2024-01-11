@@ -106,55 +106,66 @@ async function insertDefaultValues(db) { // Insert default values into the new d
 
 
 
-  async function switchDb(dbName) {
-    await mongoose.disconnect();
-    await mongoose.connect(`mongodb://0.0.0.0:27017/${dbName}`);
-    if (mongoose.connection.db.databaseName === dbName) {
-      console.log(`Successfully switched to database ${dbName}`);
-    } else {
-      console.error(`Failed to switch to database ${dbName}`);
-    }
+async function switchDb(dbName) {
+  await mongoose.disconnect();
+  await mongoose.connect(`mongodb://0.0.0.0:27017/${dbName}`);
+  if (mongoose.connection.db.databaseName === dbName) {
+    console.log(`Successfully switched to database ${dbName}`);
+  } else {
+    console.error(`Failed to switch to database ${dbName}`);
   }
+}
 
+const { exec } = require('child_process');
+const backupPathArchive = './backup/archive';
+const backupPathJSON = './backup/JSON';
 
-
-
-
-  const { exec } = require('child_process');
-  const backupPathArchive = './backup/archive';
-  const backupPathJSON = './backup/JSON';
-
-
-  function backupDb() {
-    //fetch the name of the current database
-    const dbName = mongoose.connection.db.databaseName;
-    const backupFile = `${backupPathArchive}/mongodump-${dbName}`;
-    const backupURI = 'mongodb://0.0.0.0:27017/' + dbName;
-    
-
-    const command = `mongodump --uri=${backupURI} --db=${dbName} --archive="${backupFile}"`;
-
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Fehler beim Erstellen des Backups: ${error}`);
-            return;
-        }
-
-        console.log(`Backup erfolgreich erstellt unter: ${backupFile}`);
+function checkPath(pathList) {
+  // check if backup path exists by splitting it into parts and creating each part if it does not exist
+  pathList.forEach((path) => {
+    const pathParts = path.split('/');
+    let currentPath = '';
+    pathParts.forEach((part) => {
+      currentPath += `${part}/`;
+      if (!fs.existsSync(currentPath)) {
+        fs.mkdirSync(currentPath);
+      }
     });
+  });
+}
+
+checkPath([backupPathArchive, backupPathJSON]);
+
+function backupDb() {
+  //fetch the name of the current database
+  const dbName = mongoose.connection.db.databaseName;
+  const backupFile = `${backupPathArchive}/mongodump-${dbName}`;
+  const backupURI = 'mongodb://0.0.0.0:27017/' + dbName;
+
+
+  const command = `mongodump --uri=${backupURI} --db=${dbName} --archive="${backupFile}"`;
+
+  exec(command, (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Fehler beim Erstellen des Backups: ${error}`);
+          return;
+      }
+
+      console.log(`Backup erfolgreich erstellt unter: ${backupFile}`);
+  });
 
 
 
-    const commandJSON = `mongodump --uri=${backupURI} --out=${backupPathJSON}`;
+  const commandJSON = `mongodump --uri=${backupURI} --out=${backupPathJSON}`;
 
-    exec(commandJSON, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Fehler beim Erstellen des Backups als JSON: ${error}`);
-            return;
-        }
+  exec(commandJSON, (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Fehler beim Erstellen des Backups als JSON: ${error}`);
+          return;
+      }
 
-        console.log(`BackupJSON erfolgreich erstellt unter: ${backupPathJSON}`);
-    });
+      console.log(`BackupJSON erfolgreich erstellt unter: ${backupPathJSON}`);
+  });
 }
 
 function restoreDb(dbName) {
