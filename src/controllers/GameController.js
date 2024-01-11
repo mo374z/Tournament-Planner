@@ -229,16 +229,11 @@ router.get('/:id/endGame', async (req, res) => {
         // Set the game status to "Ended" only if the status is "active"
         if (game.status == 'active') {
             await Game.findByIdAndUpdate(gameId, { status: 'Ended' });
-            console.log('Game set to Ended');
 
             // Update the team data with the game results
             await writeGameDataToTeams(game);   
-             
-            
-            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment gamesPlayed counter
-
+            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment the overall gamesPlayed counter
             resetTimer(0);  // Reset the timer to the value 0 in seconds
-           
         }
         res.redirect('/schedule/list');
     
@@ -251,6 +246,7 @@ router.get('/:id/endGame', async (req, res) => {
 async function writeGameDataToTeams(game) {
     try {
         const updateTeam = async (team, goals, isWinner) => {
+            console.log('Updating team: ', team.name, ' with goals: ', goals, ' and isWinner: ', isWinner)
             team.gamesPlayed += 1;
             team.gamesPlayed_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
 

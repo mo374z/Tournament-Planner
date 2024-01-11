@@ -28,13 +28,10 @@ router.get('/', (req,res) => {
 });
 
 router.post('/', (req, res) => {
-    console.log("Empfangen " + req);
     if(req.body._id == ''){
-        console.log("insertRecord");
         insertRecord(req,res);
     }
     else{
-        console.log("updateRecord ");
         updateRecord(req,res);
     }
 })
@@ -51,6 +48,7 @@ async function insertRecord(req, res) {
     team.sektWon = 0;
     team.points_Group_Stage = 0;
     team.points_General = 0;
+    team.gamesPlayed_Group_Stage = 0;
 
     try {
         const doc = await team.save();
@@ -108,7 +106,7 @@ router.get('/list', async (req, res) => {
                             name: "$name",
                             group: "$group",
                             rank: { $literal: null }, // Placeholder for rank
-                            gamesPlayed: "$gamesPlayed",
+                            gamesPlayed_Group_Stage: "$gamesPlayed_Group_Stage",
                             points_Group_Stage: "$points_Group_Stage",
                             goalsDifference: {
                                 $subtract: [
@@ -165,6 +163,7 @@ router.get('/clearTeamCounters', isAdmin, async (req, res) => {   //Clear Team C
             team.sektWon = 0;
             team.points_Group_Stage = 0;
             team.points_General = 0;
+            team.gamesPlayed_Group_Stage = 0;
             await team.save();
         });
         res.redirect('/team/list');
@@ -183,7 +182,6 @@ router.get('/:id', isAdmin, async (req, res) => {     //Create and Update Team o
                 viewTitle: "Update Team With id: " + req.params.id + " !",
                 team: team,
             });
-            console.log(team);
         } else {
             res.status(404).send('Team not found');
         }
