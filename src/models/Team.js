@@ -33,6 +33,9 @@ var TeamSchema = new mongoose.Schema({
     points_General: {
         type: Number,
     },
+    gamesPlayed_Group_Stage: {
+        type: Number,
+    },
 
 });
 
