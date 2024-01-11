@@ -7,6 +7,8 @@ module.exports = {
     updateQuarterFinalsSchedule
 };
 
+const { getRank } = require('../models/Team');
+
 
 // Funktion um die Viertelfinalspiele zu generieren
 async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, gameNumber) {
@@ -22,11 +24,16 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
             groupedTeams[team.group].push(team);
         });
 
-        // Sortiere die Teams in jeder Gruppe nach Punkten
+        // Sortiere die Teams in jeder Gruppe nach Rang
         for (const group in groupedTeams) {
-            groupedTeams[group].sort((a, b) => b.points_Group_Stage - a.points_Group_Stage);
-        }
 
+            // get the rank of each team
+            groupedTeams[group].forEach(team => {
+                team.rank = getRank(team);
+            });
+            // sort the teams by rank
+            groupedTeams[group].sort((a, b) => a.rank - b.rank);            
+        }
 
         const teamsInQuarterFinals = [];
 
@@ -63,14 +70,6 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
             }
         }
 
-        //Log teams in Quarterfinals
-        // console.log("Teams in Quarterfinals: ");
-        // teamsInQuarterFinals.forEach(team => {
-        //     console.log("Team: " + team.name + " Group: " + team.group);
-        // });
-        console.log("Teams in Quarterfinals: " + teamsInQuarterFinals.length);
-
-
         const FirstgameNumber = gameNumber;
         let gamePhase_m_NR = "Quarterfinals";
 
@@ -79,33 +78,22 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
         Number_of_groups = Object.keys(groupedTeams).length;
         console.log("Number of groups: " + Number_of_groups);
 
-        if(Number_of_groups === 4){
+        if (Number_of_groups === 4) {
             // Erzeuge die Viertelfinalspiele für 4 Gruppen
-            for (let i = 0; i < teamsInQuarterFinals.length - 2; i += 4) { // -2 weil immer 2 gleichzeitig erzeugt werden
-
-                let team1 = teamsInQuarterFinals[i];       // 1. Team A
-                let team2 = teamsInQuarterFinals[i + 3];   // 2. Team B
-                gamePhase_m_NR = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString(); //gamePhase_m_NR = "Quarterfinals 1"
-                console.log(gamePhase_m_NR) ;
-                let GameEndTime = await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase_m_NR, FirstgameNumber, gameNumber);
-                if(GameEndTime !== 0){
-                    lastGameEndTime = GameEndTime;
+            for (let i = 0; i < teamsInQuarterFinals.length - 2; i += 4) {
+                for (let j = 0; j < 2; j++) {
+                    let team1 = teamsInQuarterFinals[i + j];
+                    let team2 = teamsInQuarterFinals[i + 3 - j];
+                    let gamePhase_m_NR = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString();
+                    console.log(gamePhase_m_NR);
+                    let GameEndTime = await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase_m_NR, FirstgameNumber, gameNumber);
+                    if (GameEndTime !== 0) {
+                        lastGameEndTime = GameEndTime;
+                    }
+                    gameNumber++;
                 }
-                gameNumber++;
-            
-                team1 = teamsInQuarterFinals[i + 1];       // 2. Team A
-                team2 = teamsInQuarterFinals[i + 2];       // 1. Team B
-                gamePhase_m_NR = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString(); //gamePhase_m_NR = "Quarterfinals 2"
-                console.log(gamePhase_m_NR) ;
-                GameEndTime = await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase_m_NR, FirstgameNumber, gameNumber);
-                if(GameEndTime !== 0){
-                    lastGameEndTime = GameEndTime;
-                }
-                gameNumber++;
             }
             console.log('Quarterfinals schedule for 4 groups generated and saved successfully!');
-            
-
         }
         else if(Number_of_groups === 3){
             // Erzeuge die Viertelfinalspiele für 3 Gruppen

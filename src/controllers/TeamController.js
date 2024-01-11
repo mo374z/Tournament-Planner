@@ -19,6 +19,8 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
   });
 //--------------------------------------------------------------
 
+const { getRank } = require('../models/Team');
+
 router.get('/', (req,res) => {
     res.render('layouts/createUpdateTeam', {
         viewTitle: 'Insert Team',
@@ -246,29 +248,7 @@ router.get('/getTeamRank/:id', async (req, res) => {
     }
 });
 
-async function getRank(team){
-    const allTeamsInGroup = await Team.find({group: team.group}).exec();
 
-    // Sort teams based on points, goal difference, and goals scored
-    const sortedTeams = allTeamsInGroup.sort((a, b) => {
-        if (a.points_Group_Stage !== b.points_Group_Stage) {
-            return b.points_Group_Stage - a.points_Group_Stage;
-        } else {
-            const goalDifferenceA = a.goals[0] - a.goals[1];
-            const goalDifferenceB = b.goals[0] - b.goals[1];
-
-            if (goalDifferenceA !== goalDifferenceB) {
-                return goalDifferenceB - goalDifferenceA;
-            } else {
-                return b.goals[0] - a.goals[0];
-            }
-        }
-    });
-
-    // Find the index of the current team in the sorted array to determine its rank
-    const teamIndex = sortedTeams.findIndex(t => t._id.equals(team._id));
-    return teamIndex + 1;
-}
 
 async function updateRanks(teamsByGroup) {
     for (const group of teamsByGroup) {
@@ -280,7 +260,5 @@ async function updateRanks(teamsByGroup) {
         group.teams.sort((a, b) => a.rank - b.rank);
     }
 }
-
-
 
 module.exports = router;
