@@ -120,6 +120,33 @@ router.get('/:id', isAdmin, async (req, res) => {
 });
 
 
+const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
+    try {
+        // find number of game by gameId
+        const game = await Game.findById(gameId).exec();
+
+        // Fetch subsequent games based on the updated game's time
+        const subsequentGames = await Game.find({
+            number: {
+                $gt: game.number
+            }
+        }).sort('number').exec();
+
+        for (const game of subsequentGames) {
+            const newStartTime = new Date(game.time.getTime() + mainTimeDifference);
+
+            await Game.findByIdAndUpdate(game._id, {
+                time: newStartTime
+            }).exec();
+        }
+
+        console.log("Updated time for subsequent games");
+    } catch (err) {
+        console.error('Error updating subsequent games time: ', err);
+        throw err; // Re-throw the error for handling in the main function
+    }
+};
+
 router.post('/:id/edit', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
@@ -150,44 +177,21 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
             new: true
         }).exec();
 
-        console.log("New time" + updatedGame.time);
-
         if (!updatedGame) {
             res.status(404).send('Game not found');
             return;
         }
 
-        console.log("Updating other games...");
-        // Fetch subsequent games based on the updated game's time
-        const subsequentGames = await Game.find({
-            number: {
-                $gt: updatedGame.number
-            }
-        }).sort('number').exec();
-
         // Calculate time difference between old game time and new input time
         var gameDurationdifference = 0;
-        if(oldGameduration !== updatedGame.duration){
-            gameDurationdifference = updatedGame.duration - oldGameduration;      // 6 - 5 = 1 in minutes
-            console.log("Game duration difference (min): " + gameDurationdifference);
-            gameDurationdifference = gameDurationdifference * 60000; // calculate to min 1 minute = 60000 milliseconds
+        if (oldGameduration !== updatedGame.duration) {
+            gameDurationdifference = (updatedGame.duration - oldGameduration) * 60000; // Convert to milliseconds
         }
+
         const timeDifference = updatedGame.time - oldGameTime;
-        console.log("Game Time difference: " + timeDifference/60000 + " min");
+        const mainTimeDifference = timeDifference + gameDurationdifference;
 
-        const MainTimeDifference = timeDifference + gameDurationdifference;
-
-        console.log("Game Time and duration difference: " + MainTimeDifference/60000 + " min");
-
-
-
-        for (const game of subsequentGames) {
-            const newStartTime = new Date(game.time.getTime() + MainTimeDifference);
-
-            await Game.findByIdAndUpdate(game._id, {
-                time: newStartTime
-            }).exec();
-        }
+        await updateSubsequentGamesTime(gameId, mainTimeDifference);
 
         res.redirect('/schedule/list');
     } catch (err) {
@@ -195,6 +199,7 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 function renderScheduleList(req, res) {
     fetchGamesData()
