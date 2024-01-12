@@ -48,9 +48,7 @@ router.get('/generate', isAdmin, async (req, res) => {
 
     const initialStatus = 'Scheduled'; // Replace with your desired initial status
 
-    console.log("Gernerating Group stage schedule...");
     const lastGroupStageGameEndTime = await generateGroupStageSchedule(startTime, gameDurationGroupStage, timeBetweenGames, initialStatus, "Group_Stage");
-    console.log("Last Group stage game end time: " + lastGroupStageGameEndTime);
 
 
     const StartTimeQuarterfinals = lastGroupStageGameEndTime; // Set the start time for the Quarterfinals
@@ -62,17 +60,10 @@ router.get('/generate', isAdmin, async (req, res) => {
     // Call the function to generate and save the Quarterfinals schedule
     const {lastQuarterFinalsGameEndTime, returnGameNumber1} = await generateQuarterFinalsSchedule(StartTimeQuarterfinals, gameDurationQuarterfinals, timeBetweenGames, initialStatus, "Quarterfinals", gameNumber);
     gameNumber = returnGameNumber1;
-    console.log("Last Quarterfinals game end time: " + lastQuarterFinalsGameEndTime+ " Game Number: " + returnGameNumber1);
-
 
     const StartTimeSemifinals = lastQuarterFinalsGameEndTime; // Set the start time for the Semifinals
-    StartTimeSemifinals.setMinutes( StartTimeSemifinals.getMinutes() + timeBetweenGamePhases); //Add the time between game phases to the last Quarterfinals game end time4
-    console.log("Semifinals start time: " + StartTimeSemifinals);
-    
-
-    console.log("Gernerating Semifinals schedule..."); 
+    StartTimeSemifinals.setMinutes( StartTimeSemifinals.getMinutes() + timeBetweenGamePhases);
     const {lastSemiFinalsGameEndTime, returnGameNumber2} = await generateSemiFinalsSchedule(StartTimeSemifinals, gameDurationSemifinals, timeBetweenGames, initialStatus, "Semifinals", gameNumber);
-    console.log("Last Semifinals game end time: " + lastSemiFinalsGameEndTime + " Game Number: " + returnGameNumber2);
     gameNumber = returnGameNumber2;
 
     // Delay the redirect by 1 seconds to allow time for the schedule generation
@@ -205,16 +196,6 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
-
-
-
 function renderScheduleList(req, res) {
     fetchGamesData()
     .then(({ games, timeBetweenGames }) => {
@@ -261,8 +242,6 @@ async function fetchMainSettings() {
     }
 }
 
-
-
 async function getTeamDataById(teamId) {
     try {
         if (teamId.isDummy) {
@@ -277,13 +256,13 @@ async function getTeamDataById(teamId) {
     }
 }
 
-
 let gameNumber;
 
 async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase) {
     let lastGameEndTime = 0; // This will be returned as the last game end time
     gameNumber = 1;
-
+    
+    // attention: this algorithm only works for equally sized groups
     try {
         await clearGamesCollection(); // Clear existing games before generating new ones
 
@@ -299,50 +278,45 @@ async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeB
 
         const groups = Object.values(groupedTeams);
 
-        let maxGamesInGroup = 0;
-        groups.forEach(group => {
-            maxGamesInGroup = Math.max(maxGamesInGroup, group.length);
-        });
+        const groupLength = groups[0].length;
 
-        for (let i = 0; i < maxGamesInGroup; i++) {
-            for (const group of groups) {
-                const team1 = group[i % group.length];
-                const team2 = group[(i + 1) % group.length];
+        for (let i = 0; i < groupLength; i++) {
+            for (let j = i + 1; j < groupLength; j++) {
+                for (const group of groups) {
+                    const team1 = group[i];
+                    const team2 = group[j];
 
-                const gameStartTime = new Date(scheduleStartTime);
-                if (gameNumber > 1) {
-                    gameStartTime.setMinutes(
-                        gameStartTime.getMinutes() + (gameNumber - 1) * (gameDuration + timeBetweenGames)
-                    );
+                    const gameStartTime = new Date(scheduleStartTime);
+                    if (gameNumber > 1) {
+                        gameStartTime.setMinutes(
+                            gameStartTime.getMinutes() + (gameNumber - 1) * (gameDuration + timeBetweenGames)
+                        );
+                    }
+
+                    const newGame = new Game({
+                        number: gameNumber,
+                        time: gameStartTime,
+                        duration: gameDuration,
+                        status: initialStatus,
+                        opponents: [team1._id, team2._id],
+                        goals: [0, 0], // Setting initial goals as [0, 0]
+                        gamePhase: gamePhase
+                    });
+
+                    await newGame.save();
+
+                    lastGameEndTime = new Date(newGame.time.getTime() + newGame.duration * 60000);
+                    gameNumber++;
                 }
-
-                const newGame = new Game({
-                    number: gameNumber,
-                    time: gameStartTime,
-                    duration: gameDuration,
-                    status: initialStatus,
-                    opponents: [team1._id, team2._id],
-                    goals: [0, 0], // Setting initial goals as [0, 0]
-                    gamePhase: gamePhase
-                });
-
-                await newGame.save();
-
-                lastGameEndTime = new Date(newGame.time.getTime() + newGame.duration * 60000);
-                gameNumber++;
             }
         }
-
-        console.log('Group stage schedule generated and saved successfully!');
-        console.log("Last game end time: " + lastGameEndTime);
-
         return lastGameEndTime;
-
     } catch (err) {
         console.error('Error generating Group stage schedule: ', err);
         return lastGameEndTime;
     }
 }
+
 
 
 async function clearGamesCollection() {
