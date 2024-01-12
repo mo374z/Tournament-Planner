@@ -243,35 +243,32 @@ router.get('/:id/endGame', async (req, res) => {
     }
 });
 
+const updateTeam = async (team, goals, isWinner) => {
+    team.gamesPlayed += 1;
+    team.gamesPlayed_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
+
+    if (isWinner) {
+        team.gamesWon += 1;
+        team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 3 : 0;
+        team.points_General += 3;
+    } else if (goals[0] === goals[1]) {
+        team.gamesDraw += 1;
+        team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
+        team.points_General += 1;
+    } else {
+        team.gamesLost += 1;
+    }
+
+    team.goals[0] += goals[0];
+    team.goals[1] += goals[1];
+
+    return await team.save();
+};
+
 async function writeGameDataToTeams(game) {
     try {
-        const updateTeam = async (team, goals, isWinner) => {
-            console.log('Updating team: ', team.name, ' with goals: ', goals, ' and isWinner: ', isWinner)
-            team.gamesPlayed += 1;
-            team.gamesPlayed_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
-
-            if (isWinner) {
-                team.gamesWon += 1;
-                team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 3 : 0;
-                team.points_General += 3;
-            } else if (goals[0] === goals[1]) {
-                team.gamesDraw += 1;
-                team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
-                team.points_General += 1;
-            } else {
-                team.gamesLost += 1;
-            }
-
-            team.goals[0] += goals[0];
-            team.goals[1] += goals[1];
-
-            return await team.save();
-        };
-
         const team1 = await updateTeam(await Team.findById(game.opponents[0]), game.goals, game.goals[0] > game.goals[1]);
         const team2 = await updateTeam(await Team.findById(game.opponents[1]), [game.goals[1], game.goals[0]], game.goals[1] > game.goals[0]);
-
-        console.log('Teams updated:', team1, team2);
     } catch (err) {
         console.error('Error updating teams:', err);
     }

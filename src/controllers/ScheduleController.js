@@ -133,6 +133,8 @@ const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
         }).sort('number').exec();
 
         for (const game of subsequentGames) {
+            // calculate new time for each subsequent game based on the prevoius game's time
+            // also take the pauses into account
             const newStartTime = new Date(game.time.getTime() + mainTimeDifference);
 
             await Game.findByIdAndUpdate(game._id, {
@@ -146,6 +148,10 @@ const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
         throw err; // Re-throw the error for handling in the main function
     }
 };
+
+function calculateUpdateValues(game, updatedGame) {
+    // TODO
+}
 
 router.post('/:id/edit', isAdmin, async (req, res) => {
     try {
