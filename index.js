@@ -1,3 +1,6 @@
+// this is the main entry point of our application and should only contain the absolute minimum code needed to start our application
+const https = require('https');
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const handlebars = require('handlebars');
@@ -17,6 +20,12 @@ app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 
 
+app.get('/', (request, response) => {
+  response.render('home');
+
+  // response.send('<h2>Welcome</h2> <h3>Click here to get acess to <b> <a href="/student/list"> Database</a></h3></b>');
+});
+
 
 app.set('views', path.join(__dirname, '/src/views/'));
 
@@ -32,6 +41,7 @@ app.engine('hbs', exphbs.engine({
     },
     formatDateTime: function (time) {
       time.setHours(time.getHours() + 1);
+
       const formattedTime = new Date(time).toISOString().slice(0, 16); // Adjust the slice based on your datetime-local format
       return formattedTime;
     },
@@ -54,14 +64,24 @@ app.engine('hbs', exphbs.engine({
 
 app.set('view engine', 'hbs');
 
-app.listen(3000, () => {
-  console.log("Webserver started at localhost port 3000");
+// Create an HTTPS server
+const httpsServer = https.createServer({
+  key: fs.readFileSync('private-key.pem'),
+  cert: fs.readFileSync('certificate.pem'),
+}, app);
+
+// Listen on port 443
+httpsServer.listen(443, () => {
+  console.log('HTTPS server running on port 443');
 });
 
 // import the necessary script for the application
 const TeamController = require("./src/controllers/TeamController");
+
 const ScheduleController = require("./src/controllers/ScheduleController");
+
 const MainSettingController = require("./src/controllers/MainSettingController");
+
 const GameController = require("./src/controllers/GameController");
 const AuthenticationController = require("./src/controllers/AuthenticationController");
 
@@ -92,8 +112,11 @@ app.get('/', checkLoginStatus, (req, res) => {
 
 
 app.use("/team", TeamController);
+
 app.use("/schedule", ScheduleController);
+
 app.use("/mainSettings", MainSettingController);
+
 app.use("/game", GameController);
 
 app.use("/user", AuthenticationController);
