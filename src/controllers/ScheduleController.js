@@ -32,6 +32,7 @@ router.get('/list', async (req, res) => {
 // Import the functions to generate the Semischedule
 const { generateSemiFinalsSchedule, updateSemiFinalsSchedule } = require('./SemiFinalsController');
 const { generateQuarterFinalsSchedule, updateQuarterFinalsSchedule } = require('./QuarterFinalsController');
+const { get, find } = require('lodash');
 
 router.get('/generate', isAdmin, async (req, res) => {
 
@@ -150,16 +151,103 @@ const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
 };
 
 // if some game stats are changed afterwards this functions updates team properties in order to keep the ranking correct
-function updateTeamInformation(oldGame, newGame) {
-    // given the former game and the values, which are updated, determine whether the winner has changed and change the points of the teams
+function calculateChanges(oldPoints, newPoints, oldGoals, newGoals) {
+    const pointChange = [newPoints[0] - oldPoints[0], newPoints[1] - oldPoints[1]];
+    const goalChange = [newGoals[0] - oldGoals[0], newGoals[1] - oldGoals[1]];
+    
+    let gamesWonChange1 = 0, gamesLostChange1 = 0, gamesDrawChange1 = 0;
+    let gamesWonChange2 = 0, gamesLostChange2 = 0, gamesDrawChange2 = 0;
+
+    if (oldPoints[0] === 3 && oldPoints[1] === 0 && newPoints[0] === 0 && newPoints[1] === 3) {
+        gamesWonChange1 = -1;
+        gamesWonChange2 = 1;
+        gamesLostChange1 = 1;
+        gamesLostChange2 = -1;
+    } else if (oldPoints[0] === 3 && oldPoints[1] === 0 && newPoints[0] === 1 && newPoints[1] === 1) {
+        gamesWonChange1 = -1;
+        gamesLostChange2 = -1;
+        gamesDrawChange1 = 1;
+        gamesDrawChange2 = 1;
+    } else if (oldPoints[0] === 0 && oldPoints[1] === 3 && newPoints[0] === 3 && newPoints[1] === 0) {
+        gamesWonChange1 = 1;
+        gamesWonChange2 = -1;
+        gamesLostChange1 = -1;
+        gamesLostChange2 = 1;
+    } else if (oldPoints[0] === 0 && oldPoints[1] === 3 && newPoints[0] === 1 && newPoints[1] === 1) {
+        gamesLostChange1 = -1;
+        gamesWonChange2 = -1;
+        gamesDrawChang1 = 1;
+        gamesDrawChange2 = 1;
+    } else if (oldPoints[0] === 1 && oldPoints[1] === 1 && newPoints[0] === 0 && newPoints[1] === 3) {
+        gamesDrawChange1 = -1;
+        gamesDrawChange2 = -1;
+        gamesLostChange1 = 1;
+        gamesWonChange2 = 1;
+    } else if (oldPoints[0] === 1 && oldPoints[1] === 1 && newPoints[0] === 3 && newPoints[1] === 0) {
+        gamesDrawChange1 = -1;
+        gamesDrawChange2 = -1;
+        gamesWonChange1 = 1;
+        gamesLostChange2 = 1;
+    }
+
+    return {
+        pointChange,
+        goalChange,
+        gamesWonChange1,
+        gamesLostChange1,
+        gamesDrawChange1,
+        gamesWonChange2,
+        gamesLostChange2,
+        gamesDrawChange2
+    };
+}
+
+async function editTeamInformation(oldGame, newGame) {
     if (getPoints(oldGame) !== getPoints(newGame)) {
-        opponent1PointChange = getPoints(newGame)[0] - getPoints(oldGame)[0];
-        opponent2PointChange = getPoints(newGame)[1] - getPoints(oldGame)[1];
+        const changes = calculateChanges(getPoints(oldGame), getPoints(newGame), oldGame.goals, newGame.goals);
 
-        opponent1GoalChange = newGame.goals[0] - oldGame.goals[0];
-        opponent2GoalChange = newGame.goals[1] - oldGame.goals[1];
+        opponent1PointChange = changes.pointChange[0];
+        opponent2PointChange = changes.pointChange[1];
+        opponent1GoalChange = changes.goalChange[0];
+        opponent2GoalChange = changes.goalChange[1];
+        opponent1GamesWonChange = changes.gamesWonChange1;
+        opponent2GamesWonChange = changes.gamesWonChange2;
+        opponent1GamesLostChange = changes.gamesLostChange1;
+        opponent2GamesLostChange = changes.gamesLostChange2;
+        opponent1GamesDrawChange = changes.gamesDrawChange1;
+        opponent2GamesDrawChange = changes.gamesDrawChange2;
 
-        //TODO: update more fields
+        if (oldGame.gamePhase === 'Group_Stage') {
+            opponent1PointGroupStageChange = opponent1PointChange;
+            opponent2PointGroupStageChange = opponent2PointChange;
+        }
+
+        // Update team information
+        Team.findByIdAndUpdate(oldGame.opponents[0], {
+            $inc: {
+                gamesWon: opponent1GamesWonChange,
+                gamesLost: opponent1GamesLostChange,
+                gamesDraw: opponent1GamesDrawChange,
+                points_Group_Stage: opponent1PointGroupStageChange,
+                points_General: opponent1PointChange
+            },
+            $set: {
+                goals: [opponent1GoalChange + oldGame.goals[0], opponent2GoalChange + oldGame.goals[1]]
+            }
+        }).exec();
+
+        Team.findByIdAndUpdate(oldGame.opponents[1], {
+            $inc: {
+                gamesWon: opponent2GamesWonChange,
+                gamesLost: opponent2GamesLostChange,
+                gamesDraw: opponent2GamesDrawChange,
+                points_Group_Stage: opponent2PointGroupStageChange,
+                points_General: opponent2PointChange
+            },
+            $set: {
+                goals: [opponent2GoalChange + oldGame.goals[1], opponent1GoalChange + oldGame.goals[0]]
+            }
+        }).exec();
     }
 
 }
@@ -179,7 +267,7 @@ function getPoints(game) {
 router.post('/:id/edit', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
-        const {
+        let {
             time,
             duration,
             team1,
@@ -188,21 +276,40 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
             goals2,
         } = req.body;
 
+        
+        // check wether goals are undefined, if not set goals1 and goals2 to 0
+        if (goals1 === undefined) {
+            goals1 = 0;
+        }
+        if (goals2 === undefined) {
+            goals2 = 0;
+        }
+
         // Fetch existing game details to obtain the old game time
         const existingGame = await Game.findById(gameId);
         const oldGameTime = existingGame.time;
         const oldGameduration = existingGame.duration;
 
-        // TODO: only allow for changing teams, when the game is not played yet
+        if (team1 === undefined) {
+            team1 = existingGame.opponents[0];
+        }
+        if (team2 === undefined) {
+            team2 = existingGame.opponents[1];
+        }
 
-        const updatedGame = await Game.findByIdAndUpdate(gameId, {
+        await Game.findByIdAndUpdate(gameId, {
             time: new Date(time),
             duration: parseInt(duration),
             opponents: [team1, team2],
             goals: [parseInt(goals1), parseInt(goals2)],
-        }, {
-            new: true
         }).exec();
+
+        const updatedGame = await Game.findById(gameId).exec();
+
+        // only change team information if the game is already ended
+        if (updatedGame.status === 'Ended') {
+            await editTeamInformation(existingGame, updatedGame);
+        }
 
         if (!updatedGame) {
             res.status(404).send('Game not found');
