@@ -7,9 +7,6 @@
         <label for="duration">Duration (minutes):</label><br>
         <input type="number" id="duration" name="duration" value="{{game.duration}}" required class="form-control mb-2">
 
-        <label for="status">Status:</label><br>
-        <input type="text" id="status" name="status" value="{{game.status}}" required class="form-control mb-2">
-
         <label for="team1">Team 1:</label><br>
         <select id="team1" name="team1" required class="form-select mb-2">
             {{#each teams}}
@@ -38,8 +35,11 @@
         <label for="goals2">Goals (Team 2):</label><br>
         <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required class="form-control mb-2" min="0">
 
+        <label for="status">Status:</label><br>
+        <p><b>{{game.status}}</b></p>
+
         <label for="gamePhase">Game Phase:</label><br>
-        <input type="text" id="gamePhase" name="gamePhase" value="{{game.gamePhase}}" required class="form-control mb-2">
+        <p><b>{{game.gamePhase}}</b></p>
 
         <button type="submit" class="btn btn-primary">Save Changes</button>
         <a href="/schedule/list" class="btn btn-secondary">Back to List</a>

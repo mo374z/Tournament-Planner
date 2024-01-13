@@ -150,7 +150,9 @@ const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
 };
 
 function calculateUpdateValues(game, updatedGame) {
-    // TODO
+    // given the former game and the values, which are updated, determine whether the winner has changed and change the points of the teams
+
+
 }
 
 router.post('/:id/edit', isAdmin, async (req, res) => {
@@ -159,12 +161,10 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
         const {
             time,
             duration,
-            status,
             team1,
             team2,
             goals1,
             goals2,
-            gamePhase
         } = req.body;
 
         // Fetch existing game details to obtain the old game time
@@ -172,13 +172,13 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
         const oldGameTime = existingGame.time;
         const oldGameduration = existingGame.duration;
 
+        // TODO: only allow for changing teams, when the game is not played yet
+
         const updatedGame = await Game.findByIdAndUpdate(gameId, {
             time: new Date(time),
             duration: parseInt(duration),
-            status: status,
             opponents: [team1, team2],
             goals: [parseInt(goals1), parseInt(goals2)],
-            gamePhase: gamePhase
         }, {
             new: true
         }).exec();
