@@ -38,14 +38,21 @@
 
                 <td>
                     <div style="white-space: nowrap;">
-                    <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>                   
+                    {{#streq this.status 'active'}} {{!-- if the game is ended, the edit button is disabled --}}
+                        <a href="/schedule/{{this.id}}" class="btn btn-secondary disabled" >Edit Game</a>   
+                    {{else}}
+                        <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>   
+                    {{/streq}}                
 
-                    {{#if (isGamePlayable this)}} {{!-- isGamePlayable is a helper function to check if the game is playable --}}	
+                    {{#if this.isGamePlayable}} {{!-- isGamePlayable is a helper function to check if the game is playable --}}	
                         <a href="/game/{{this.id}}/play" class="btn btn-success">Open Game</a>
-                    {{else}}                            
-                        <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                    {{else}}    
+                        {{#streq this.status 'Scheduled'}}                        
+                            <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                        {{else}}
+                            <a href="/game/{{this.id}}/play" class="btn btn-secondary disabled">Open Game</a>
+                        {{/streq}}
                     {{/if}}
-
 
                     </div>
                 </td>
