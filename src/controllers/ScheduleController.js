@@ -207,7 +207,7 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
 });
 
 
-function renderScheduleList(req, res) {
+function renderScheduleList(req, res) { //TODO: add isGamePlayable function from helper here
     fetchGamesData()
     .then(({ games, timeBetweenGames }) => {
             res.render('layouts/schedulelist', {
@@ -220,6 +220,31 @@ function renderScheduleList(req, res) {
             // Handle the error appropriately, maybe by rendering an error page
         });
 }
+
+
+
+// isGamePlayable: function(game) {
+//     //check if game on nuber befor this game is played or not
+//     //if not return false
+//     if (game.number === 1) {
+//       return true;
+//     } else {
+//       const gameBeforeQuery = Game.findOne({ number: game.number - 1 });
+//       const gameBefore = gameBeforeQuery.exec();
+//       console.log(gameBefore.status);
+//       if (gameBefore.status === 'Ended') {
+//         return true;
+//       } else {
+//         return false
+//       }
+//     }
+
+//     // 
+//     // return gameBefore.status === 'Ended';
+
+//     //return !(game.group[0] === '-' || game.group[1] === '-' || game.opponents[0].includes('aus Gruppe') || game.opponents[1].includes('aus Gruppe') || game.status === 'Ended');
+
+//   }
 
 async function fetchGamesData() {
     try {

@@ -7,6 +7,9 @@ const app = express();
 
 require('./src/models/db');
 
+const mongoose = require('mongoose');
+const Game = mongoose.model('Game');
+
 
 const bodyparser = require('body-parser');
 
@@ -44,10 +47,8 @@ app.engine('hbs', exphbs.engine({
     },
     streq: function (a, b, options) {
       return a === b ? options.fn(this) : options.inverse(this);
-    },
-    isGamePlayable: function(game) {
-      return !(game.group[0] === '-' || game.group[1] === '-' || game.opponents[0].includes('aus Gruppe') || game.opponents[1].includes('aus Gruppe') || game.status === 'Ended');
     }
+
   }
 }));
 
