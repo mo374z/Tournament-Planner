@@ -149,10 +149,31 @@ const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
     }
 };
 
-function calculateUpdateValues(game, updatedGame) {
+// if some game stats are changed afterwards this functions updates team properties in order to keep the ranking correct
+function updateTeamInformation(oldGame, newGame) {
     // given the former game and the values, which are updated, determine whether the winner has changed and change the points of the teams
+    if (getPoints(oldGame) !== getPoints(newGame)) {
+        opponent1PointChange = getPoints(newGame)[0] - getPoints(oldGame)[0];
+        opponent2PointChange = getPoints(newGame)[1] - getPoints(oldGame)[1];
 
+        opponent1GoalChange = newGame.goals[0] - oldGame.goals[0];
+        opponent2GoalChange = newGame.goals[1] - oldGame.goals[1];
 
+        //TODO: update more fields
+    }
+
+}
+
+function getPoints(game) {
+    goals = [game.goals[0], game.goals[1]];
+
+    if(goals[0] > goals[1]) {
+        return [3, 0];
+    } else if (goals[0] < goals[1]) {
+        return [0, 3];
+    } else {
+        return [1, 1];
+    }
 }
 
 router.post('/:id/edit', isAdmin, async (req, res) => {
