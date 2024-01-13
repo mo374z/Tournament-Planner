@@ -14,6 +14,15 @@
         <label for="gameDurationQuarterfinals">Game Duration - Quarterfinals (minutes):</label><br>
         <input type="number" id="gameDurationQuarterfinals" name="gameDurationQuarterfinalsInMin" value="{{ milliToMin mainSettings.gameDurationQuarterfinals }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
+        <label for="gameDurationSemifinals">Game Duration - Semifinals (minutes):</label><br>
+        <input type="number" id="gameDurationSemifinals" name="gameDurationSemifinalsInMin" value="{{ milliToMin mainSettings.gameDurationSemifinals }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+        <label for="gameDurationFinal">Game Duration - Final (minutes):</label><br>
+        <input type="number" id="gameDurationFinal" name="gameDurationFinalInMin" value="{{ milliToMin mainSettings.gameDurationFinal }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
+        <label for="timeBetweenGamePhases">Time Between Game Phases (minutes):</label><br>
+        <input type="number" id="timeBetweenGamePhases" name="timeBetweenGamePhasesInMin" value="{{ milliToMin mainSettings.timeBetweenGamePhases }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+
         <label for="goalsforSekt">Nr. Goals for Flasche Sekt:</label><br>
         <input type="number" id="goalsforSekt" name="goalsforSekt" value="{{ mainSettings.goalsforSekt }}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
@@ -47,6 +56,9 @@
         <h4>Databases on this Device</h4>
         <p><strong><span style="color: red;">Current DB: "{{dbName}}"</span></strong></p>
 
+        <a href="/mainSettings/backupDB" class="btn btn-dark">Erstelle Backup</a>
+
+
         <table class="mx-auto" style="margin-left: auto; margin-right: auto;">
             <thead>
                 <tr>
@@ -66,22 +78,35 @@
         <br></br>
 
         <form action="/mainSettings/createDb" method="post">
-        <label for="dbName"><strong>Name für Neue Datenbank:</strong></label><br>
+        <label for="dbName"><strong>Name for the new database:</strong></label><br>
         <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required autocomplete="off" maxlength="20" style="margin-bottom: 10px;"><br> <!-- pattern="^[^\s]+$" - no spaces allowed-->
-        <input type="submit" value="Neue Datenbank erstellen" onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
+        <input type="submit" class="btn btn-primary" value="Create new database" onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
         </form>  
 
         <br></br>
 
         <form action="/mainSettings/switchDb" method="post">
-        <label for="dbName"><strong>Datenbank wechseln:</strong></label><br>
+        <label for="dbName"><strong>Switch database:</strong></label><br>
         <select id="dbName" name="dbName" required style="margin-bottom: 10px;">
             {{#each dbs}}
             <option value="{{this.name}}">{{this.name}}</option>
             {{/each}}
         </select>
         <br>
-        <input type="submit" value="Datenbank wechseln" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+        <input type="submit" value="Switch database" class="btn btn-primary" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+        </form>
+
+
+
+        <form action="/mainSettings/restoreDB" method="post">
+        <label for="dbRestoreName"><strong>Restore database:</strong></label><br>
+        <select id="dbRestoreName" name="dbRestoreName" required style="margin-bottom: 10px;">
+            {{#each backupDbs}}
+            <option value="{{this}}">{{this}}</option>
+            {{/each}}
+        </select>
+        <br>
+        <input type="submit" value="Restore database" class="btn btn-primary" onclick="return confirm('Are you sure you want to restore the database?')">
         </form>
         
                  

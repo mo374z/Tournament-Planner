@@ -7,40 +7,66 @@
             onclick="return confirm('Are you sure you want to clear the Schedule and create new?');">
             Generate Schedule from Teams</a>
     </h3>
-    <table class="mx-auto table table-bordered" style="margin-left: auto; margin-right: auto; text-align: center;">
+    <table class="mx-auto table table-bordered table-hover" style="margin-left: auto; margin-right: auto; text-align: center;">
+
         <thead>
             <tr>
                 <th>Number</th>
                 <th>Time ({{timeBetweenGames}} min Abstand)</th>
-                <th>Team Opponents</th>
+                <th colspan="2">Team Opponents</th>
                 <th>Goals</th>
                 <th>Duration</th>
-                <th>Group</th>
+                <th colspan="2">Groups</th>
                 <th>Status</th>
                 <th>Game Phase</th>
+                <th>Display Name</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {{#each list}}
-            <tr>
+            <tr {{#streq this.gamePhase 'Group_Stage'}}  {{else}}class="bg-light"{{/streq}}>
                 <td>{{this.number}}</td>
                 <td>{{formatTime this.time}}</td>
-                <td>{{this.opponents}}</td>
+                <td>{{this.opponents.[0]}}</td>
+                <td>{{this.opponents.[1]}}</td>
                 <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
                 <td>{{this.duration}} minutes</td>
-                <td>{{this.group}}</td>
+                <td>{{this.group.[0]}}</td>
+                <td>{{this.group.[1]}}</td>
                 <td>{{this.status}}</td>
                 <td>{{this.gamePhase}}</td>
+                <td>{{this.gameDisplayName}}</td>
 
                 <td>
                     <div style="white-space: nowrap;">
-                        <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>
+                    {{#streq this.status 'active'}} {{!-- if the game is ended, the edit button is disabled --}}
+                        <a href="/schedule/{{this.id}}" class="btn btn-secondary disabled" >Edit Game</a>   
+                    {{else}}
+                        <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>   
+                    {{/streq}}                
+
+                    {{#if this.isGamePlayable}} {{!-- isGamePlayable is a helper function to check if the game is playable --}}	
                         <a href="/game/{{this.id}}/play" class="btn btn-success">Open Game</a>
+                    {{else}}    
+                        {{#streq this.status 'Scheduled'}}                        
+                            <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                        {{else}}
+                            <a href="/game/{{this.id}}/play" class="btn btn-secondary disabled">Open Game</a>
+                        {{/streq}}
+                    {{/if}}
+
                     </div>
                 </td>
             </tr>
             {{/each}}
         </tbody>
     </table>
+
+
+    <a href="/schedule/updateQuarterFinals" class="btn btn-success">Update  Quarter Final Games </a>
+
+    <a href="/schedule/updateSemiFinals" class="btn btn-info">Update  Semi Final Games </a>
 </section>
+
+<script>console.log( this.isGamePlayable )</script>

@@ -13,7 +13,11 @@
                     <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</p>
                     <p><strong>Status:</strong> {{ game.status }}</p>
 
-                    <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Set Game to active</button>
+                    {{#unless areOtherGamesActiveBool}}
+                         <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Set Game to active</button>
+                    {{/unless}}
+                       
+                    
                     <div class="alert alert-success d-none mt-2" role="alert"> Game is now active and on Live Page.</div>
                 </div>
             </div>
@@ -29,8 +33,16 @@
                     <br>
                     <span id="timerStatus" class="ms-2"></span>
                 </div>
-                {{else}}                                    
-                   <p><strong>This Game is not active</strong></p>
+                {{else}}    
+                   {{#if areOtherGamesActiveBool}}
+                        <div class="alert alert-danger mt-2" role="alert">
+                            There is another game active.<br> Please end the active Game with the "End Game Button".
+                        </div>
+                    {{else}}
+                        <div class="alert alert-warning mt-2" role="alert">
+                            This game is not active. <br>Please set the game to active.
+                        </div>
+                    {{/if}}
                 {{/streq}}
             </div>
         </div>
@@ -44,18 +56,22 @@
                     <div class="col">
                         <h3>{{ game.opponents.[0] }}</h3>
                         <p class="display-5"><strong><span id="team1Score">{{ game.goals.[0] }}</span></strong></p>
-                        <div>
-                            <button onclick="changeScore(1,1)" class="btn btn-success me-2">+</button>
-                            <button onclick="changeScore(1,-1)" class="btn btn-danger">-</button>
-                        </div>
+                        {{#streq game.status 'active'}}
+                            <div>
+                                <button onclick="changeScore(1,1)" class="btn btn-success me-2">+</button>
+                                <button onclick="changeScore(1,-1)" class="btn btn-danger">-</button>
+                            </div>
+                        {{/streq}}
                     </div>
                     <div class="col">
                         <h3>{{ game.opponents.[1] }}</h3>
                         <p class="display-5"><strong><span id="team2Score">{{ game.goals.[1] }}</span></strong></p>
-                        <div>
-                            <button onclick="changeScore(2,1)" class="btn btn-success me-2">+</button>
-                            <button onclick="changeScore(2,-1)" class="btn btn-danger">-</button>
-                        </div>
+                        {{#streq game.status 'active'}}
+                            <div>
+                                <button onclick="changeScore(2,1)" class="btn btn-success me-2">+</button>
+                                <button onclick="changeScore(2,-1)" class="btn btn-danger">-</button>
+                            </div>
+                        {{/streq}}
                     </div>
                 </div>
             </div>
@@ -82,6 +98,9 @@
     </div>
 
 <script>
+
+    console.log('Game status: {{ areOtherGamesActiveBool }}');
+
     // update the date and time
     function updateDateTime() {
         const now = new Date();

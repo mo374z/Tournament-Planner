@@ -103,8 +103,8 @@ function resetTimer(duration) {
     if (duration === 0) {                                //if duration is 0, the game is ended
         io.emit('timerUpdate', timer, isPaused, 'Ended');
     }
-    else {                                              //if duration is not 0, the game is ready to start                   
-        io.emit('timerUpdate', timer, isPaused, 'Ready');
+    else {                                              //if duration is not 0, the game is ready to start and is paused                   
+        io.emit('timerUpdate', timer, isPaused, 'Paused');
     }
 }
 
@@ -130,10 +130,15 @@ router.get('/:id/play', async (req, res) => {
 
         const durationInMillis = game.duration * 60 * 1000; // Convert minutes to milliseconds
 
+        // set this to true if there are other games active
+        const areOthergamesActive = await Game.exists({ status: 'active', _id: { $ne: gameId } }); // Check if there are other active games but not the current one
+        const areOtherGamesActiveBool = Boolean(areOthergamesActive); // Convert to boolean
+        console.log('areOtherGamesActive: ', areOtherGamesActiveBool);
+
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
 
-        res.render('layouts/playGame', { game, durationInMillis, generalCounters: counters });
+        res.render('layouts/playGame', { game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
     } catch (err) {
         console.error('Error fetching game for play: ', err);
         res.status(500).send('Internal Server Error');
@@ -224,16 +229,11 @@ router.get('/:id/endGame', async (req, res) => {
         // Set the game status to "Ended" only if the status is "active"
         if (game.status == 'active') {
             await Game.findByIdAndUpdate(gameId, { status: 'Ended' });
-            console.log('Game set to Ended');
 
             // Update the team data with the game results
             await writeGameDataToTeams(game);   
-             
-            
-            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment gamesPlayed counter
-
+            await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment the overall gamesPlayed counter
             resetTimer(0);  // Reset the timer to the value 0 in seconds
-           
         }
         res.redirect('/schedule/list');
     
@@ -243,49 +243,36 @@ router.get('/:id/endGame', async (req, res) => {
     }
 });
 
+const updateTeam = async (team, game, isWinner) => {
+    team.gamesPlayed += 1;
+    team.gamesPlayed_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
+
+    if (isWinner) {
+        team.gamesWon += 1;
+        team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 3 : 0;
+        team.points_General += 3;
+    } else if (game.goals[0] === game.goals[1]) {
+        team.gamesDraw += 1;
+        team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
+        team.points_General += 1;
+    } else {
+        team.gamesLost += 1;
+    }
+
+    team.goals[0] += game.goals[0];
+    team.goals[1] += game.goals[1];
+
+    return await team.save();
+};
 
 async function writeGameDataToTeams(game) {
     try {
-        // Update the team data with the game results
-        let team1 = await Team.findById(game.opponents[0]);
-        let team2 = await Team.findById(game.opponents[1]);
-
-        // Update the team data with the game results
-        team1.gamesPlayed += 1;
-        team2.gamesPlayed += 1;
-
-        if (game.goals[0] > game.goals[1]) {
-            team1.gamesWon += 1;
-            team2.gamesLost += 1;
-            team1.points += 3;
-        } else if (game.goals[0] < game.goals[1]) {
-            team2.gamesWon += 1;
-            team1.gamesLost += 1;
-            team2.points += 3;
-        } else {
-            team1.gamesDraw += 1;
-            team2.gamesDraw += 1;
-            team1.points += 1;
-            team2.points += 1;
-        }
-
-        team1.goals[0] += game.goals[0];
-        team1.goals[1] += game.goals[1];
-        team2.goals[0] += game.goals[1];
-        team2.goals[1] += game.goals[0];
-
-        let updatedTeam1 = await team1.save();
-        console.log('Team 1 updated: ', updatedTeam1);
-
-        let updatedTeam2 = await team2.save();
-        console.log('Team 2 updated: ', updatedTeam2);
-
+        const team1 = await updateTeam(await Team.findById(game.opponents[0]), game, game.goals[0] > game.goals[1]);
+        const team2 = await updateTeam(await Team.findById(game.opponents[1]), game, game.goals[1] > game.goals[0]);
     } catch (err) {
-        console.error('Error updating teams: ', err);
+        console.error('Error updating teams:', err);
     }
-}//end writeGameDataToTeams
-
-
+}
 
 
 // render the live game view

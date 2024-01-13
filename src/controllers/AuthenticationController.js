@@ -38,35 +38,35 @@ router.get('/list', verifyToken, isAdmin, async (req, res) => {
   });
 
 
-router.get('/createDevUser', async (req, res) => {      // Create a Development User - only for testing
-    try {
-        let password = "admin";
-        const username = "admin";
-        const role = "admin";
+// router.get('/createDevUser', async (req, res) => {      // Create a Development User - only for testing
+//     try {
+//         let password = "admin";
+//         const username = "admin";
+//         const role = "admin";
 
-        const existingUser = await User.findOne({ username });
+//         const existingUser = await User.findOne({ username });
 
-        if (existingUser) {
-            return res.status(400).send('User already exists');
-        }
+//         if (existingUser) {
+//             return res.status(400).send('User already exists');
+//         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+//         const hashedPassword = await bcrypt.hash(password, 10);
 
-        password = hashedPassword;
+//         password = hashedPassword;
         
-        // Create a new user
-        const newUser = new User({ username, password, role });
-        await newUser.save();
+//         // Create a new user
+//         const newUser = new User({ username, password, role });
+//         await newUser.save();
 
-        // You might also generate a JWT token here for immediate login after registration
+//         // You might also generate a JWT token here for immediate login after registration
 
-        res.status(201).send('Dev User Registration successful');
-        //res.redirect('/user/login');
-    } catch (error) {
-        console.error('Error during registration:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
+//         res.status(201).send('Dev User Registration successful');
+//         //res.redirect('/user/login');
+//     } catch (error) {
+//         console.error('Error during registration:', error);
+//         res.status(500).send('Internal Server Error');
+//     }
+// });
 
 
 // User registration endpoint

@@ -6,10 +6,13 @@ const MainSettings = mongoose.model('MainSettings');
 
 const genCounters = mongoose.model('generalCounters');
 
-const defaultStartTime = new Date('2021-06-11T21:00:00.000Z');
+const defaultStartTime = new Date('2024-01-20T08:00:00.000Z'); //in unserer Zeitzone: 20.01.2024 09:00 Uhr
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
-const defaultGameDurationGroupStage = 10 * 60 * 1000; 
-const defaultGameDurationQuarterfinals = 15 * 60 * 1000;
+const defaultGameDurationGroupStage = 8 * 60 * 1000; 
+const defaultGameDurationQuarterfinals = 10 * 60 * 1000;
+const defaultGameDurationSemiFinals = 10 * 60 * 1000;
+const defaultGameDurationFinal = 10 * 60 * 1000;
+const defaultTimeBetweenGamePhases = 5 * 60 * 1000;
 const defaultgoalsforSekt = 10;
 
 
@@ -30,7 +33,7 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 
 
 
-const { listDbs } = require('../models/db'); // Import the listDbs function from the db.js file
+const { listDbs, listBackups } = require('../models/db'); // Import the listDbs function from the db.js file
 
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
@@ -45,6 +48,9 @@ router.get('/', async (req, res) => {
                 timeBetweenGames: defaultTimeBetweenGames,
                 gameDurationGroupStage: defaultGameDurationGroupStage,
                 gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                gameDurationSemifinals: defaultGameDurationSemiFinals,
+                gameDurationFinal: defaultGameDurationFinal,
+                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
                 goalsforSekt: defaultgoalsforSekt,
                 // Add other default values if needed
             });
@@ -57,7 +63,7 @@ router.get('/', async (req, res) => {
 
         let generalCounters = await genCounters.findOne({});
         if (!generalCounters) {
-            generalCounters = new generalCounters({
+            generalCounters = new genCounters({
                 allGoals: 0,
                 gamesPlayed: 0,
                 goalSektCounter: 0,
@@ -70,8 +76,11 @@ router.get('/', async (req, res) => {
 
         const dbName = mongoose.connection.db.databaseName;
 
+        const backupDbs = listBackups();  // Get a list of all backups
+        console.log('backupDbs:', backupDbs);
+
         // Render the edit page with the MainSettings data
-        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName });
+        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName, backupDbs });
     } catch (err) {
         console.error('Error fetching MainSettings data:', err);
         res.status(500).send('Internal Server Error');
@@ -100,19 +109,44 @@ router.post('/createDb', async (req, res) => {      // Create a new database for
 
 
 const { switchDb } = require('../models/db');
-
-router.post('/switchDb', async (req, res) => {      // Switch to a different database
+// Switch to a different database
+router.post('/switchDb', async (req, res) => {      
     try {
-        const dbName = req.body.dbName;
-        console.log('Switching to database:', dbName);
-        await switchDb(dbName);
+        await switchDb(req.body.dbName);
         res.redirect('/mainSettings');
-        } catch (err) {
-        console.error(err);
+    } catch (err) {
         res.status(500).send('Error switching database');
-        }
+    }
 }); 
 
+const { backupDb } = require('../models/db');
+
+router.get('/backupDB', async (req, res) => {      // Backup the current database
+    try {
+        backupDb();
+        setTimeout(() => {
+            res.redirect('/mainSettings');
+        }, 1000); // 1000 milliseconds (1 seconds) delay
+        } catch (err) {
+            console.error(err);
+            res.status(500).send('Error backing up database');
+        }
+});
+
+const { restoreDb } = require('../models/db');
+
+router.post('/restoreDB', async (req, res) => {      // Restore the current database
+    const DbName = req.body.dbRestoreName;
+    try {
+        restoreDb(DbName);
+        setTimeout(() => {
+            res.redirect('/mainSettings');
+        }, 1000);
+        } catch (err) {
+            console.error(err);
+            res.status(500).send('Error restoring database');
+        }
+});
 
 // POST route to handle form submission and update MainSettings
 router.post('/', async (req, res) => {
@@ -122,6 +156,9 @@ router.post('/', async (req, res) => {
             timeBetweenGamesInMin,
             gameDurationGroupStageInMin,
             gameDurationQuarterfinalsInMin,
+            gameDurationSemifinalsInMin,
+            gameDurationFinalInMin,
+            timeBetweenGamePhasesInMin,            
             goalsforSekt
         } = req.body;
 
@@ -129,6 +166,9 @@ router.post('/', async (req, res) => {
         const timeBetweenGames = parseInt(timeBetweenGamesInMin) * 60 * 1000; // minutes to milliseconds
         const gameDurationGroupStage = parseInt(gameDurationGroupStageInMin) * 60 * 1000; // minutes to milliseconds
         const gameDurationQuarterfinals = parseInt(gameDurationQuarterfinalsInMin) * 60 * 1000; // minutes to milliseconds
+        const gameDurationSemifinals = parseInt(gameDurationSemifinalsInMin) * 60 * 1000; // minutes to milliseconds
+        const gameDurationFinal = parseInt(gameDurationFinalInMin) * 60 * 1000; // minutes to milliseconds
+        const timeBetweenGamePhases = parseInt(timeBetweenGamePhasesInMin) * 60 * 1000; // minutes to milliseconds
 
         // Find the MainSettings document and update its values
         const mainSettings = await MainSettings.findOne({});
@@ -140,6 +180,9 @@ router.post('/', async (req, res) => {
                 timeBetweenGames: defaultTimeBetweenGames,
                 gameDurationGroupStage: defaultGameDurationGroupStage,
                 gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                gameDurationSemifinals: defaultGameDurationSemiFinals,
+                gameDurationFinal: defaultGameDurationFinal,
+                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
                 goalsforSekt: defaultgoalsforSekt,
             });
         }
@@ -148,6 +191,9 @@ router.post('/', async (req, res) => {
         mainSettings.timeBetweenGames = timeBetweenGames;
         mainSettings.gameDurationGroupStage = gameDurationGroupStage;
         mainSettings.gameDurationQuarterfinals = gameDurationQuarterfinals;
+        mainSettings.gameDurationSemifinals = gameDurationSemifinals;
+        mainSettings.gameDurationFinal = gameDurationFinal;
+        mainSettings.timeBetweenGamePhases = timeBetweenGamePhases;
         mainSettings.goalsforSekt = goalsforSekt;
 
         // Save the updated MainSettings

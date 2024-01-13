@@ -1,17 +1,17 @@
-<div style="text-align: center;">
+<div class="container text-center">
     <h3>{{viewTitle}}</h3>
-    <form action="/schedule/{{game._id}}/edit" method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
+    <form action="/schedule/{{game._id}}/edit" method="POST" autocomplete="off" style="max-width: 300px; margin: 0 auto;">
         <label for="time">Game Time:</label><br>
-        <input type="datetime-local" id="time" name="time" value="{{formatDateTime game.time}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+        <input type="datetime-local" id="time" name="time" value="{{formatDateTime game.time}}" required class="form-control mb-2">
 
         <label for="duration">Duration (minutes):</label><br>
-        <input type="number" id="duration" name="duration" value="{{game.duration}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-        <label for="status">Status:</label><br>
-        <input type="text" id="status" name="status" value="{{game.status}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+        <input type="number" id="duration" name="duration" value="{{game.duration}}" required class="form-control mb-2">
 
         <label for="team1">Team 1:</label><br>
-        <select id="team1" name="team1" required style="width: 100%; padding: 5px; margin-bottom: 10px;">
+        {{#streq game.status "Ended"}}
+        <p><b>{{teams.[0].name}}</b></p>
+        {{else}}
+        <select id="team1" name="team1" required class="form-select mb-2">
             {{#each teams}}
                 {{#if (eq this._id (lookup ../game.opponents 0))}}
                     <option value="{{this._id}}" selected>{{this.name}}</option>
@@ -20,13 +20,20 @@
                 {{/if}}
             {{/each}}
         </select><br>
+        {{/streq}}
 
-
-        <label for="goals">Goals (Team 1):</label><br>
-        <input type="number" id="goals1" name="goals1" value="{{game.goals.[0]}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;" min="0"><br>
+        <label for="goals1">Goals (Team 1):</label><br>
+        {{#streq game.status "Ended"}}
+        <input type="number" id="goals1" name="goals1" value="{{game.goals.[0]}}" required class="form-control mb-2" min="0">
+        {{else}}
+        <p><b>{{game.goals.[0]}}</b></p>
+        {{/streq}}
 
         <label for="team2">Team 2:</label><br>
-        <select id="team2" name="team2" required style="width: 100%; padding: 5px; margin-bottom: 10px;">
+        {{#streq game.status "Ended"}}
+        <p><b>{{teams.[1].name}}</b></p>
+        {{else}}
+        <select id="team2" name="team2" required class="form-select mb-2">
             {{#each teams}}
                 {{#if (eq this._id (lookup ../game.opponents 1))}}
                     <option value="{{this._id}}" selected>{{this.name}}</option>
@@ -34,16 +41,26 @@
                     <option value="{{this._id}}">{{this.name}}</option>
                 {{/if}}
             {{/each}}
+        {{/streq}}
         </select><br>
 
+        <label for="goals2">Goals (Team 2):</label><br>
+        {{#streq game.status "Ended"}}
+        <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required class="form-control mb-2" min="0">
+        {{else}}
+        <p><b>{{game.goals.[1]}}</b></p>
+        {{/streq}}
 
-        <label for="goals">Goals (Team 2):</label><br>
-        <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;" min="0"><br>
+        <label for="status">Status:</label><br>
+        <p><b>{{game.status}}</b></p>
 
         <label for="gamePhase">Game Phase:</label><br>
-        <input type="text" id="gamePhase" name="gamePhase" value="{{game.gamePhase}}" required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+        <p><b>{{game.gamePhase}}</b></p>
 
-        <button type="submit" class"btn btn-primary">Save Changes</button>
-        <a href="/schedule/list" class"btn btn-secondary">Back to List</a>
+        <label for="gameDisplayName">Display Name: </label><br>
+        <input type="text" id="gameDisplayName" name="gameDisplayName" value="{{game.gameDisplayName}}" required class="form-control mb-2">
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="/schedule/list" class="btn btn-secondary">Back to List</a>
     </form>
 </div>

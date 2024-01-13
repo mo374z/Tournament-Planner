@@ -7,6 +7,9 @@ const app = express();
 
 require('./src/models/db');
 
+const mongoose = require('mongoose');
+const Game = mongoose.model('Game');
+
 
 const bodyparser = require('body-parser');
 
@@ -45,6 +48,7 @@ app.engine('hbs', exphbs.engine({
     streq: function (a, b, options) {
       return a === b ? options.fn(this) : options.inverse(this);
     }
+
   }
 }));
 
