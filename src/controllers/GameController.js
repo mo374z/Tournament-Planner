@@ -243,7 +243,7 @@ router.get('/:id/endGame', async (req, res) => {
     }
 });
 
-const updateTeam = async (team, goals, isWinner) => {
+const updateTeam = async (team, game, isWinner) => {
     team.gamesPlayed += 1;
     team.gamesPlayed_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
 
@@ -251,7 +251,7 @@ const updateTeam = async (team, goals, isWinner) => {
         team.gamesWon += 1;
         team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 3 : 0;
         team.points_General += 3;
-    } else if (goals[0] === goals[1]) {
+    } else if (game.goals[0] === game.goals[1]) {
         team.gamesDraw += 1;
         team.points_Group_Stage += (game.gamePhase === 'Group_Stage') ? 1 : 0;
         team.points_General += 1;
@@ -259,16 +259,16 @@ const updateTeam = async (team, goals, isWinner) => {
         team.gamesLost += 1;
     }
 
-    team.goals[0] += goals[0];
-    team.goals[1] += goals[1];
+    team.goals[0] += game.goals[0];
+    team.goals[1] += game.goals[1];
 
     return await team.save();
 };
 
 async function writeGameDataToTeams(game) {
     try {
-        const team1 = await updateTeam(await Team.findById(game.opponents[0]), game.goals, game.goals[0] > game.goals[1]);
-        const team2 = await updateTeam(await Team.findById(game.opponents[1]), [game.goals[1], game.goals[0]], game.goals[1] > game.goals[0]);
+        const team1 = await updateTeam(await Team.findById(game.opponents[0]), game, game.goals[0] > game.goals[1]);
+        const team2 = await updateTeam(await Team.findById(game.opponents[1]), game, game.goals[1] > game.goals[0]);
     } catch (err) {
         console.error('Error updating teams:', err);
     }
