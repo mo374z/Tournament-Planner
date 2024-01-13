@@ -11,7 +11,7 @@ const { getRank } = require('../models/Team');
 
 
 // Funktion um die Viertelfinalspiele zu generieren
-async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, gameNumber) {
+async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gameNumber, gamePhase, displayName) {
     try {
         const teams = await Team.find({});
         const groupedTeams = {};
@@ -71,7 +71,6 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
         }
 
         const FirstgameNumber = gameNumber;
-        let gamePhase_m_NR = "Quarterfinals";
 
         let lastGameEndTime = 0;
         
@@ -84,9 +83,10 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
                 for (let j = 0; j < 2; j++) {
                     let team1 = teamsInQuarterFinals[i + j];
                     let team2 = teamsInQuarterFinals[i + 3 - j];
-                    let gamePhase_m_NR = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString();
-                    console.log(gamePhase_m_NR);
-                    let GameEndTime = await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase_m_NR, FirstgameNumber, gameNumber);
+                    let gamePhaseNr = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString();
+                    let displayNameNr = "Viertelfinale " + (gameNumber - FirstgameNumber + 1).toString();
+                    console.log(gamePhaseNr);
+                    let GameEndTime = await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhaseNr, FirstgameNumber, gameNumber, displayNameNr);
                     if (GameEndTime !== 0) {
                         lastGameEndTime = GameEndTime;
                     }
@@ -121,7 +121,7 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
 }
 
 // Funktion um die Viertelfinalspiele zu speichern
-async function SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, FirstgameNumber, gameNumber) {
+async function SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, FirstgameNumber, gameNumber, displayName) {
     if (team1 && team2 && team1.group !== team2.group) {
         console.log(`Spiel generiert: Team 1: ${team1.name} vs. Team 2: ${team2.name}`);
 
@@ -139,7 +139,8 @@ async function SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDurati
             status: initialStatus,
             opponents: [team1, team2],
             goals: [0, 0],
-            gamePhase: gamePhase
+            gamePhase: gamePhase,
+            gameDisplayName: displayName
         });
 
         // Ersetze echte Teams durch ihre IDs und Dummy-Teams bleiben

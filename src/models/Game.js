@@ -22,6 +22,9 @@ var GameSchema = new mongoose.Schema({
     gamePhase: {
       type: String,
     },
+    gameDisplayName: {
+      type: String,
+    },
 
 });
 
