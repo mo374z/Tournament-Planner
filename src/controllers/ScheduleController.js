@@ -244,28 +244,31 @@ function renderScheduleList(req, res) { //TODO: add isGamePlayable function from
 
 
 
-// isGamePlayable: function(game) {
-//     //check if game on nuber befor this game is played or not
-//     //if not return false
-//     if (game.number === 1) {
-//       return true;
-//     } else {
-//       const gameBeforeQuery = Game.findOne({ number: game.number - 1 });
-//       const gameBefore = gameBeforeQuery.exec();
-//       console.log(gameBefore.status);
-//       if (gameBefore.status === 'Ended') {
-//         return true;
-//       } else {
-//         return false
-//       }
-//     }
+async function isGamePlayable(game) {
 
-//     // 
-//     // return gameBefore.status === 'Ended';
+    if(game.status === 'Ended') {                                                   //check if game is ended
+        return false;
+    }
+    else{                                                                           //check if game is game 1
+        if(game.number === 1) {
+            return true;
+        }
+        else {                                                                      //check if game bevor is ended
+            const gameBefore = await Game.findOne({ number: game.number - 1 });
+            if(gameBefore.status === 'Ended') {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
 
-//     //return !(game.group[0] === '-' || game.group[1] === '-' || game.opponents[0].includes('aus Gruppe') || game.opponents[1].includes('aus Gruppe') || game.status === 'Ended');
+    }
 
-//   }
+
+    //return !(game.group[0] === '-' || game.group[1] === '-' || game.opponents[0].includes('aus Gruppe') || game.opponents[1].includes('aus Gruppe') || game.status === 'Ended');
+
+  }
 
 async function fetchGamesData() {
     try {
@@ -280,6 +283,8 @@ async function fetchGamesData() {
 
             const groupData = opponentData.map(opponent => opponent.group);
             game.group = groupData;
+
+            game.isGamePlayable = await isGamePlayable(game);
         }
 
         return { games, timeBetweenGames: mainSettings.timeBetweenGames/60000 };
