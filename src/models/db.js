@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
-const mongoURI = "mongodb://0.0.0.0:27017/TournamentDB2025";
+const mongoURI = "mongodb://0.0.0.0:27017/TournamentDB";
 
 
 const connectToMongo = async () => {
