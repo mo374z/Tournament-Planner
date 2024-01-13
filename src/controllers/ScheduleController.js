@@ -274,6 +274,7 @@ router.post('/:id/edit', isAdmin, async (req, res) => { //implement dislayName s
             team2,
             goals1,
             goals2,
+            gameDisplayName
         } = req.body;
 
         
@@ -302,6 +303,7 @@ router.post('/:id/edit', isAdmin, async (req, res) => { //implement dislayName s
             duration: parseInt(duration),
             opponents: [team1, team2],
             goals: [parseInt(goals1), parseInt(goals2)],
+            gameDisplayName: gameDisplayName
         }).exec();
 
         const updatedGame = await Game.findById(gameId).exec();
