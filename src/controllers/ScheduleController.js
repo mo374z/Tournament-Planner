@@ -48,7 +48,7 @@ router.get('/generate', isAdmin, async (req, res) => {
 
     const initialStatus = 'Scheduled'; // Replace with your desired initial status
 
-    const lastGroupStageGameEndTime = await generateGroupStageSchedule(startTime, gameDurationGroupStage, timeBetweenGames, initialStatus, "Group_Stage");
+    const lastGroupStageGameEndTime = await generateGroupStageSchedule(startTime, gameDurationGroupStage, timeBetweenGames, initialStatus, "Group_Stage", "Gruppenspiel");
 
 
     const StartTimeQuarterfinals = lastGroupStageGameEndTime; // Set the start time for the Quarterfinals
@@ -58,12 +58,12 @@ router.get('/generate', isAdmin, async (req, res) => {
 
     console.log("Gernerating Quarterfinals schedule..." + gameDurationQuarterfinals);
     // Call the function to generate and save the Quarterfinals schedule
-    const {lastQuarterFinalsGameEndTime, returnGameNumber1} = await generateQuarterFinalsSchedule(StartTimeQuarterfinals, gameDurationQuarterfinals, timeBetweenGames, initialStatus, "Quarterfinals", gameNumber);
+    const {lastQuarterFinalsGameEndTime, returnGameNumber1} = await generateQuarterFinalsSchedule(StartTimeQuarterfinals, gameDurationQuarterfinals, timeBetweenGames, initialStatus, gameNumber, "Quarterfinals", "Viertelfinale");
     gameNumber = returnGameNumber1;
 
     const StartTimeSemifinals = lastQuarterFinalsGameEndTime; // Set the start time for the Semifinals
     StartTimeSemifinals.setMinutes( StartTimeSemifinals.getMinutes() + timeBetweenGamePhases);
-    const {lastSemiFinalsGameEndTime, returnGameNumber2} = await generateSemiFinalsSchedule(StartTimeSemifinals, gameDurationSemifinals, timeBetweenGames, initialStatus, "Semifinals", gameNumber);
+    const {lastSemiFinalsGameEndTime, returnGameNumber2} = await generateSemiFinalsSchedule(StartTimeSemifinals, gameDurationSemifinals, timeBetweenGames, initialStatus, gameNumber , "Semifinals", "Halbfinale");
     gameNumber = returnGameNumber2;
 
     // Delay the redirect by 1 seconds to allow time for the schedule generation
@@ -101,7 +101,7 @@ router.get('/updateSemiFinals', isAdmin, async (req, res) => {
 
 
 
-
+// render the page to edit the game
 router.get('/:id', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
@@ -176,7 +176,7 @@ function getPoints(game) {
     }
 }
 
-router.post('/:id/edit', isAdmin, async (req, res) => {
+router.post('/:id/edit', isAdmin, async (req, res) => { //implement dislayName saving !
     try {
         const gameId = req.params.id;
         const {
@@ -320,7 +320,7 @@ async function getTeamDataById(teamId) {
 
 let gameNumber;
 
-async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase) {
+async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, displayName) {
     let lastGameEndTime = 0; // This will be returned as the last game end time
     gameNumber = 1;
     
@@ -362,7 +362,8 @@ async function generateGroupStageSchedule(scheduleStartTime, gameDuration, timeB
                         status: initialStatus,
                         opponents: [team1._id, team2._id],
                         goals: [0, 0], // Setting initial goals as [0, 0]
-                        gamePhase: gamePhase
+                        gamePhase: gamePhase,
+                        gameDisplayName: displayName
                     });
 
                     await newGame.save();
