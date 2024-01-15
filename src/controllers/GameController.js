@@ -7,10 +7,21 @@ const Team = mongoose.model('Team');
 const MainSettings = mongoose.model('MainSettings');
 
 const genCounters = mongoose.model('generalCounters');
-const http = require('http');
+
 const socketIo = require('socket.io');
 const app = express();
-const server = http.createServer(app);
+
+
+// const fs = require('fs');
+// const https = require('https');
+
+// const server = https.createServer({
+//     key: fs.readFileSync('private-key.pem'),             // set the correct path to your private key
+//     cert: fs.readFileSync('certificate.pem'),
+//   }, app);
+
+const http = require('http');
+const server = http.createServer(app); // comment this 2 lines and uncomment the above lines to enable https
 
 module.exports = router;
 const cors = require('cors'); // Import cors middleware
@@ -32,8 +43,11 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 //--------------------------------------------------------------
 
 
-// Start the Websocet server on port 8080
-const PORT = process.env.PORT || 8080;
+
+
+
+// Start the Websocet server on port 2053
+const PORT = process.env.PORT || 2053;
 server.listen(PORT, () => {
     console.log(`Server for Websocet recieving is running on port ${PORT}`);
 });

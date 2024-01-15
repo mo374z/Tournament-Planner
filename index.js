@@ -1,3 +1,6 @@
+// const https = require('https');    //https server erstellen
+// const fs = require('fs');
+
 const path = require('path');
 const express = require('express');
 const handlebars = require('handlebars');
@@ -54,9 +57,25 @@ app.engine('hbs', exphbs.engine({
 
 app.set('view engine', 'hbs');
 
-app.listen(3000, () => {
+
+
+app.listen(3000, () => {                                      //http server erstellen
   console.log("Webserver started at localhost port 3000");
 });
+
+// // Create an HTTPS server                                  //https server erstellen
+// const httpsServer = https.createServer({
+//   key: fs.readFileSync('private-key.pem'),
+//   cert: fs.readFileSync('certificate.pem'),
+// }, app);
+
+// // Listen on port 443
+// httpsServer.listen(443, () => {
+//   console.log('HTTPS server running on port 443');
+// });
+
+
+
 
 // import the necessary script for the application
 const TeamController = require("./src/controllers/TeamController");
