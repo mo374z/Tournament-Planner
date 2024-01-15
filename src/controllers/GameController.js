@@ -32,7 +32,11 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 //--------------------------------------------------------------
 
 
-
+// Start the Websocet server on port 8080
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+    console.log(`Server for Websocet recieving is running on port ${PORT}`);
+});
 
 
 
@@ -108,11 +112,7 @@ function resetTimer(duration) {
     }
 }
 
-// Start the Websocet server on port 4000
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-    console.log(`Server for Websocet recieving is running on port ${PORT}`);
-});
+
 
 
 // Render the game play page
@@ -259,9 +259,17 @@ const updateTeam = async (team, game, isWinner) => {
         team.gamesLost += 1;
     }
 
-    team.goals[0] += game.goals[0];
-    team.goals[1] += game.goals[1];
 
+    if(game.opponents[0].toString() === team._id.toString()){ //check if the team is the first or second opponent
+        team.goals[0] += game.goals[0]; //add the goals from the game to the team
+        team.goals[1] += game.goals[1];
+        console.log(1);
+    }
+    else{
+        team.goals[0] += game.goals[1];
+        team.goals[1] += game.goals[0];
+        console.log(2);
+    }
     return await team.save();
 };
 
