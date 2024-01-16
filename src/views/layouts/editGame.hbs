@@ -9,17 +9,21 @@
 
         <label for="team1">Team 1:</label><br>
         {{#streq game.status "Ended"}}
-        <p><b>{{teams.[0].name}}</b></p>
-        {{else}}
-        <select id="team1" name="team1" required class="form-select mb-2">
             {{#each teams}}
                 {{#if (eq this._id (lookup ../game.opponents 0))}}
-                    <option value="{{this._id}}" selected>{{this.name}}</option>
-                {{else}}
-                    <option value="{{this._id}}">{{this.name}}</option>
+                    <p><b>{{this.name}}</b></p>
                 {{/if}}
             {{/each}}
-        </select><br>
+        {{else}}
+            <select id="team1" name="team1" required class="form-select mb-2">
+                {{#each teams}}
+                    {{#if (eq this._id (lookup ../game.opponents 0))}}
+                        <option value="{{this._id}}" selected>{{this.name}}</option>
+                    {{else}}
+                        <option value="{{this._id}}">{{this.name}}</option>
+                    {{/if}}
+                {{/each}}
+            </select><br>
         {{/streq}}
 
         <label for="goals1">Goals (Team 1):</label><br>
@@ -31,7 +35,11 @@
 
         <label for="team2">Team 2:</label><br>
         {{#streq game.status "Ended"}}
-        <p><b>{{teams.[1].name}}</b></p>
+            {{#each teams}}
+                {{#if (eq this._id (lookup ../game.opponents 1))}}
+                    <p><b>{{this.name}}</b></p>
+                {{/if}}
+            {{/each}}
         {{else}}
         <select id="team2" name="team2" required class="form-select mb-2">
             {{#each teams}}

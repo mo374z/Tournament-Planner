@@ -107,7 +107,7 @@ router.get('/:id', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
-        const teams = await Team.find({});
+                const teams = await Team.find({});
 
         res.render('layouts/editGame', {
             game: game,
@@ -395,6 +395,10 @@ async function fetchGamesData() {
 
             game.isGamePlayable = await isGamePlayable(game);
         }
+
+        // Sort games by game number
+        games.sort((a, b) => a.number - b.number);
+        
 
         return { games, timeBetweenGames: mainSettings.timeBetweenGames/60000 };
     } catch (err) {
