@@ -16,9 +16,11 @@ const app = express();
 // const https = require('https');
 
 // const server = https.createServer({
-//     key: fs.readFileSync('private-key.pem'),             // set the correct path to your private key
-//     cert: fs.readFileSync('certificate.pem'),
+//     key: fs.readFileSync('./private-key.pem'),             // set the correct path to your private key
+//     cert: fs.readFileSync('./certificate.pem'),
 //   }, app);
+
+
 
 const http = require('http');
 const server = http.createServer(app); // comment this 2 lines and uncomment the above lines to enable https
@@ -108,6 +110,9 @@ io.on('connection', (socket) => {
         //clearInterval(timerInterval);
         console.log('A user disconnected');
     });
+
+    //add a consol log on the server side to see if the client is connected
+    console.log('A user connected');
 
 });
 

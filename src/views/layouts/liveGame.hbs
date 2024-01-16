@@ -30,6 +30,13 @@
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <script>
     const socket = io('http://localhost:2053');
+    //const socket = io('https://budescharfeseck.de:2053');
+
+    socket.on('connect', () => {
+    console.log('Socket connected');
+    });
+    
+
     socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
         const minutes = Math.floor(timerValue / 60);
         const seconds = timerValue % 60;
