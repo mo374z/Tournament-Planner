@@ -7,13 +7,32 @@ const Team = mongoose.model('Team');
 const MainSettings = mongoose.model('MainSettings');
 
 const genCounters = mongoose.model('generalCounters');
-const http = require('http');
+
 const socketIo = require('socket.io');
 const app = express();
-const server = http.createServer(app);
+
+
+// const http = require('http');
+// const server = http.createServer(app);
+
+const fs = require('fs');
+const https = require('https');
+
+const server = https.createServer({
+    key: fs.readFileSync('./private-key.pem'),             // set the correct path to your private key
+    cert: fs.readFileSync('./certificate.pem'),
+  }, app);
 
 module.exports = router;
 const cors = require('cors'); // Import cors middleware
+
+
+
+// Start the Websocet server on port 4000
+const PORT = process.env.PORT || 2053;
+server.listen(PORT, () => {
+    console.log(`Server for Websocet recieving is running on port ${PORT}`);
+});
 
 
 
@@ -55,6 +74,7 @@ let isPaused = true;
 
 // WebSocket logic
 io.on('connection', (socket) => {
+    console.log('an user connected');
 
     socket.on('playPauseGame', () => {
         if (isPaused) {
@@ -108,11 +128,14 @@ function resetTimer(duration) {
     }
 }
 
-// Start the Websocet server on port 4000
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-    console.log(`Server for Websocet recieving is running on port ${PORT}`);
-});
+function Sekt(Sekt_Team_ID){
+
+    io.emit('Sekt', Sekt_Team_ID);
+
+
+}
+
+
 
 
 // Render the game play page
@@ -196,10 +219,12 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
                 console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
                 await team.save(); // Save the updated team
 
-                io.emit('Sekt', Sekt_Team_ID);
+                Sekt(Sekt_Team_ID);
             }
 
-            io.emit('updateLiveGame', updatedGame);
+            io.emit('updateLive', updatedGame);
+            console.log("updating");
+            console.log(io.emit('updateLive', updatedGame));
         }
     } catch (err) {
         res.status(500).send('Internal Server Error');
@@ -211,8 +236,9 @@ router.post('/:id/updateLivePage', async (req, res) => {
     try {
         const game = await Game.findById(req.params.id).exec();
         res.status(200).send('Game send to Live page successfully');
-        io.emit('updateLiveGame', game);
+        io.emit('updateLive', game);
         io.emit('timerUpdate', timer, isPaused);
+        console.log("updating live page");
     } catch (err) {
         console.error('Error Updatng Live Page: ', err);
         res.status(500).send('Internal Server Error');
