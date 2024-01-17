@@ -1,8 +1,91 @@
 <body>
-    <div class="container mt-5">
-        <h2>Welcome to Tournament Planner</h2>
+
+
+    <div class="container-fluid">
+
+        <div class="container mt-5 text-center">
+            <h1>Budetunier 2023</h1>
+        </div>
     </div>
-    This webapp enables you to manage your tournament and display the live game on a second screen.
+
+    <!-- Groups Section -->
+    <section class="text-center mt-5 mb-5">
+        <h1 class="mb-4">Tabelle</h1>
+
+        {{#each teamsByGroup}}
+            <h2 class="h4 mb-3">Group {{groupName}}</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-light">
+                         <tr>
+                                <th scope="col">Platz</th>
+                                <th scope="col">Team</th>
+                                <th scope="col">Sp</th>
+                                <th scope="col">T</th>
+                                <th scope="col">TD</th>
+                                <th scope="col">Pkt</th>
+                            </tr>
+                    </thead>
+                    <tbody>
+                        {{#each teams}}
+                            <tr>
+                                <td>{{this.rank}}</td>
+                                <td>{{this.name}}</td>
+                                <td>{{this.gamesPlayed}}</td>
+                                <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                                <td>{{this.goalsDifference}}</td>
+                                <td>{{this.points_General}}</td>
+                            </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        {{/each}}
+
+        <p class="small">Disclaimer: The ranking is based on the following criteria: 1) Points; 2) Goal difference; 3) Goals scored</p>
+    </section>
+
+    <!-- Schedule List Section -->
+    <section style="text-align: center;">
+
+        <h1>Spielplan</h1>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Beginn</th>
+                            <th>Gruppe</th>
+                            <th colspan="2" >Spiel</th>
+                            <th>Ergebnis</th>
+                        </tr>
+                </thead>
+                <tbody>
+                    {{#each gameslist}}
+                        <tr {{#streq this.gamePhase 'Group_Stage'}} class= {{else}}class="bg-light"{{/streq}} {{#streq this.status 'active'}} "bg-info"{{/streq}}>
+                            <td>{{this.number}}</td>
+                            <td>{{formatTime this.time}}</td>
+                            {{#streq this.group.[0] this.group.[1]}}
+                                <td>{{this.group.[0]}}</td>
+                            {{else}}
+                                <td>{{this.group.[0]}} - {{this.group.[1]}}</td>
+                            {{/streq}}
+                            <td>{{this.opponents.[0]}}</td>
+                            <td>{{this.opponents.[1]}}</td>
+                            <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+</div>
+
+</body>
+
+    
 
     <br><br>
     

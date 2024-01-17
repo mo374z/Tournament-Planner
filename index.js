@@ -75,38 +75,40 @@ app.listen(3000, () => {                                      //http server erst
 // });
 
 
-
+app.use(express.static(path.join(__dirname, 'src/public'))); // Statische Dateien wie CSS, Bilder, JS, etc. werden aus dem Ordner "public" geladen
 
 // import the necessary script for the application
-const TeamController = require("./src/controllers/TeamController");
-const ScheduleController = require("./src/controllers/ScheduleController");
+const {TeamController} = require("./src/controllers/TeamController");
+const {ScheduleController} = require("./src/controllers/ScheduleController");
 const MainSettingController = require("./src/controllers/MainSettingController");
 const GameController = require("./src/controllers/GameController");
 const AuthenticationController = require("./src/controllers/AuthenticationController");
 
+const PublicPageController = require("./src/controllers/PublicPageController");
 
 
-const  {verifyToken, checkLoginStatus , isAdmin} =  require('./src/middleware/auth'); // Pfad zu Ihrer auth.js-Datei
 
-// app.get('/', (request, response) => {
-//   response.render('home');
+// const  {verifyToken, checkLoginStatus , isAdmin} =  require('./src/middleware/auth'); // Pfad zu Ihrer auth.js-Datei
+
+// // app.get('/', (request, response) => {
+// //   response.render('home');
+// // });
+
+
+
+
+
+// const cookieParser = require('cookie-parser');
+// app.use(cookieParser());
+
+// app.get('/', checkLoginStatus, (req, res) => {
+//   const username = req.username;
+//   const userrole = req.userRole;
+//   res.render('home', { username , userrole}); // 'main' ist der Name Ihrer Hauptseite-Vorlage
 // });
 
 
-
-app.use(express.static(path.join(__dirname, 'src/public'))); // Statische Dateien wie CSS, Bilder, JS, etc. werden aus dem Ordner "public" geladen
-
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
-
-app.get('/', checkLoginStatus, (req, res) => {
-  const username = req.username;
-  const userrole = req.userRole;
-  res.render('home', { username , userrole}); // 'main' ist der Name Ihrer Hauptseite-Vorlage
-});
-
-
-
+app.use("/", PublicPageController);
 
 
 

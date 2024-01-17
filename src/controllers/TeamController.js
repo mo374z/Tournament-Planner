@@ -96,61 +96,83 @@ router.get('/list', async (req, res) => {
     }
   });
 
-  router.get('/grouplist', async (req, res) => {
+
+
+router.get('/grouplist', async (req, res) => {
     try {
-        const teamsByGroup = await Team.aggregate([
-            {
-                $group: {
-                    _id: "$group",
-                    teams: {
-                        $push: {
-                            _id: "$_id",
-                            name: "$name",
-                            group: "$group",
-                            rank: { $literal: null }, // Placeholder for rank
-                            gamesPlayed_Group_Stage: "$gamesPlayed_Group_Stage",
-                            points_Group_Stage: "$points_Group_Stage",
-                            goalsDifference: {
-                                $subtract: [
-                                    { $arrayElemAt: ["$goals", 0] },
-                                    { $arrayElemAt: ["$goals", 1] }  
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    groupName: "$_id",
-                    teams: 1,
-                    _id: 0
-                }
-            },
-            {
-                $sort: {
-                    groupName: 1 // Sort by group name
-                }
-            }
-        ]);
+        const teamsByGroup = await getTeamsByGroup();
 
-        await updateRanks(teamsByGroup);
-
-        // Sort groups based on the first team's rank in each group
-        teamsByGroup.sort((a, b) => {
-            if (a.teams.length > 0 && b.teams.length > 0) {
-                return a.teams[0].rank - b.teams[0].rank;
-            }
-            return 0;
-        });
-
-      res.render('layouts/grouplist', {
+        res.render('layouts/grouplist', {
             teamsByGroup,
         });
     } catch (err) {
-      console.log('Error in retrieval: ' + err);
+        console.log('Error in retrieval: ' + err);
     }
-  });
+});
+
+
+function getTeamsByGroup() {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const teamsByGroup = await Team.aggregate([
+                {
+                    $group: {
+                        _id: "$group",
+                        teams: {
+                            $push: {
+                                _id: "$_id",
+                                name: "$name",
+                                group: "$group",
+                                rank: { $literal: null }, // Placeholder for rank
+                                gamesPlayed: "$gamesPlayed",
+                                gamesPlayed_Group_Stage: "$gamesPlayed_Group_Stage",
+                                points_General: "$points_General",
+                                points_Group_Stage: "$points_Group_Stage",
+                                goalsDifference: {
+                                    $subtract: [
+                                        { $arrayElemAt: ["$goals", 0] },
+                                        { $arrayElemAt: ["$goals", 1] }
+                                    ]
+                                },
+                                goals: "$goals" // [goalsFor, goalsAgainst]
+                            }
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        groupName: "$_id",
+                        teams: 1,
+                        _id: 0
+                    }
+                },
+                {
+                    $sort: {
+                        groupName: 1 // Sort by group name
+                    }
+                }
+            ]);
+
+            await updateRanks(teamsByGroup);
+
+            // Sort groups based on the first team's rank in each group
+            teamsByGroup.sort((a, b) => {
+                if (a.teams.length > 0 && b.teams.length > 0) {
+                    return a.teams[0].rank - b.teams[0].rank;
+                }
+                return 0;
+            });
+
+            resolve(teamsByGroup);
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+
+
+  
 
 
 router.get('/clearTeamCounters', isAdmin, async (req, res) => {   //Clear Team Counters only for Admins
@@ -261,4 +283,7 @@ async function updateRanks(teamsByGroup) {
     }
 }
 
-module.exports = router;
+module.exports = {
+    TeamController: router,
+    getTeamsByGroup
+};

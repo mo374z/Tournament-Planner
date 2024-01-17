@@ -18,7 +18,7 @@
     
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous"/>
-    <title>Tournament-Planner</title>
+    <title>Budetunier</title>
 
 
 </head>
@@ -28,8 +28,11 @@
 
     <div class="container-fluid bg-dark text-light p-3 mb-3">
         <nav class="navbar navbar-expand-lg navbar-dark">
-            <a class="navbar-brand" href="/">
-                <span class="align-middle ms-5"><i class="fas fa-trophy"></i> Tournament-Planner</span>
+        <a class="navbar-brand" href="/">
+        
+            <img src="/images/LogoSE.png" alt="LogoSE" class="align-middle" style="height: 90px;">
+
+                <span class="align-middle ms-2"><i class="fas fa-trophy"></i> Budetunier 2023</span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,21 +41,24 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link ms-5" href="/team/list">Mannschaften</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link ms-5" href="/schedule/list">Spielplan</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link ms-5" href="/game/live">Live Game</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
-                    </li>
+                    {{#if username}}
+                        <li class="nav-item">
+                            <a class="nav-link ms-5" href="/team/list">Mannschaften</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link ms-5" href="/schedule/list">Spielplan</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link ms-5" href="/game/live">Live Game</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
+                        </li>
+                    {{/if}}
+
                     <li class="nav-item">
                         {{#if username}}
                             <a class="nav-link ms-5" href="/user/logout"><i class='fas fa-sign-out-alt'></i></a>
@@ -63,8 +69,6 @@
                     <li class="nav-item">
                         {{#if username}}
                             <p class="navbar-text ms-5">Signed in: {{username}} - {{userrole}}</p>
-                        {{else}}
-                            <p class="navbar-text ms-5">Not signed in</p>
                         {{/if}}
                     </li>
                 </ul>

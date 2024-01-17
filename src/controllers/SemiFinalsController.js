@@ -30,7 +30,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             let gamePhaseNr = gamePhase + " 3"; //gamePhaseNr = "Semifinals 3"
             let displayNameNr = displayName + " 3";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
-                                        getTeam(game1, game1.gamePhase, false), getTeam(game3, game3.gamePhase, false), 
+                                        getTeam(game1, game1.gameDisplayName, false), getTeam(game3, game3.gameDisplayName, false), 
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
 
@@ -38,7 +38,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             gamePhaseNr = gamePhase + " 4"; //gamePhaseNr = "Semifinals 4"
             displayNameNr = displayName + " 4";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames, 
-                                        getTeam(game2, game2.gamePhase, false), getTeam(game4, game4.gamePhase, false), 
+                                        getTeam(game2, game2.gameDisplayName, false), getTeam(game4, game4.gameDisplayName, false), 
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;       
 
@@ -46,7 +46,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             gamePhaseNr = gamePhase + " 1"; //gamePhaseNr = "Semifinals 1"
             displayNameNr = displayName + " 1";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
-                                    getTeam(game1, game1.gamePhase, true), getTeam(game3, game3.gamePhase, true), 
+                                    getTeam(game1, game1.gameDisplayName, true), getTeam(game3, game3.gameDisplayName, true), 
                                     initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
 
@@ -54,7 +54,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             gamePhaseNr = gamePhase + " 2"; //gamePhaseNr = "Semifinals 2"
             displayNameNr = displayName + " 2";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
-                                        getTeam(game2, game2.gamePhase, true), getTeam(game4, game4.gamePhase, true), 
+                                        getTeam(game2, game2.gameDisplayName, true), getTeam(game4, game4.gameDisplayName, true), 
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
 
@@ -70,7 +70,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             gamePhaseNr = gamePhase + " 4";
             displayNameNr = "Spiel um Platz 7";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
-                                        getTeam(semi3, semi3.gamePhase, false), getTeam(semi4, semi4.gamePhase, false),
+                                        getTeam(semi3, semi3.gameDisplayName, false), getTeam(semi4, semi4.gameDisplayName, false),
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
 
@@ -79,7 +79,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             gamePhaseNr = gamePhase + " 3";
             displayNameNr = "Spiel um Platz 5";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
-                                        getTeam(semi3, semi3.gamePhase, true), getTeam(semi4, semi4.gamePhase, true),
+                                        getTeam(semi3, semi3.gameDisplayName, true), getTeam(semi4, semi4.gameDisplayName, true),
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
 
@@ -89,7 +89,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             gamePhaseNr = gamePhase + " 2";
             displayNameNr = "Spiel um Platz 3";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
-                                        getTeam(semi1, semi1.gamePhase, false), getTeam(semi2, semi2.gamePhase, false),
+                                        getTeam(semi1, semi1.gameDisplayName, false), getTeam(semi2, semi2.gameDisplayName, false),
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
 
@@ -97,7 +97,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             gamePhaseNr = gamePhase + " 1";
             displayNameNr = "Finale";
             await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
-                                        getTeam(semi1, semi1.gamePhase, true), getTeam(semi2, semi2.gamePhase, true),
+                                        getTeam(semi1, semi1.gameDisplayName, true), getTeam(semi2, semi2.gameDisplayName, true),
                                         initialStatus, gamePhaseNr, displayNameNr);
 
             // reading the end time of the last game from the database searching by gameNumber
@@ -244,20 +244,20 @@ async function updateKnockoutGame(game, subgame1, subgame2, winner) {
     };
 
     if (game.opponents[0].isDummy && game.opponents[1].isDummy && subgame1.status === "Ended" && subgame2.status === "Ended") {
-        const opponent1_id = getTeam(subgame1, subgame1.gamePhase, winner);
-        const opponent2_id = getTeam(subgame2, subgame2.gamePhase, winner);
+        const opponent1_id = getTeam(subgame1, subgame1.gameDisplayName, winner);
+        const opponent2_id = getTeam(subgame2, subgame2.gameDisplayName, winner);
 
         if (!opponent1_id.isDummy && !opponent2_id.isDummy) {
             await updateOpponents([opponent1_id, opponent2_id]);
         }
     } else if (game.opponents[0].isDummy && subgame1.status === "Ended" && subgame2.status !== "Ended") {
-        const opponent1_id = getTeam(subgame1, subgame1.gamePhase, winner);
+        const opponent1_id = getTeam(subgame1, subgame1.gameDisplayName, winner);
         
         if (!opponent1_id.isDummy) {
             await updateOpponents([opponent1_id, game.opponents[1]]);
         }
     } else if (game.opponents[1].isDummy && subgame2.status === "Ended") {
-        const opponent2_id = getTeam(subgame2, subgame2.gamePhase, winner);
+        const opponent2_id = getTeam(subgame2, subgame2.gameDisplayName, winner);
 
         if (!opponent2_id.isDummy) {
             await updateOpponents([game.opponents[0], opponent2_id]);

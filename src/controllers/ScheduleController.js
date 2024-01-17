@@ -7,7 +7,12 @@ const Team = mongoose.model('Team');
 
 const MainSettings = mongoose.model('MainSettings');
 
-module.exports = router;
+//module.exports = router;
+
+module.exports = {
+    ScheduleController: router,
+    fetchGamesData
+};
 
 //Code part to enable the authentication for all the following routes
 const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
