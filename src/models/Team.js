@@ -45,7 +45,34 @@ async function getRank(team){
     const allTeamsInGroup = await Team.find({group: team.group}).exec();
 
     // Sort teams based on points, goal difference, and goals scored
-    const sortedTeams = allTeamsInGroup.sort((a, b) => {
+    const sortedTeams = rankTeams(allTeamsInGroup);
+
+    // Find the index of the current team in the sorted array to determine its rank
+    const teamIndex = sortedTeams.findIndex(t => t._id.equals(team._id));
+    return teamIndex + 1;
+}
+
+// returns the overall rank of a team in the tournament
+async function getTeamRank(rank){
+    const allTeams = await Team.find({}).exec();
+    const sortedTeams = rankTeams(allTeams);
+
+    // return the team at the given rank
+    return sortedTeams[rank];
+}
+
+// returns the rank of a team in a group
+async function getTeamGroupRank(rank, group){
+    const allTeamsInGroup = await Team.find({group: group}).exec();
+    const sortedTeams = rankTeams(allTeamsInGroup);
+
+    // return the team at the given rank
+    return sortedTeams[rank];
+}
+
+function rankTeams(teams){
+    // Sort teams based on points, goal difference, and goals scored
+    const sortedTeams = teams.sort((a, b) => {
         if (a.points_Group_Stage !== b.points_Group_Stage) {
             return b.points_Group_Stage - a.points_Group_Stage;
         } else {
@@ -60,11 +87,11 @@ async function getRank(team){
         }
     });
 
-    // Find the index of the current team in the sorted array to determine its rank
-    const teamIndex = sortedTeams.findIndex(t => t._id.equals(team._id));
-    return teamIndex + 1;
+    return sortedTeams;
 }
 
 module.exports =  {
-    getRank
+    getRank,
+    getTeamRank,
+    getTeamGroupRank
 }
