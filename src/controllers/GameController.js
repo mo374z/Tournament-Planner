@@ -80,13 +80,16 @@ io.on('connection', (socket) => {
     socket.on('playPauseGame', () => {
         if (isPaused) {
             isPaused = false;
+            io.emit('playSound');
             timerInterval = setInterval(() => {             //Timer resuluion is 1 second !! (timer Variable is in seconds)
                 if (timer > 0 && !isPaused) {
                     timer--;
                     io.emit('timerUpdate', timer, isPaused, 'Running');
                 } else if (timer === 0) {
                     clearInterval(timerInterval);
-                    //io.emit('timerEnd');
+
+                    io.emit('playSound');
+
                     io.emit('timerUpdate', timer, isPaused, 'Ended');
                 }
             }, 1000);
@@ -178,6 +181,7 @@ router.post('/start/:id', async (req, res) => {
 
         console.log('Game set to active: ', gameId);
         resetTimer(game.duration*60);  // Reset the timer to the value 0 in seconds
+
 
         res.status(200).send('Game status set to active successfully');
     } catch (err) {

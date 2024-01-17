@@ -48,7 +48,15 @@
     socket.on('updateLiveGame', (updatedGame) => {
         updatePage(updatedGame);
     });
+    
 
+    const audio = new Audio('/sounds/Horn.mp3');       // Create an audio element
+
+    socket.on('playSound', (updatedGame) => {          
+        // Play the sound
+        audio.play();
+    });
+    
     function updatePage(game) {
         updateScore('team1Score', game.goals[0]);
         updateScore('team2Score', game.goals[1]);
@@ -56,6 +64,8 @@
         updateName('team2Name', game.opponents[1]);
         SetActiveGameMessage(game.status);
     }
+
+    
 
     function SetActiveGameMessage(status) {        
         if (status === 'active') {
