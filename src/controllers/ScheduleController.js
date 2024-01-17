@@ -186,29 +186,22 @@ router.post('/saveCustomGame', isAdmin, async (req, res) => {
             if(useUserInputTime === 'true') {
                 newGameTime = new Date(time);
                 customTimeDifference = newGameTime - selectedGame.time;
-                console.log("newGameTime: " + newGameTime);
-                console.log("customTimeDifference: " + customTimeDifference/60000 + "min"); // Convert milliseconds to minutes
             } else{                    
                 newGameTime = new Date(selectedGame.time);
             }
-
-
         } else {
+
             newGameNumber = selectedGame.number + 1;
-
-
             if(useUserInputTime === 'true') {
                 newGameTime = new Date(time);
                 let NextGameTime = new Date(selectedGame.time);
                 NextGameTime.setMinutes(NextGameTime.getMinutes() + parseInt(selectedGame.duration) + parseInt(timeBetweenGames));
                 customTimeDifference = NextGameTime - selectedGame.time;
-                console.log("newGameTime: " + newGameTime);
-                console.log("customTimeDifference: " + customTimeDifference/60000 + "min"); // Convert milliseconds to minutes
+
             } else{
                 newGameTime = new Date(selectedGame.time);
-                console.log("newGameTime: " + newGameTime);
                 newGameTime.setMinutes(newGameTime.getMinutes() + parseInt(selectedGame.duration) + parseInt(timeBetweenGames));
-                console.log("newGameTime: " + newGameTime);
+
             }
         }
 
@@ -247,18 +240,7 @@ router.post('/saveCustomGame', isAdmin, async (req, res) => {
 
         const timeDifference = customGame.duration * 60000 + timeBetweenGames * 60000 + customTimeDifference; // Convert minutes to milliseconds
 
-
-        if (position === 'true') { //wenn es and der Stelle des ausgewählten Spiels eingefügt werden soll
-
-            updateSubsequentGamesTime(customGame._id, timeDifference); // Convert minutes to milliseconds
-
-        }
-        else { //wenn es nach dem ausgewählten Spiel eingefügt werden soll
-
-            updateSubsequentGamesTime(customGame._id, timeDifference); // Convert minutes to milliseconds
-
-        }
-
+        updateSubsequentGamesTime(customGame._id, timeDifference); // Update the time of subsequent games
 
         //add a delay of 1 second to allow the updateSubsequentGamesTime function to finish
         setTimeout(() => {
