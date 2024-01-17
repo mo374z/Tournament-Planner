@@ -45,7 +45,8 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 //--------------------------------------------------------------
 
 
-
+const {updateQuarterFinalsSchedule} = require('./QuarterFinalsController');
+const {updateSemiFinalsSchedule} = require('./SemiFinalsController');
 
 
 // Start the Websocet server on port 2053
@@ -252,6 +253,19 @@ router.get('/:id/endGame', async (req, res) => {
             // Update the team data with the game results
             await writeGameDataToTeams(game);   
             await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment the overall gamesPlayed counter
+
+            // check whether the game was the last one of the group stage and if so, 
+            //update the quarterfinals schedule by finding a game in group stage where the subsequent game is not in group stage
+            const gamePhase = game.gamePhase;
+            if(gamePhase === 'Group_Stage'){
+                const subsequentGame = await Game.findOne({number: game.number+1}).exec();
+                if(subsequentGame.gamePhase != 'Group_Stage'){
+                    await updateQuarterFinalsSchedule();
+                }
+            } else {
+                await updateSemiFinalsSchedule();
+            }
+
             resetTimer(0);  // Reset the timer to the value 0 in seconds
         }
         res.redirect('/schedule/list');

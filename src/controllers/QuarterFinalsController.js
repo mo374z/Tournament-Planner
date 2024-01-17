@@ -137,36 +137,26 @@ async function updateQuarterFinalsSchedule() {
 
         const games = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } }); // Find all games with gamePhase starting with 'Quarterfinals'
 
-        for (const group in groupedTeams) {
-            if (groupedTeams[group][0].gamesPlayed > 0 || groupedTeams[group][1].gamesPlayed > 0) { //check if the first 2 teams in the group have played at least 1 game
-                for (const game of games) {
-                    if (game.status === 'Ended') continue; // Skip games that have already ended
-                    // KNOWN BUG: change this to not rely on the dummy name for generation (skipped for now)
-                    if (game.opponents[0].group === group) { 
-                        const teamIndex = game.opponents[0].name.startsWith('1.') ? 0 : 1;
-                        await Game.findByIdAndUpdate(game._id, {
-                            opponents: [
-                                groupedTeams[group][teamIndex]._id,
-                                game.opponents[1] // Keep the second team
-                            ]
-                        });
-                        console.log("Updated " + game.opponents[0].name + " with " + groupedTeams[group][teamIndex].name);
-                    } 
-                    if (game.opponents[1].group === group) { 
-                        const teamIndex = game.opponents[1].name.startsWith('1.') ? 0 : 1;
-                        await Game.findByIdAndUpdate(game._id, {
-                            opponents: [
-                                game.opponents[0], // Keep the first team
-                                groupedTeams[group][teamIndex]._id
-                            ]
-                        });
-                        console.log("Updated " + game.opponents[1].name + " with " + groupedTeams[group][teamIndex].name);
-                    }
-                }
-            } else {
-                console.log(`Insufficient data in Group ${group}`);
-            }
+
+        for (const game of games) {
+            if (game.status === 'Ended') continue; // Skip games that have already ended
+            // KNOWN BUG: change this to not rely on the dummy name for generation (skipped for now)
+            const team1Index = game.opponents[0].name.startsWith('1.') ? 0 : 1;
+            const team2Index = game.opponents[1].name.startsWith('1.') ? 0 : 1;
+            const team1 = groupedTeams[game.opponents[0].group][team1Index];
+            const team2 = groupedTeams[game.opponents[1].group][team2Index];
+
+            await Game.findByIdAndUpdate(game._id, {
+                opponents: [
+                    team1._id,
+                    team2._id
+                ]
+            });
+
+            console.log(`Updated game ${game.number} with new opponents: ${team1.name} vs. ${team2.name}`);
         }
+
+
         console.log('Quarterfinals schedule updated successfully!');
     } catch (err) {
         console.error('Error updating Quarterfinals schedule: ', err);
@@ -189,13 +179,16 @@ async function groupedTeamsPerGroupAndRank(teams){
     // Sortiere die Teams in jeder Gruppe nach Rang
     for (const group in groupedTeams) {
 
-        // get the rank of each team
-        groupedTeams[group].forEach(team => {
-            team.rank = getRank(team);
-        });
+        for (const team of groupedTeams[group]) {
+            team.rank = await getRank(team);
+            console.log("Got rank for team " + team.name + ": " + team.rank);
+        }
+
         // sort the teams by rank
         groupedTeams[group].sort((a, b) => a.rank - b.rank);            
     }
+
+    console.log(groupedTeams);
 
     return groupedTeams;
 }
