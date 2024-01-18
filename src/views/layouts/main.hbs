@@ -21,6 +21,7 @@
 <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
+ 
     <div class="container-fluid bg-dark text-light p-3 mb-3">
         <nav class="navbar navbar-expand-lg navbar-dark">
         <a class="navbar-brand" href="/">
@@ -38,6 +39,8 @@
                 <ul class="navbar-nav ms-auto">
                     {{#if username}}
 
+                    {{#unless (gl userrole "beamer")}}
+
                         <li class="nav-item">
                             <a class="nav-link ms-5" href="/TV">TV Anzeige</a>
                         </li>                    
@@ -53,7 +56,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
-                            </li>
+                            </li>                     
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/game/live">Live Game</a>
                             </li>
@@ -61,7 +64,17 @@
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
                             </li>
+                            {{/unless}}
+
                         {{/unless}}
+
+                        
+                        {{#if (gl userrole "beamer")}}
+                              <li class="nav-item">
+                                <a class="nav-link ms-5" href="/game/live">Live Game</a>
+                            </li>
+                        {{/if}}
+                        
 
 
 
@@ -83,7 +96,7 @@
             </div>
         </nav>
     </div>
-
+ 
 
     <div id='box' class="col-lg-11 col-md-11 col-sm-11 col-xs-11 mx-auto">
         {{{body}}}
@@ -93,15 +106,16 @@
 <br>
 </br>	
 
-
+{{#unless (gl userrole "beamer")}}
 <footer class="text-center text-lg-start bg-dark text-white py-5">
         <div class="container d-flex justify-content-center">
          
         </div>
 
         <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2);">
-            © 2024 S'schafe Eck: <a class="text-white" href="https://www.budescharfeseck.de/">Budeturnier 2024</a>
+            © 2024 S'schafe Eck: <a class="text-white" href="/">Budeturnier 2024</a>
         </div>
 </footer>
+{{/unless}}
 
 </html>
