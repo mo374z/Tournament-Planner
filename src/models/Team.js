@@ -24,6 +24,9 @@ var TeamSchema = new mongoose.Schema({
     goals: { // Tore (geschossene Tore [0] - erhaltene Tore[1])
         type: Array,
     },
+    goalsGroupStage:{
+        type: Array,
+    },
     sektWon: {
         type: Number,
     },

@@ -310,11 +310,22 @@ const updateTeam = async (team, game, isWinner) => {
     if(game.opponents[0].toString() === team._id.toString()){ //check if the team is the first or second opponent
         team.goals[0] += game.goals[0]; //add the goals from the game to the team
         team.goals[1] += game.goals[1];
+
+        if(game.gamePhase === 'Group_Stage'){
+            team.goalsGroupStage[0] += game.goals[0]; //add the goals from the game to the gropstage goals
+            team.goalsGroupStage[1] += game.goals[1];        
+        }
         console.log(1);
     }
     else{
         team.goals[0] += game.goals[1];
         team.goals[1] += game.goals[0];
+
+        if(game.gamePhase === 'Group_Stage'){
+            team.goalsGroupStage[0] += game.goals[1]; //add the goals from the game to the gropstage goals
+            team.goalsGroupStage[1] += game.goals[0];        
+        }
+
         console.log(2);
     }
     return await team.save();
