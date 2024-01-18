@@ -8,10 +8,10 @@ module.exports = {
     updateSemiFinalsSchedule
 };
 
-const { rankTeams } = require('../models/Team');
+const { rankTeams, getTeamGroupRank, getAllGroupNames } = require('../models/Team');
 
 // Funktion um die Halbfinalspiele zu generieren
-async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, firstgameNumber, gamePhase, displayName) {
+async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, gameDurationFinal, timeBetweenGames, initialStatus, firstgameNumber, gamePhase, displayName) {
 
     try {
         //count the number of Quarterfinals games
@@ -26,6 +26,25 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             const game4 = await findGamefromGamePhase("Quarterfinals 4");
             
             let gameNumber = firstgameNumber;
+
+            // generate 13th place game
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
+                createDummyTeam("13. Gesamtwertung"), createDummyTeam("14. Gesamtwertung"),
+                initialStatus, "Finals 7", "Spiel um Platz 13");
+            gameNumber++;
+
+            // generate 11th place game
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
+                createDummyTeam("11. Gesamtwertung"), createDummyTeam("12. Gesamtwertung"),
+                initialStatus, "Finals 6", "Spiel um Platz 11");
+            gameNumber++;
+            
+            // generate 9th place game
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
+                createDummyTeam("9. Gesamtwertung"), createDummyTeam("10. Gesamtwertung"),
+                initialStatus, "Finals 5", "Spiel um Platz 9");
+            gameNumber++;
+
 
             //generate 1. Semifinal game: (Sieger 1. Viertelfinale - Sieger 3.Viertelfinale)
             let gamePhaseNr = gamePhase + " 1"; //gamePhaseNr = "Semifinals 1"
@@ -52,7 +71,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             // generate 7rd place game: (Verlierer 3. Halbfinale - Verlierer 4. Halbfinale)
             gamePhaseNr = gamePhase + " 4";
             displayNameNr = "Spiel um Platz 7";
-            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
                                         createDummyTeam("7. Gesamtwertung"), createDummyTeam("8. Gesamtwertung"),
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
@@ -61,7 +80,7 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             // generate 5rd place game: (Gewinner 3. Halbfinale - Gewinner 4. Halbfinale)
             gamePhaseNr = gamePhase + " 3";
             displayNameNr = "Spiel um Platz 5";
-            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
                                         createDummyTeam("5. Gesamtwertung"), createDummyTeam("6. Gesamtwertung"),
                                         initialStatus, gamePhaseNr, displayNameNr);
             gameNumber++;
@@ -69,15 +88,21 @@ async function generateSemiFinalsSchedule(scheduleStartTime, gameDuration, timeB
             // generate 3rd place game: (Verlierer 1. Halbfinale - Verlierer 2. Halbfinale)
             gamePhaseNr = gamePhase + " 2";
             displayNameNr = "Spiel um Platz 3";
-            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
                                         getTeam(semi1, semi1.gameDisplayName, false), getTeam(semi2, semi2.gameDisplayName, false),
                                         initialStatus, gamePhaseNr, displayNameNr);
+            gameNumber++;
+
+            // generate 15th place game
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
+                createDummyTeam("15. Gesamtwertung"), createDummyTeam("16. Gesamtwertung"),
+                initialStatus, "Finals 8", "Spiel um den Schandpokal");
             gameNumber++;
 
             // generate Final game: (Sieger 1. Halbfinale - Sieger 2. Halbfinale)
             gamePhaseNr = gamePhase + " 1";
             displayNameNr = "Finale";
-            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDuration, timeBetweenGames,
+            await createKnockoutGame(firstgameNumber, gameNumber, scheduleStartTime, gameDurationFinal, timeBetweenGames,
                                         getTeam(semi1, semi1.gameDisplayName, true), getTeam(semi2, semi2.gameDisplayName, true),
                                         initialStatus, gamePhaseNr, displayNameNr);
 
@@ -172,12 +197,38 @@ async function updateSemiFinalsSchedule() {
         const Quartergame4 = await findGamefromGamePhase("Quarterfinals 4");
         const Semigame1 = await findGamefromGamePhase("Semifinals 1");
         const Semigame2 = await findGamefromGamePhase("Semifinals 2");
-        const Finalgame4 = await findGamefromGamePhase("Finals 4");
-        const Finalgame3 = await findGamefromGamePhase("Finals 3");            
-        const Finalgame2 = await findGamefromGamePhase("Finals 2");
         const Finalgame1 = await findGamefromGamePhase("Finals 1");
+        const Finalgame2 = await findGamefromGamePhase("Finals 2");
+        const Finalgame3 = await findGamefromGamePhase("Finals 3");            
+        const Finalgame4 = await findGamefromGamePhase("Finals 4");
+        const Finalgame5 = await findGamefromGamePhase("Finals 5");
+        const Finalgame6 = await findGamefromGamePhase("Finals 6");
+        const Finalgame7 = await findGamefromGamePhase("Finals 7");
+        const Finalgame8 = await findGamefromGamePhase("Finals 8");
 
-        let rankedLoosers = [];
+        let loosers = [];
+
+        // get all teams which made 3rd and 4th place in their groups
+        let groupnames = getAllGroupNames(await Team.find({}).exec());
+        console.log(groupnames);
+        for (i in groupnames) {
+            const team3 = await getTeamGroupRank(2, groupnames[i]);
+            const team4 = await getTeamGroupRank(3, groupnames[i]);
+            loosers.push(team3);
+            loosers.push(team4);
+        }
+        console.log(loosers);
+
+        let rankedLoosers = rankTeams(loosers);
+        
+        if(Finalgame5.status === "Scheduled" && Finalgame6.status === "Scheduled" && Finalgame7.status === "Scheduled" && Finalgame8.status === "Scheduled") {
+            await updateOpponents(Finalgame8, [rankedLoosers[6]._id, rankedLoosers[7]._id]);
+            await updateOpponents(Finalgame7, [rankedLoosers[4]._id, rankedLoosers[5]._id]);
+            await updateOpponents(Finalgame6, [rankedLoosers[2]._id, rankedLoosers[3]._id]);
+            await updateOpponents(Finalgame5, [rankedLoosers[0]._id, rankedLoosers[1]._id]);
+        }
+
+
         if (Quartergame1.status === "Ended" && Quartergame2.status === "Ended" && Quartergame3.status === "Ended" && Quartergame4.status === "Ended") {
             // rank the four looser teams of the Quarterfinals
             const looser1 = await Team.findById(getTeam(Quartergame1, Quartergame1.gameDisplayName, false)).exec();

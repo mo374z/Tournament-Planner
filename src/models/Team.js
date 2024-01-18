@@ -63,7 +63,9 @@ async function getTeamRank(rank){
 
 // returns the rank of a team in a group
 async function getTeamGroupRank(rank, group){
+    console.log(group);
     const allTeamsInGroup = await Team.find({group: group}).exec();
+    console.log(allTeamsInGroup);
     const sortedTeams = rankTeams(allTeamsInGroup);
 
     // return the team at the given rank
@@ -90,9 +92,20 @@ function rankTeams(teams){
     return sortedTeams;
 }
 
+function getAllGroupNames(teams){
+    groupNames = [];
+    for (const team of teams) {
+        if (!groupNames.includes(team.group)) {
+            groupNames.push(team.group);
+        }
+    }
+    return groupNames;
+}
+
 module.exports =  {
     getRank,
     getTeamRank,
     getTeamGroupRank,
-    rankTeams
+    rankTeams,
+    getAllGroupNames
 }
