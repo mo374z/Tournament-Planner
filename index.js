@@ -63,6 +63,8 @@ app.engine('hbs', exphbs.engine({
 
 app.set('view engine', 'hbs');
 
+app.use(express.static(__dirname + '/public'))
+
 
 
 app.listen(3000, () => {                                      //http server erstellen

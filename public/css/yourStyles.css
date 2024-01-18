@@ -1,0 +1,15 @@
+body {
+    background-color: #ECEDF0;
+}
+.page-divider {
+    background: #fff;
+    box-shadow: 0 4px 8px #7474741a;
+    border-radius: 0.5em;
+    margin-bottom: 1em;
+    padding: 1em;
+    overflow: hidden;
+    object-fit: contain;
+    object-position: center;
+    overflow-x: auto;
+}
+
