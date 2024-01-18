@@ -93,5 +93,6 @@ function rankTeams(teams){
 module.exports =  {
     getRank,
     getTeamRank,
-    getTeamGroupRank
+    getTeamGroupRank,
+    rankTeams
 }
