@@ -194,6 +194,10 @@ router.post('/start/:id', async (req, res) => {
 
 
         res.status(200).send('Game status set to active successfully');
+
+        io.emit('reloadTVPage'); // Reload the TV page to show the updated game data
+
+        
     } catch (err) {
         console.error('Error starting game: ', err);
         res.status(500).send('Internal Server Error');
@@ -281,6 +285,8 @@ router.get('/:id/endGame', async (req, res) => {
             }
 
             resetTimer(0);  // Reset the timer to the value 0 in seconds
+
+            io.emit('reloadTVPage'); // Reload the TV page to show the updated game data
         }
         res.redirect('/schedule/list');
     

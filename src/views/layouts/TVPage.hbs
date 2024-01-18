@@ -5,36 +5,36 @@
     <div class="row mt-5 d-flex justify-content-between">
 
         <!-- Groups Section -->
-    <div class="col-md-5 page-divider">
-        <h1>Tabelle</h1>
-        {{#each teamsByGroup}}
-            <h2 class="h4 mb-3">Group {{groupName}}</h2>
-            <div class="table-container">
-                <table class="table table-bordered table-striped">
-                    <thead class="thead-light">
-                        <tr>
-                            <th scope="col">Platz</th>
-                            <th scope="col">Team</th>
-                            <th scope="col">Sp</th>
-                            <th scope="col">T</th>
-                            <th scope="col">TD</th>
-                            <th scope="col">Pkt</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{#each teams}}
-                        <tr>
-                            <td>{{this.rank}}</td>
-                            <td>{{this.name}}</td>
-                            <td>{{this.gamesPlayed}}</td>
-                            <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
-                            <td>{{this.goalsDifference}}</td>
-                            <td>{{this.points_General}}</td>
-                        </tr>
-                        {{/each}}
-                    </tbody>
-                </table>
-            </div>
+        <div class="col-md-5 page-divider">
+            <h1>Tabelle</h1>
+            {{#each teamsByGroup}}
+                <h2 class="h4 mb-3">Group {{groupName}}</h2>
+                <div class="table-container">
+                    <table class="table table-bordered table-striped">
+                        <thead class="thead-light">
+                            <tr>
+                                <th scope="col">Platz</th>
+                                <th scope="col">Team</th>
+                                <th scope="col">Sp</th>
+                                <th scope="col">T</th>
+                                <th scope="col">TD</th>
+                                <th scope="col">Pkt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each teams}}
+                                <tr>
+                                    <td>{{this.rank}}</td>
+                                    <td>{{this.name}}</td>
+                                    <td>{{this.gamesPlayed}}</td>
+                                    <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                                    <td>{{this.goalsDifference}}</td>
+                                    <td>{{this.points_General}}</td>
+                                </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
             {{/each}}
             <p class="small">Disclaimer: The ranking is based on the following criteria: 1) Points; 2) Goal
                 difference; 3) Goals scored</p>
@@ -51,24 +51,26 @@
                             <th>Beginn</th>
                             <th>Gruppe</th>
                             <th colspan="2">Spiel</th>
-                            <th>Ergebnis</th>
+                                                        <th>Ergebnis</th>
+                            <th>Name</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{#each gameslist}}
-                        <tr class={{#streq this.status 'active' }} "bg-info" {{/streq}} {{#streq
-                            this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
-                            <td>{{this.number}}</td>
-                            <td>{{formatTime this.time}}</td>
-                            {{#streq this.group.[0] this.group.[1]}}
-                            <td>{{this.group.[0]}}</td>
-                            {{else}}
-                            <td>{{this.group.[0]}} - {{this.group.[1]}}</td>
-                            {{/streq}}
-                            <td>{{this.opponents.[0]}}</td>
-                            <td>{{this.opponents.[1]}}</td>
-                            <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
-                        </tr>
+                            <tr class={{#streq this.status 'active' }} "bg-info" {{/streq}} {{#streq
+                                this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
+                                <td>{{this.number}}</td>
+                                <td>{{formatTime this.time}}</td>
+                                {{#streq this.group.[0] this.group.[1]}}
+                                    <td>{{this.group.[0]}}</td>
+                                {{else}}
+                                    <td>{{this.group.[0]}} - {{this.group.[1]}}</td>
+                                {{/streq}}
+                                <td>{{this.opponents.[0]}}</td>
+                                <td>{{this.opponents.[1]}}</td>
+                                <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                                <td>{{this.gameDisplayName}}</td>
+                            </tr>
                         {{/each}}
                     </tbody>
                 </table>
@@ -77,3 +79,16 @@
 
     </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
+<script>
+    const socket = io('http://localhost:2053');
+    //const socket = io('https://budescharfeseck.de:2053');
+
+    socket.on('reloadTVPage', () => {
+        location.reload();
+    });
+</script>
+
+
+
