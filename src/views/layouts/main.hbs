@@ -42,21 +42,34 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {{#if username}}
+
                         <li class="nav-item">
-                            <a class="nav-link ms-5" href="/team/list">Mannschaften</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link ms-5" href="/schedule/list">Spielplan</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link ms-5" href="/game/live">Live Game</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
-                        </li>
+                            <a class="nav-link ms-5" href="/TV">TV Anzeige</a>
+                        </li>                    
+
+                        {{#unless (gl userrole "TV")}}
+                            <!-- Your code here -->
+                        
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/team/list">Mannschaften</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/schedule/list">Spielplan</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/game/live">Live Game</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
+                            </li>
+                        {{/unless}}
+
+
+
                     {{/if}}
 
                     <li class="nav-item">

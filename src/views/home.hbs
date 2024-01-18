@@ -62,7 +62,7 @@
                 </thead>
                 <tbody>
                     {{#each gameslist}}
-                        <tr {{#streq this.gamePhase 'Group_Stage'}} class= {{else}}class="bg-light"{{/streq}} {{#streq this.status 'active'}} "bg-info"{{/streq}}>
+                        <tr class={{#streq this.status 'active'}} "bg-info"{{/streq}}    {{#streq this.gamePhase 'Group_Stage'}}  {{else}}"bg-light"{{/streq}} >
                             <td>{{this.number}}</td>
                             <td>{{formatTime this.time}}</td>
                             {{#streq this.group.[0] this.group.[1]}}
