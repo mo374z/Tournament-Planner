@@ -1,5 +1,15 @@
 <div style="text-align: center;" style="width: 100px; margin: 0 auto;">
 
+    <h4>Spielplan</h4>
+
+        <a href="/schedule/generate" class="btn btn-primary" role="button"
+            onclick="return confirm('Are you sure you want to clear the Schedule and create new?');">
+            Generate Schedule from Teams</a>
+
+
+    <hr>
+
+
     <h4>Tournament Settings</h4>
     <form action="/mainSettings" method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
         <label for="TornamentStartTime">Tournament Start Time:</label><br>
