@@ -88,10 +88,8 @@
         <form action="/mainSettings/createDb" method="post">
         <label for="dbName"><strong>Name for the new database:</strong></label><br>
         <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required autocomplete="off" maxlength="20" style="margin-bottom: 10px;"><br> <!-- pattern="^[^\s]+$" - no spaces allowed-->
-        <input type="submit" class="btn btn-primary" value="Create new database" onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
+        <input type="submit" class="btn btn-primary" value="Create new database" style="margin-bottom: 20px;" onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
         </form>  
-
-        <br></br>
 
         <form action="/mainSettings/switchDb" method="post">
         <label for="dbName"><strong>Switch database:</strong></label><br>
@@ -101,7 +99,7 @@
             {{/each}}
         </select>
         <br>
-        <input type="submit" value="Switch database" class="btn btn-primary" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+        <input type="submit" value="Switch database" class="btn btn-primary" style="margin-bottom: 20px;" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
         </form>
 
 
@@ -114,7 +112,7 @@
             {{/each}}
         </select>
         <br>
-        <input type="submit" value="Restore database" class="btn btn-primary" onclick="return confirm('Are you sure you want to restore the database?')">
+        <input type="submit" value="Restore database" class="btn btn-primary" style="margin-bottom: 20px;" onclick="return confirm('Are you sure you want to restore the database?')">
         </form>
         
                  

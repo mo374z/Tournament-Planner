@@ -1,9 +1,13 @@
-    <section class="text-center mt-5 mb-5">
+    <section class="text-center">
+        <div class="container-fluid">
         <h1>Teams List</h1>
         <p>
             <a href="/Team" class="btn btn-primary" role="button">Create New Team</a>
         </p>
-        <table class="table table-bordered">
+        <div class="row justify-content-center page-divider">
+            <div class="col-auto">
+
+        <table class="table table-responsive table-bordered">
             <thead>
                 <tr>
                 <th scope="col">Name</th>
@@ -42,6 +46,9 @@
                 {{/each}}
             </tbody>
         </table>
+        </div>
+        </div>
 
         <a href="/team/clearTeamCounters" onclick="return confirm('Are you sure you want to clear all team counters?');" class="btn btn-primary" role="button">Clear All Team Counters</a>
+        </div>
     </section>

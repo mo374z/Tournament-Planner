@@ -3,14 +3,15 @@
 
     <div class="container-fluid">
 
-        <div class="container mt-5 text-center">
+        <div class="container mt-5 mb-5 text-center">
             <h1>Budeturnier 2024</h1>
         </div>
     </div>
 
     <!-- Groups Section -->
-    <section class="text-center mt-5 mb-5">
-        <h1 class="mb-4">Tabelle</h1>
+    <div class="page-divider">
+    <section class="text-center mt-2 mb-2">
+        <h1 class="mb-2">Tabelle</h1>
 
         {{#each teamsByGroup}}
             <h2 class="h4 mb-3">Group {{groupName}}</h2>
@@ -44,8 +45,10 @@
 
         <p class="small">Disclaimer: The ranking is based on the following criteria: 1) Points; 2) Goal difference; 3) Goals scored</p>
     </section>
+    </div>
 
     <!-- Schedule List Section -->
+    <div class="page-divider">
     <section style="text-align: center;">
 
         <h1>Spielplan</h1>
@@ -80,6 +83,7 @@
         </div>
 
     </section>
+    </div>
 
 </div>
 
