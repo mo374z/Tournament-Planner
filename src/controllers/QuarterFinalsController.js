@@ -40,7 +40,6 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
         let lastGameEndTime = 0;
         
         Number_of_groups = Object.keys(groupedTeams).length;
-        console.log("Number of groups: " + Number_of_groups);
 
         if (Number_of_groups === 4) {
             // Erzeuge die Viertelfinalspiele für 4 Gruppen
@@ -50,7 +49,6 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
                     let team2 = teamsInQuarterFinals[i + 3 - j];
                     let gamePhaseNr = gamePhase + " " + (gameNumber - FirstgameNumber + 1).toString();
                     let displayNameNr = "Viertelfinale " + (gameNumber - FirstgameNumber + 1).toString();
-                    console.log(gamePhaseNr);
                     let GameEndTime = await SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhaseNr, FirstgameNumber, gameNumber, displayNameNr);
                     if (GameEndTime !== 0) {
                         lastGameEndTime = GameEndTime;
@@ -88,8 +86,6 @@ async function generateQuarterFinalsSchedule(scheduleStartTime, gameDuration, ti
 // Funktion um die Viertelfinalspiele zu speichern
 async function SaveQuarterfinalsGame(team1, team2, scheduleStartTime, gameDuration, timeBetweenGames, initialStatus, gamePhase, FirstgameNumber, gameNumber, displayName) {
     if (team1 && team2 && team1.group !== team2.group) {
-        console.log(`Spiel generiert: Team 1: ${team1.name} vs. Team 2: ${team2.name}`);
-
         const gameStartTime = new Date(scheduleStartTime);
         if (gameNumber > FirstgameNumber) {
             gameStartTime.setMinutes(
@@ -152,8 +148,6 @@ async function updateQuarterFinalsSchedule() {
                     team2._id
                 ]
             });
-
-            console.log(`Updated game ${game.number} with new opponents: ${team1.name} vs. ${team2.name}`);
         }
 
 
@@ -181,14 +175,11 @@ async function groupedTeamsPerGroupAndRank(teams){
 
         for (const team of groupedTeams[group]) {
             team.rank = await getRank(team);
-            console.log("Got rank for team " + team.name + ": " + team.rank);
         }
 
         // sort the teams by rank
         groupedTeams[group].sort((a, b) => a.rank - b.rank);            
     }
-
-    console.log(groupedTeams);
 
     return groupedTeams;
 }
