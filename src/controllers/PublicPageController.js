@@ -39,6 +39,11 @@ router.get('/', (req, res) => {
 });
 
 
+router.get('/TV', checkLoginStatus, (req, res) => {
+    renderTVPage(req, res);
+});
+
+
 
 
 
@@ -51,6 +56,35 @@ async function renderPublicPage(req, res) {
             const teamsByGroup = await getTeamsByGroup();
 
             res.render('home', {
+                gameslist: games,
+                teamsByGroup,
+                timeBetweenGames,
+            });
+
+        } catch (err) {
+            console.log('Error in retrieval: ' + err);
+        }
+        
+        
+
+    }).catch((error) => {
+        console.log(error);
+    });
+
+    
+}
+
+
+
+async function renderTVPage(req, res) {
+
+    fetchGamesData().then(async ({ games, timeBetweenGames }) => {
+
+
+        try {
+            const teamsByGroup = await getTeamsByGroup();
+
+            res.render('layouts/TVPage', {
                 gameslist: games,
                 teamsByGroup,
                 timeBetweenGames,

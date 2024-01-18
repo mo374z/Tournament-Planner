@@ -41,6 +41,12 @@ app.engine('hbs', exphbs.engine({
     eq: function (v1, v2) {
       return v1.equals(v2);
     },
+    gl: function (v1, v2) {
+      console.log(v1, v2);
+      return v1 === v2;
+    },
+
+
     log: function (...args) {
       console.log('Logging:', ...args);
       return ''; // Return an empty string to avoid adding content to the rendered template

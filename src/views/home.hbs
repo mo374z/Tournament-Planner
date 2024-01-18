@@ -4,7 +4,7 @@
     <div class="container-fluid">
 
         <div class="container mt-5 text-center">
-            <h1>Budetunier 2024</h1>
+            <h1>Budeturnier 2024</h1>
         </div>
     </div>
 
@@ -62,7 +62,7 @@
                 </thead>
                 <tbody>
                     {{#each gameslist}}
-                        <tr {{#streq this.gamePhase 'Group_Stage'}} class= {{else}}class="bg-light"{{/streq}} {{#streq this.status 'active'}} "bg-info"{{/streq}}>
+                        <tr class={{#streq this.status 'active'}} "bg-info"{{/streq}}    {{#streq this.gamePhase 'Group_Stage'}}  {{else}}"bg-light"{{/streq}} >
                             <td>{{this.number}}</td>
                             <td>{{formatTime this.time}}</td>
                             {{#streq this.group.[0] this.group.[1]}}

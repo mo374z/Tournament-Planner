@@ -49,6 +49,7 @@ router.get('/generate', isAdmin, async (req, res) => {
     const gameDurationGroupStage = mainSettings.gameDurationGroupStage / (1000 * 60); // Convert milliseconds to minutes
     const gameDurationQuarterfinals = mainSettings.gameDurationQuarterfinals / (1000 * 60); // Convert milliseconds to minutes
     const gameDurationSemifinals = mainSettings.gameDurationSemifinals / (1000 * 60); // Convert milliseconds to minutes
+    const gameDurationFinal = mainSettings.gameDurationFinal / (1000 * 60); // Convert milliseconds to minutes
     const timeBetweenGames = mainSettings.timeBetweenGames / (1000 * 60); // Convert milliseconds to minutes
     const timeBetweenGamePhases = mainSettings.timeBetweenGamePhases / (1000 * 60); // Convert milliseconds to minutes
 
@@ -69,7 +70,7 @@ router.get('/generate', isAdmin, async (req, res) => {
 
     const StartTimeSemifinals = lastQuarterFinalsGameEndTime; // Set the start time for the Semifinals
     StartTimeSemifinals.setMinutes( StartTimeSemifinals.getMinutes() + timeBetweenGamePhases);
-    const {lastSemiFinalsGameEndTime, returnGameNumber2} = await generateSemiFinalsSchedule(StartTimeSemifinals, gameDurationSemifinals, timeBetweenGames, initialStatus, gameNumber , "Semifinals", "Halbfinale");
+    const {lastSemiFinalsGameEndTime, returnGameNumber2} = await generateSemiFinalsSchedule(StartTimeSemifinals, gameDurationSemifinals, gameDurationFinal, timeBetweenGames, initialStatus, gameNumber , "Semifinals", "Halbfinale");
     gameNumber = returnGameNumber2;
 
     // Delay the redirect by 1 seconds to allow time for the schedule generation

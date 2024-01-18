@@ -29,9 +29,15 @@
                 </div>
                 <div class="mt-2">
                     <button id="startButton" class="btn btn-primary me-2">Play/Pause Game</button>
-                    <button id="resetButton" class="btn btn-secondary">Reset Timer</button>
+                    <button id="resetButton" class="btn btn-secondary" onclick="return confirm('Are you sure you want to reset the timer?')">Reset Timer</button>
                     <br>
                     <span id="timerStatus" class="ms-2"></span>
+                </div>
+                <div class="mt-3">
+                    
+                    <input type="number" id="playbackTime" name="playbackTime" min="-10" max="10" value="1" style="width: 50px;">
+                    <label for="playbackTime">min</label><br>
+                    <button onclick="addPlaybackTime()" class="btn btn-dark btn-sm">Add Playback Time</button>
                 </div>
                 {{else}}    
                    {{#if areOtherGamesActiveBool}}
@@ -43,7 +49,7 @@
                             This game is not active. <br>Please set the game to active.
                         </div>
                     {{/if}}
-                {{/streq}}
+                {{/streq}}                
             </div>
         </div>
 
@@ -100,6 +106,13 @@
 <script>
 
     console.log('Game status: {{ areOtherGamesActiveBool }}');
+
+    // add playback time to the timer
+    function addPlaybackTime() {
+        socket.emit('addPlaybackTime', document.getElementById('playbackTime').value);
+    }
+
+
 
     // update the date and time
     function updateDateTime() {
@@ -238,15 +251,7 @@
     document.getElementById('startButton').addEventListener('click', async () => {
 
         socket.emit('playPauseGame');
-        //try {
-            // socket.emit('playPauseGame');
-            // const gameId = '{{ game._id }}';
-            // const response = await fetch(`/game/start/${gameId}`, {
-            //     method: 'POST',
-            // });
-       // } catch (err) {
-            // console.error('Error starting game: ', err);
-       // }
+
     });
 
     const gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
