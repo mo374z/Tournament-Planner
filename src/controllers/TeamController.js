@@ -86,6 +86,7 @@ router.get('/list', async (req, res) => {
       
         Teams.forEach(team => {
             team.goalsDifference = team.goals[0] - team.goals[1];
+            team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
             team.rank = getRank(team);
         });
 
@@ -135,7 +136,8 @@ function getTeamsByGroup() {
                                         { $arrayElemAt: ["$goals", 1] }
                                     ]
                                 },
-                                goals: "$goals" // [goalsFor, goalsAgainst]
+                                goals: "$goals", // [goalsFor, goalsAgainst],
+                                goalsGroupStage: "$goalsGroupStage",
                             }
                         }
                     }
