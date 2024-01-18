@@ -104,6 +104,16 @@ io.on('connection', (socket) => {
         resetTimer(duration);
     });
 
+
+    socket.on('addPlaybackTime', (minutesToAdd) => {
+        if(timer + minutesToAdd*60 > 0){            
+            timer = timer + minutesToAdd*60;  
+            if(!isPaused && timer > 0) io.emit('timerUpdate', timer, isPaused, 'Running');
+            if(isPaused) io.emit('timerUpdate', timer, isPaused, 'Paused');     
+        } 
+    });
+
+
     socket.on('getData', () => {
         if(isPaused) io.emit('timerUpdate', timer, isPaused, 'Paused');
         if(!isPaused && timer > 0) io.emit('timerUpdate', timer, isPaused, 'Running');
