@@ -12,18 +12,18 @@ const socketIo = require('socket.io');
 const app = express();
 
 
-// const fs = require('fs');
-// const https = require('https');
+const fs = require('fs');
+const https = require('https');
 
-// const server = https.createServer({
-//     key: fs.readFileSync('./private-key.pem'),             // set the correct path to your private key
-//     cert: fs.readFileSync('./certificate.pem'),
-//   }, app);
+const server = https.createServer({
+    key: fs.readFileSync('./private-key.pem'),             // set the correct path to your private key
+    cert: fs.readFileSync('./certificate.pem'),
+  }, app);
 
 
 
-const http = require('http');
-const server = http.createServer(app); // comment this 2 lines and uncomment the above lines to enable https
+// const http = require('http');
+// const server = http.createServer(app); // comment this 2 lines and uncomment the above lines to enable https
 
 module.exports = router;
 const cors = require('cors'); // Import cors middleware

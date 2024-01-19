@@ -1,5 +1,5 @@
-// const https = require('https');    //https server erstellen
-// const fs = require('fs');
+const https = require('https');    //https server erstellen
+const fs = require('fs');
 
 const path = require('path');
 const express = require('express');
@@ -67,20 +67,20 @@ app.use(express.static(__dirname + '/public'))
 
 
 
-app.listen(3000, () => {                                      //http server erstellen
-  console.log("Webserver started at localhost port 3000");
-});
-
-// // Create an HTTPS server                                  //https server erstellen
-// const httpsServer = https.createServer({
-//   key: fs.readFileSync('private-key.pem'),
-//   cert: fs.readFileSync('certificate.pem'),
-// }, app);
-
-// // Listen on port 443
-// httpsServer.listen(443, () => {
-//   console.log('HTTPS server running on port 443');
+// app.listen(3000, () => {                                      //http server erstellen
+//   console.log("Webserver started at localhost port 3000");
 // });
+
+// Create an HTTPS server                                  //https server erstellen
+const httpsServer = https.createServer({
+  key: fs.readFileSync('private-key.pem'),
+  cert: fs.readFileSync('certificate.pem'),
+}, app);
+
+// Listen on port 443
+httpsServer.listen(443, () => {
+  console.log('HTTPS server running on port 443');
+});
 
 
 app.use(express.static(path.join(__dirname, 'src/public'))); // Statische Dateien wie CSS, Bilder, JS, etc. werden aus dem Ordner "public" geladen

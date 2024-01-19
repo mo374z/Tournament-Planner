@@ -227,8 +227,8 @@
     disableActiveGameButton('{{ game.status }}');
 
 
-    const socket = io('http://localhost:2053');
-    //const socket = io('https://budescharfeseck.de:2053');
+    //const socket = io('http://localhost:2053');
+    const socket = io('https://budescharfeseck.de:2053');
 
        socket.on('connect', () => {
     console.log('Socket connected');
