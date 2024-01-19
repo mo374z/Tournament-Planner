@@ -1,11 +1,8 @@
 <div class="container-fluid">
-    <div class="container mt-5 text-center">
-        <h1>Budeturnier 2024</h1>
-    </div>
     <div class="row mt-5 d-flex justify-content-between">
 
         <!-- Groups Section -->
-        <div class="col-md-5 page-divider">
+        <div class="col-md-3 page-divider">
             <h1>Tabelle</h1>
             {{#each teamsByGroup}}
                 <h2 class="h4 mb-3">Group {{groupName}}</h2>
@@ -41,8 +38,8 @@
         </div>
 
         <!-- Schedule List Section -->
-        <div class="col-md-6 offset-md-1 order-md-2 page-divider">
-            <h1>Spielplan</h1>
+        <div class="col-md-4 page-divider">
+            <h1>Spielplan Gruppenphase</h1>
             <div class="table-container">
                 <table class="table table-bordered table-hover">
                     <thead>
@@ -57,10 +54,11 @@
                     </thead>
                     <tbody>
                         {{#each gameslist}}
+                        {{#streq this.gamePhase 'Group_Stage'}}
                             <tr class={{#streq this.status 'active' }} "bg-info" {{/streq}} {{#streq
                                 this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
                                 <td>{{this.number}}</td>
-                                <td>{{formatTime this.time}}</td>
+                                <td><b>{{formatTime this.time}}</b></td>
                                 {{#streq this.group.[0] this.group.[1]}}
                                     <td>{{this.group.[0]}}</td>
                                 {{else}}
@@ -71,12 +69,55 @@
                                 <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
                                 <td>{{this.gameDisplayName}}</td>
                             </tr>
+                        {{/streq}}
                         {{/each}}
                     </tbody>
                 </table>
             </div>
         </div>
 
+        <!-- Schedule List Section -->
+        <div class="col-md-4 page-divider">
+            <h1>Spielplan K.O.-Phase</h1>
+            <div class="table-container">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Beginn</th>
+                            <th>Gruppe</th>
+                            <th colspan="2">Spiel</th>
+                                                        <th>Ergebnis</th>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each gameslist}}
+                        {{#streq this.gamePhase 'Group_Stage'}}
+                        {{else}}
+                            <tr class={{#streq this.status 'active' }} "bg-info" {{/streq}} {{#streq
+                                this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
+                                <td>{{this.number}}</td>
+                                <td><b>{{formatTime this.time}}</b></td>
+                                {{#streq this.group.[0] this.group.[1]}}
+                                    <td>{{this.group.[0]}}</td>
+                                {{else}}
+                                    <td>{{this.group.[0]}} - {{this.group.[1]}}</td>
+                                {{/streq}}
+                                <td>{{this.opponents.[0]}}</td>
+                                <td>{{this.opponents.[1]}}</td>
+                                <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                                <td>{{this.gameDisplayName}}</td>
+                            </tr>
+                        {{/streq}}
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+    </div>
     </div>
 </div>
 
