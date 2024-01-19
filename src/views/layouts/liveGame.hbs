@@ -53,8 +53,6 @@
     const audio = new Audio('/sounds/Horn.mp3');       // Create an audio element
 
     socket.on('playSound', (updatedGame) => {          
-        // Play the sound
-        console.log('play sound');
         audio.play();
     });
     

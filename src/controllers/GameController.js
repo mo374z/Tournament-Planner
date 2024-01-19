@@ -321,7 +321,6 @@ const updateTeam = async (team, game, isWinner) => {
             team.goalsGroupStage[0] += game.goals[0]; //add the goals from the game to the gropstage goals
             team.goalsGroupStage[1] += game.goals[1];        
         }
-        console.log(1);
     }
     else{
         team.goals[0] += game.goals[1];
@@ -331,8 +330,6 @@ const updateTeam = async (team, game, isWinner) => {
             team.goalsGroupStage[0] += game.goals[1]; //add the goals from the game to the gropstage goals
             team.goalsGroupStage[1] += game.goals[0];        
         }
-
-        console.log(2);
     }
     return await team.save();
 };

@@ -374,11 +374,29 @@ async function editTeamInformation(oldGame, newGame) {
         opponent2GamesLostChange = changes.gamesLostChange2;
         opponent1GamesDrawChange = changes.gamesDrawChange1;
         opponent2GamesDrawChange = changes.gamesDrawChange2;
+        opponent1GoalGroupStageChange = 0;
+        opponent2GoalGroupStageChange = 0;
 
         if (oldGame.gamePhase === 'Group_Stage') {
             opponent1PointGroupStageChange = opponent1PointChange;
             opponent2PointGroupStageChange = opponent2PointChange;
+            opponent1GoalGroupStageChange = opponent1GoalChange;
+            opponent2GoalGroupStageChange = opponent2GoalChange;
         }
+
+        // Fetch the current state of the team
+        const team1 = await Team.findById(oldGame.opponents[0]).exec();
+        const team2 = await Team.findById(oldGame.opponents[1]).exec();
+
+        // Calculate the changes based on the current state
+        const goalsChange1a = opponent1GoalChange + team1.goals[0];
+        const goalsChange1b = opponent2GoalChange + team1.goals[1];
+        const goalsGroupStageChange1a = opponent1GoalGroupStageChange + team1.goalsGroupStage[0];
+        const goalsGroupStageChange1b = opponent2GoalGroupStageChange + team1.goalsGroupStage[1];
+        const goalsChange2a = opponent2GoalChange + team2.goals[0];
+        const goalsChange2b = opponent1GoalChange + team2.goals[1];
+        const goalsGroupStageChange2a = opponent2GoalGroupStageChange + team2.goalsGroupStage[0];
+        const goalsGroupStageChange2b = opponent1GoalGroupStageChange + team2.goalsGroupStage[1];
 
         // Update team information
         Team.findByIdAndUpdate(oldGame.opponents[0], {
@@ -390,7 +408,8 @@ async function editTeamInformation(oldGame, newGame) {
                 points_General: opponent1PointChange
             },
             $set: {
-                goals: [opponent1GoalChange + oldGame.goals[0], opponent2GoalChange + oldGame.goals[1]]
+                goals: [goalsChange1a, goalsChange1b],
+                goalsGroupStage : [goalsGroupStageChange1a, goalsGroupStageChange1b]
             }
         }).exec();
 
@@ -403,7 +422,8 @@ async function editTeamInformation(oldGame, newGame) {
                 points_General: opponent2PointChange
             },
             $set: {
-                goals: [opponent2GoalChange + oldGame.goals[1], opponent1GoalChange + oldGame.goals[0]]
+                goals: [goalsChange2a, goalsChange2b],
+                goalsGroupStage : [goalsGroupStageChange2a, goalsGroupStageChange2b]
             }
         }).exec();
     }

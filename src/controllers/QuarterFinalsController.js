@@ -174,7 +174,7 @@ async function groupedTeamsPerGroupAndRank(teams){
     for (const group in groupedTeams) {
 
         for (const team of groupedTeams[group]) {
-            team.rank = await getRank(team);
+            team.rank = await getRank(team, true);
         }
 
         // sort the teams by rank

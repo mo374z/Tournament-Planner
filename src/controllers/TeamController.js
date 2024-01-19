@@ -136,6 +136,12 @@ function getTeamsByGroup() {
                                         { $arrayElemAt: ["$goals", 1] }
                                     ]
                                 },
+                                goalsDifferenceGroupStage: {
+                                    $subtract: [
+                                        { $arrayElemAt: ["$goalsGroupStage", 0] },
+                                        { $arrayElemAt: ["$goalsGroupStage", 1] }
+                                    ]
+                                },
                                 goals: "$goals", // [goalsFor, goalsAgainst],
                                 goalsGroupStage: "$goalsGroupStage",
                             }

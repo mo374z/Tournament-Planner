@@ -10,6 +10,7 @@
                     <th scope="col" class="w-10">Rank</th>
                     <th scope="col" class="w-40">Team Name</th>
                     <th scope="col" class="w-20">Games Played</th>
+                    <th scope="col" class="w-20">Goals</th>
                     <th scope="col" class="w-20">Goals Difference</th>
                     <th scope="col" class="w-20">Points</th>
                 </tr>
@@ -20,7 +21,8 @@
                         <td>{{this.rank}}</td>
                         <td>{{this.name}}</td>
                         <td>{{this.gamesPlayed_Group_Stage}}</td>
-                        <td>{{this.goalsDifference}}</td>
+                        <td>{{this.goalsGroupStage.[0]}}:{{this.goalsGroupStage.[1]}}</td>
+                        <td>{{this.goalsDifferenceGroupStage}}</td>
                         <td>{{this.points_Group_Stage}}</td>
                     </tr>
                 {{/each}}
