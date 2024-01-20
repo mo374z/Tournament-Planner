@@ -80,7 +80,7 @@
         const seconds = timerValue % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         document.getElementById('liveCountdownTimer').innerText = formattedTime;
-        document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
+        //document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
     });
 
     socket.on('updateLiveGame', (updatedGame) => {
