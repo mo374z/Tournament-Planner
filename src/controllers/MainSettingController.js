@@ -57,6 +57,7 @@ router.get('/', async (req, res) => {
 
             // Save the default MainSettings to the database
             await mainSettings.save();
+            console.log('Default MainSettings created:', mainSettings);
         }
 
         

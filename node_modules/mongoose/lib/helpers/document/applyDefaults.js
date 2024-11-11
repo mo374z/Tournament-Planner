@@ -1,8 +1,11 @@
 'use strict';
 
-module.exports = function applyDefaults(doc, fields, exclude, hasIncludedChildren, isBeforeSetters, pathsToSkip) {
+const isNestedProjection = require('../projection/isNestedProjection');
+
+module.exports = function applyDefaults(doc, fields, exclude, hasIncludedChildren, isBeforeSetters, pathsToSkip, options) {
   const paths = Object.keys(doc.$__schema.paths);
   const plen = paths.length;
+  const skipParentChangeTracking = options && options.skipParentChangeTracking;
 
   for (let i = 0; i < plen; ++i) {
     let def;
@@ -32,7 +35,7 @@ module.exports = function applyDefaults(doc, fields, exclude, hasIncludedChildre
         }
       } else if (exclude === false && fields && !included) {
         const hasSubpaths = type.$isSingleNested || type.$isMongooseDocumentArray;
-        if (curPath in fields || (j === len - 1 && hasSubpaths && hasIncludedChildren != null && hasIncludedChildren[curPath])) {
+        if ((curPath in fields && !isNestedProjection(fields[curPath])) || (j === len - 1 && hasSubpaths && hasIncludedChildren != null && hasIncludedChildren[curPath])) {
           included = true;
         } else if (hasIncludedChildren != null && !hasIncludedChildren[curPath]) {
           break;
@@ -78,7 +81,7 @@ module.exports = function applyDefaults(doc, fields, exclude, hasIncludedChildre
 
             if (typeof def !== 'undefined') {
               doc_[piece] = def;
-              applyChangeTracking(doc, p);
+              applyChangeTracking(doc, p, skipParentChangeTracking);
             }
           } else if (included) {
             // selected field
@@ -91,7 +94,7 @@ module.exports = function applyDefaults(doc, fields, exclude, hasIncludedChildre
 
             if (typeof def !== 'undefined') {
               doc_[piece] = def;
-              applyChangeTracking(doc, p);
+              applyChangeTracking(doc, p, skipParentChangeTracking);
             }
           }
         } else {
@@ -104,7 +107,7 @@ module.exports = function applyDefaults(doc, fields, exclude, hasIncludedChildre
 
           if (typeof def !== 'undefined') {
             doc_[piece] = def;
-            applyChangeTracking(doc, p);
+            applyChangeTracking(doc, p, skipParentChangeTracking);
           }
         }
       } else {
@@ -118,9 +121,9 @@ module.exports = function applyDefaults(doc, fields, exclude, hasIncludedChildre
  * ignore
  */
 
-function applyChangeTracking(doc, fullPath) {
+function applyChangeTracking(doc, fullPath, skipParentChangeTracking) {
   doc.$__.activePaths.default(fullPath);
-  if (doc.$isSubdocument && doc.$isSingleNested && doc.$parent() != null) {
+  if (!skipParentChangeTracking && doc.$isSubdocument && doc.$isSingleNested && doc.$parent() != null) {
     doc.$parent().$__.activePaths.default(doc.$__pathRelativeToParent(fullPath));
   }
 }

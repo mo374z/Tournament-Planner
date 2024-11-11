@@ -2,7 +2,7 @@
 
 module.exports = applyEmbeddedDiscriminators;
 
-function applyEmbeddedDiscriminators(schema, seen = new WeakSet()) {
+function applyEmbeddedDiscriminators(schema, seen = new WeakSet(), overwriteExisting = false) {
   if (seen.has(schema)) {
     return;
   }
@@ -16,8 +16,21 @@ function applyEmbeddedDiscriminators(schema, seen = new WeakSet()) {
     if (!schemaType.schema._applyDiscriminators) {
       continue;
     }
-    for (const disc of schemaType.schema._applyDiscriminators.keys()) {
-      schemaType.discriminator(disc, schemaType.schema._applyDiscriminators.get(disc));
+    if (schemaType._appliedDiscriminators && !overwriteExisting) {
+      continue;
     }
+    for (const discriminatorKey of schemaType.schema._applyDiscriminators.keys()) {
+      const {
+        schema: discriminatorSchema,
+        options
+      } = schemaType.schema._applyDiscriminators.get(discriminatorKey);
+      applyEmbeddedDiscriminators(discriminatorSchema, seen);
+      schemaType.discriminator(
+        discriminatorKey,
+        discriminatorSchema,
+        overwriteExisting ? { ...options, overwriteExisting: true } : options
+      );
+    }
+    schemaType._appliedDiscriminators = true;
   }
 }

@@ -218,7 +218,7 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
             game.goals[req.params.teamId-1] += parseInt(req.params.i);
             const updatedGame = await game.save();
 
-            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
+            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId)); // Update the allGoals counter and check if a Sekt is won
 
 
             const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
