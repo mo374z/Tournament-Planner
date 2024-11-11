@@ -93,12 +93,15 @@
     socket.on('playSound', (updatedGame) => {          
         audio.play();
     });
+
+        let gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
     
     function updatePage(game) {
         updateScore('team1Score', game.goals[0]);
         updateScore('team2Score', game.goals[1]);
         updateName('team1Name', game.opponents[0]);
         updateName('team2Name', game.opponents[1]);
+        
         SetActiveGameMessage(game.status);
     }
 
@@ -136,6 +139,29 @@
             console.error('Failed to get team name');
         }
     }
+
+
+
+
+
+
+    socket.on('Sekt', (teamNum) => {
+
+        console.log('Sekt for Team: ' + teamNum);
+        console.log('Sekt for Team: ' + gameOppNames[teamNum-1]);    // teamNum is 1 or 2, but array index is 0 or 1
+
+        // show  bootstrap info-alert for 60 seconds to indicate Sekt
+        const alert = document.querySelector('.alert-info');
+        alert.textContent = 'Sekt für ' + gameOppNames[teamNum-1]; // Set the Sekt-alert message
+        alert.classList.remove('d-none');
+        setTimeout(() => {
+            alert.classList.add('d-none');
+        }, 20000); // 60 seconds
+        
+    });
+
+
+
 
     socket.emit('getData'); //Call for game data when page loads
 </script>
