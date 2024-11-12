@@ -136,8 +136,7 @@
     // call the `updateDateTime` function every second
     setInterval(updateDateTime, 1000);
 
-    const socket = io('http://localhost:2053');
-    //const socket = io('https://budescharfeseck.de:2053');
+    const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
     socket.on('reloadTVPage', () => {
         location.reload();
