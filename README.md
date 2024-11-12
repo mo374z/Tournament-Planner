@@ -5,6 +5,8 @@
 
 npm install
 
+npn update
+
 
 > :warning: Team Structre changed please create new Teams in your DB !!!!!
 
