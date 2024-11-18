@@ -1,7 +1,8 @@
 function updateSocketConfig(args) {
     const useHttps = args.includes('--https');
     const portIndex = args.findIndex(arg => arg === '--port');
-    const port = portIndex !== -1 ? parseInt(args[portIndex + 1]) : 3000;
+    const defaultPort = useHttps ? 443 : 3000;
+    const port = portIndex !== -1 ? parseInt(args[portIndex + 1]) : defaultPort;
     const socketPortIndex = args.findIndex(arg => arg === '--socket-port');
     const socketPort = socketPortIndex !== -1 ? parseInt(args[socketPortIndex + 1]) : 2053;
     
