@@ -36,6 +36,8 @@ require('./Game');
 require('./MainSettings');
 require('./GeneralCounters');
 
+require('./Player');
+
 require('./User');
 
 

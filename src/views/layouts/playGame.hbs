@@ -1,20 +1,20 @@
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
   <div class="container text-center">
-        <h1>Game Play Page</h1>
+        <h1>Spiel Verwaltung</h1>
         <hr>
 
         <div class="row mb-3">
             <div class="col">
-                <h2>Game Nr. {{ game.number }}</h2>
+                <h2>Spiel Nr. {{ game.number }}</h2>
                 <div class="mb-2">
-                    <p><strong>Game Start Time:</strong> {{formatTime game.time }}</p>
-                    <p><strong>Game End Time:</strong> <span id="gameEndTime"></span></p>
-                    <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
-                    <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</p>
+                    <p><strong>Start Uhrzeit:</strong> {{formatTime game.time }}</p>
+                    <p><strong>Endzeit:</strong> <span id="gameEndTime"></span></p>
+                    <p><strong>Aktuelle Uhrzeit</strong> <span id="currentTime"></span></p>
+                    <p><strong>Spieldauer:</strong> {{ game.duration }}:00 min</p>
                     <p><strong>Status:</strong> {{ game.status }}</p>
 
                     {{#unless areOtherGamesActiveBool}}
-                         <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Set Game to active</button>
+                         <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Spiel aktiv setzen</button>
                     {{/unless}}
                        
                     
@@ -28,7 +28,7 @@
                     <span id="countdownTimer" class="display-4">{{ game.duration }}:00 min</span>
                 </div>
                 <div class="mt-2">
-                    <button id="startButton" class="btn btn-primary me-2">Play/Pause Game</button>
+                    <button id="startButton" class="btn btn-primary me-2">Play/Pause</button>
                     <button id="resetButton" class="btn btn-secondary" onclick="return confirm('Are you sure you want to reset the timer?')">Reset Timer</button>
                     <br>
                     <span id="timerStatus" class="ms-2"></span>
@@ -37,7 +37,7 @@
                     
                     <input type="number" id="playbackTime" name="playbackTime" min="-10" max="10" value="1" style="width: 50px;">
                     <label for="playbackTime">min</label><br>
-                    <button onclick="addPlaybackTime()" class="btn btn-dark btn-sm">Add Playback Time</button>
+                    <button onclick="addPlaybackTime()" class="btn btn-dark btn-sm">Nachspielzeit hinzufügen</button>
                 </div>
                 {{else}}    
                    {{#if areOtherGamesActiveBool}}
@@ -82,24 +82,47 @@
                 </div>
             </div>
             <div class="col">
-                <h2>Counters</h2>
+                <h2>Zähler:</h2>
                 <p class="mb-2"><strong>All Goals:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
                 <p class="mb-2"><strong>Games Played:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
                 <p class="mb-2"><strong>Sekt Counter:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
 
 
                 <div class="alert alert-info d-none mt-2" role="alert">
-                        This is a info alert—check it out!
+                        This is a info alert to show Sekt for a Team.
                 </div>
             </div>
         </div>
 
         <hr>
 
-        <a href="/schedule/list" class="btn btn-secondary me-2 mt-3">Back to List</a>
+        <a href="/schedule/list" class="btn btn-secondary me-2 mt-3">Zurück zum Spielplan</a>
 
         {{#streq game.status 'active'}}
-        <a href="/game/{{ game._id }}/endGame" class="btn btn-danger mt-3" onclick="return confirm('Willst du wirklich das Spiel ({{ game.opponents.[0] }} vs {{ game.opponents.[1] }}) beenden ?');">End Game</a>
+        <a href="/game/{{ game._id }}/endGame" class="btn btn-danger mt-3" onclick="return confirm('Willst du wirklich das Spiel ({{ game.opponents.[0] }} vs {{ game.opponents.[1] }}) beenden ?');">Spiel beenden</a>
+        <hr>
+        <table class="table">
+            <thead>
+                <tr>
+                    <td></td>
+                    <th>Startzeit</th>
+                    <th>Gegner</th>
+                    <th>Spieldauer</th>
+                    <th>Spielname</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>Nächstes Spiel: </th>
+                    <td id="nextGameTime"></td>
+                    <td id="nextGameOpponents" style="font-weight: bold;"></td>
+                    <td id="nextGameDuration"></td>
+                    <td id="nextGameDisplayName"></td>
+                </tr>
+            </tbody>
+        </table>
+        {{/streq}}
+        {{#streq game.status 'finished'}}
         {{/streq}}
     </div>
 
@@ -232,6 +255,10 @@
 
        socket.on('connect', () => {
     console.log('Socket connected');
+        // Request next game data if the current game is active
+        if ('{{ game.status }}' === 'active') {
+            socket.emit('getNextGame');
+        }
     });
 
    socket.emit('getData'); //Call for game data when page loads
@@ -269,5 +296,12 @@
             alert.classList.add('d-none');
         }, 60000); // 60 seconds
         
+    });
+
+    socket.on('nextGameData', (nextGame) => {
+        document.getElementById('nextGameTime').textContent = nextGame.time + ' Uhr';
+        document.getElementById('nextGameOpponents').textContent = nextGame.opponents.join(' vs ');
+        document.getElementById('nextGameDuration').textContent = nextGame.duration + ' min';
+        document.getElementById('nextGameDisplayName').textContent = nextGame.gameDisplayName;
     });
 </script>

@@ -1,0 +1,93 @@
+<div class="container">
+    <h1>Spieler Details</h1>
+    <hr>
+    <h2>Spieler Informationen</h2>
+    <table class="table table-striped">
+        <tr>
+            <th>Name</th>
+            <td>{{player.name}}</td>
+        </tr>
+        <tr>
+            <th>Nummer</th>
+            <td>{{player.number}}</td>
+        </tr>
+        <tr>
+            <th>Mannschaft</th>
+            <td>{{team.name}}</td>
+        </tr>
+        <tr>
+            <th>Total Goals</th>
+            <td>{{player.total_goals}}</td>
+        </tr>
+        <tr>
+            <th>Sektflaschen erspielt</th>
+            <td>{{numberSekts}}</td>
+        </tr>
+        <tr>
+            <th>Gruppe</th>
+            <td>{{team.group}}</td>
+        </tr>
+
+        {{!-- ad platzierung later --}}
+
+
+    </table>
+    <hr>
+    <h2>Tore</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>SpielNr.</th>
+                <th>Uhrzeit</th>
+                <th>Spielminute</th>                
+                <th>Ergebnis</th>
+                <th>Gegner</th>
+                <th>Tor Spiel</th>
+                <th>Art</th>
+                <th>Tor im Tunier</th>
+                <th>Sekt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#if goals.length}}
+            {{#each goals}}
+            <tr>
+                
+                <td>{{gameIndex}}</td>
+                <td>{{formattedTimestamp}}</td>
+                
+                <td>{{formatedgameTimestamp}}</td>
+                <td>
+                    {{#if (gl Playerteamindex 0)}}
+                    <strong>{{newScore.[0]}}</strong> : {{newScore.[1]}}
+                    {{else}}
+                    {{newScore.[0]}} : <strong>{{newScore.[1]}}</strong>
+                    {{/if}}
+                </td>
+                <td>
+                    {{!-- display only opponent not own team --}}
+                    {{#if (gl Playerteamindex 0)}}
+                    {{opponents.[1]}}
+                    {{else}}
+                    {{opponents.[0]}}
+                    {{/if}}
+                </td>
+                <td>{{goalIndex}}</td>
+                <td>{{gameDisplayName}}</td>
+                <td>{{goalIndexTournament}}</td>
+                <td>{{sekt_won}}</td>
+            </tr>
+            {{/each}}
+            {{else}}
+            <tr>
+                <td colspan="9" style="text-align: center;">Keine Tore vorhanden</td>
+            </tr>
+            {{/if}}
+        </tbody>
+    </table>
+</div>
+
+<!-- Zurück-Button -->
+<div class="text-center mt-4">
+    <a href="/player" class="btn btn-secondary">Zurück</a>
+</div>

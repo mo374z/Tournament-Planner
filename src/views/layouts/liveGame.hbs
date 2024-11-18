@@ -20,8 +20,12 @@
         <p class="mt-3" id="noActiveGameMessage">No active game</p>
         {{/if}}
 
+        <div class="alert alert-info d-none mt-2" role="alert">
+            This is a info alert to show Sekt for a Team.
+        </div>
 
-        <span id="timerStatus" class="ml-2"></span>
+        {{!-- Timer Status (ausgeblendet): --}}
+        <span id="timerStatus" class="ml-2 d-none"></span> 
     </div>
 
 <div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
@@ -99,9 +103,9 @@
     
     function updatePage(game) {
         updateScore('team1Score', game.goals[0]);
-        updateScore('team2Score', game.goals[1]);
-        updateName('team1Name', game.opponents[0]);
-        updateName('team2Name', game.opponents[1]);
+        updateScore('team2Score', game.goals[1]);       
+        gameOppNames = [updateName('team1Name', game.opponents[0]);, updateName('team2Name', game.opponents[1]);];
+        console.log('gameOppNames: ' + gameOppNames);
         
         SetActiveGameMessage(game.status);
     }
@@ -136,8 +140,10 @@
             if (nameElement) {
                 nameElement.innerText = teamName;
             }
+            return teamName;
         } else {
             console.error('Failed to get team name');
+            return "Error fetching team name";
         }
     }
 
@@ -153,11 +159,11 @@
 
         // show  bootstrap info-alert for 60 seconds to indicate Sekt
         const alert = document.querySelector('.alert-info');
-        alert.textContent = 'Sekt für ' + gameOppNames[teamNum-1]; // Set the Sekt-alert message
+        alert.textContent = 'Eine Flasche Sekt für ' + gameOppNames[teamNum-1]; // Set the Sekt-alert message
         alert.classList.remove('d-none');
         setTimeout(() => {
             alert.classList.add('d-none');
-        }, 20000); // 60 seconds
+        }, 20000); // Hide the alert after 20 seconds
         
     });
 

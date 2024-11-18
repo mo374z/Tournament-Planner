@@ -47,6 +47,7 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 
 const {updateQuarterFinalsSchedule} = require('./QuarterFinalsController');
 const {updateSemiFinalsSchedule} = require('./SemiFinalsController');
+const { removeLastGoalfromGameAndPlayer } = require('./ScorerController');
 
 
 // Start the Websocet server on port 2053
@@ -127,6 +128,29 @@ io.on('connection', (socket) => {
 
     //add a consol log on the server side to see if the client is connected
     console.log('A user connected');
+
+    socket.on('getNextGame', async () => {
+        try {
+            const currentGame = await Game.findOne({ status: 'active' }).exec();
+            if (currentGame) {
+                const nextGame = await Game.findOne({ number: currentGame.number + 1 }).exec();
+                if (nextGame) {
+                    const team1 = await Team.findById(nextGame.opponents[0]).exec();
+                    const team2 = await Team.findById(nextGame.opponents[1]).exec();
+                    nextGame.opponents[0] = team1 ? team1.name : 'Team not found';
+                    nextGame.opponents[1] = team2 ? team2.name : 'Team not found';
+                    socket.emit('nextGameData', {
+                        time: nextGame.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        opponents: nextGame.opponents,
+                        duration: nextGame.duration,
+                        gameDisplayName: nextGame.gameDisplayName
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching next game: ', err);
+        }
+    });
 
 });
 
@@ -216,14 +240,29 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
         } else {
             // Increment the score for the specified team
             game.goals[req.params.teamId-1] += parseInt(req.params.i);
-            const updatedGame = await game.save();
-
-            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId)); // Update the allGoals counter and check if a Sekt is won
-
+            
+            const { teamId: Sekt_Team_ID, allGoals } = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
 
             const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
 
+            if (req.params.i == -1) {            // -            // If the goal is decremented, remove the last goal from the game and player
+                await removeLastGoalfromGameAndPlayer(game, req.params.teamId - 1);
+            }
+            else {                               // +           // If the goal is incremented, add the goal to the game object
+                // Add this goal to the goal log into the game object
+                game.goalsLog.push({
+                    timestamp: new Date(),
+                    //Save the game timpstamp in seconds wich is the game duration minus the current timer value
+                    gameTimestamp: game.duration*60 - timer,
+                    teamIndex: req.params.teamId - 1,
+                    newScore: game.goals,   
+                    goalIndex: game.goalsLog.length + 1,
+                    sekt_won: Sekt_Team_ID != 0, //set the sekt_won to true if a sekt is won (Sekt_Team_ID is not 0)
+                    goalIndexTournament: allGoals
+                });
+            }
 
+            const updatedGame = await game.save(); // Save the updated game object
 
             res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
 
@@ -384,14 +423,14 @@ async function updateGenGoalsCounter(increment, teamId) {
             const mainSettings = await MainSettings.findOne({}); // Fetch main settings
             counters.goalSektCounter = mainSettings.goalsforSekt;
             await counters.save(); // Save the updated counter value            
-            return teamId;
+            return { teamId: teamId, allGoals: counters.allGoals }; // Returning an object with named properties
         }
         else{
             await counters.save(); // Save the updated counter value
-            return 0;
+            return { teamId: 0, allGoals: counters.allGoals }; // Returning an object with named properties
         }        
     } catch (err) {
         console.error('Error updating allGoals counter: ', err);
-        return 0;
+        return { teamId: 0, allGoals: -1 }; // Returning an object with named properties
     }
 }

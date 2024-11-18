@@ -1,15 +1,12 @@
 const mongoose = require('mongoose');
 
 
-
 var PlayerSchema = new mongoose.Schema({
     name:{
         type: String,
-        required: true
     },
-    number: {
-        type: Number,
-        required: true
+    number: {           // Number of the player (string weil Budetunier)
+        type: String,
     },
     //total goals scored by the player in the tournament
     total_goals: {

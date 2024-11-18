@@ -88,6 +88,7 @@ router.get('/list', async (req, res) => {
             team.goalsDifference = team.goals[0] - team.goals[1];
             team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
             team.rank = getRank(team);
+            team.index = Teams.indexOf(team) + 1;
         });
 
       res.render('layouts/teamlist', {
