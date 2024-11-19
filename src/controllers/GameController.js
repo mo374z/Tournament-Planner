@@ -1,49 +1,63 @@
 const express = require('express');
 var router = express.Router();
-
 const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
 const MainSettings = mongoose.model('MainSettings');
-
 const genCounters = mongoose.model('generalCounters');
-const http = require('http');
 const socketIo = require('socket.io');
 const app = express();
-const server = http.createServer(app);
+
+const {updateSocketConfig} = require('../config/socketConfig');
+
+const socketConfig = updateSocketConfig(process.argv.slice(2));
+
+const socketPort = socketConfig.socketPort;
+const useHttps = socketConfig.protocol === 'https';
+
+let server;
+if (useHttps) {
+    const https = require('https');
+    const fs = require('fs');
+    server = https.createServer({
+        key: fs.readFileSync('./private-key.pem'),
+        cert: fs.readFileSync('./certificate.pem'),
+    }, app);
+} else {
+    const http = require('http');
+    server = http.createServer(app);
+}
 
 module.exports = router;
-const cors = require('cors'); // Import cors middleware
-
-
-
+const cors = require('cors');
 
 //Code part to enable the authentication for all the following routes
-const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+const {verifyToken, checkLoginStatus, isAdmin} = require('../middleware/auth');
+const cookieParser = require('cookie-parser');
+router.use(cookieParser());
+router.use(verifyToken);
+router.use((req, res, next) => {
     res.locals.username = req.username;
     res.locals.userrole = req.userRole;
     next();
-  });
-//--------------------------------------------------------------
+});
 
+const {updateQuarterFinalsSchedule} = require('./QuarterFinalsController');
+const {updateSemiFinalsSchedule} = require('./SemiFinalsController');
 
-
-
-
+// Start the Websocket server
+server.listen(socketPort, () => {
+    console.log(`${useHttps ? 'HTTPS' : 'HTTP'} Websocket server running on port ${socketPort}`);
+});
 
 // Enable CORS for Socket.IO
 const io = socketIo(server, {
     cors: {
-      origin: '*', //'http://localhost:3000',  // Change this to your actual frontend URL in production for security - we changed this to * to handle a CORS error
-      methods: ['GET', 'POST'], // Add the allowed methods
-      credentials: true,
+        origin: '*',
+        methods: ['GET', 'POST'],
+        credentials: true,
     }
-  });
+});
 
 app.use(cors());
 
@@ -59,13 +73,16 @@ io.on('connection', (socket) => {
     socket.on('playPauseGame', () => {
         if (isPaused) {
             isPaused = false;
+            io.emit('playSound');
             timerInterval = setInterval(() => {             //Timer resuluion is 1 second !! (timer Variable is in seconds)
                 if (timer > 0 && !isPaused) {
                     timer--;
                     io.emit('timerUpdate', timer, isPaused, 'Running');
                 } else if (timer === 0) {
                     clearInterval(timerInterval);
-                    //io.emit('timerEnd');
+
+                    io.emit('playSound');
+
                     io.emit('timerUpdate', timer, isPaused, 'Ended');
                 }
             }, 1000);
@@ -80,6 +97,16 @@ io.on('connection', (socket) => {
         resetTimer(duration);
     });
 
+
+    socket.on('addPlaybackTime', (minutesToAdd) => {
+        if(timer + minutesToAdd*60 > 0){            
+            timer = timer + minutesToAdd*60;  
+            if(!isPaused && timer > 0) io.emit('timerUpdate', timer, isPaused, 'Running');
+            if(isPaused) io.emit('timerUpdate', timer, isPaused, 'Paused');     
+        } 
+    });
+
+
     socket.on('getData', () => {
         if(isPaused) io.emit('timerUpdate', timer, isPaused, 'Paused');
         if(!isPaused && timer > 0) io.emit('timerUpdate', timer, isPaused, 'Running');
@@ -90,6 +117,9 @@ io.on('connection', (socket) => {
         //clearInterval(timerInterval);
         console.log('A user disconnected');
     });
+
+    //add a consol log on the server side to see if the client is connected
+    console.log('A user connected');
 
 });
 
@@ -108,11 +138,7 @@ function resetTimer(duration) {
     }
 }
 
-// Start the Websocet server on port 4000
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-    console.log(`Server for Websocet recieving is running on port ${PORT}`);
-});
+
 
 
 // Render the game play page
@@ -138,7 +164,7 @@ router.get('/:id/play', async (req, res) => {
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
 
-        res.render('layouts/playGame', { game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
+        res.render('layouts/playGame', { socketConfig:socketConfig, game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
     } catch (err) {
         console.error('Error fetching game for play: ', err);
         res.status(500).send('Internal Server Error');
@@ -159,7 +185,12 @@ router.post('/start/:id', async (req, res) => {
         console.log('Game set to active: ', gameId);
         resetTimer(game.duration*60);  // Reset the timer to the value 0 in seconds
 
+
         res.status(200).send('Game status set to active successfully');
+
+        io.emit('reloadTVPage'); // Reload the TV page to show the updated game data
+
+        
     } catch (err) {
         console.error('Error starting game: ', err);
         res.status(500).send('Internal Server Error');
@@ -180,7 +211,7 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
             game.goals[req.params.teamId-1] += parseInt(req.params.i);
             const updatedGame = await game.save();
 
-            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
+            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId)); // Update the allGoals counter and check if a Sekt is won
 
 
             const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
@@ -233,7 +264,22 @@ router.get('/:id/endGame', async (req, res) => {
             // Update the team data with the game results
             await writeGameDataToTeams(game);   
             await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });      // Increment the overall gamesPlayed counter
+
+            // check whether the game was the last one of the group stage and if so, 
+            //update the quarterfinals schedule by finding a game in group stage where the subsequent game is not in group stage
+            const gamePhase = game.gamePhase;
+            if(gamePhase === 'Group_Stage'){
+                const subsequentGame = await Game.findOne({number: game.number+1}).exec();
+                if(subsequentGame.gamePhase != 'Group_Stage'){
+                    await updateQuarterFinalsSchedule();
+                }
+            } else {
+                await updateSemiFinalsSchedule();
+            }
+
             resetTimer(0);  // Reset the timer to the value 0 in seconds
+
+            io.emit('reloadTVPage'); // Reload the TV page to show the updated game data
         }
         res.redirect('/schedule/list');
     
@@ -259,9 +305,25 @@ const updateTeam = async (team, game, isWinner) => {
         team.gamesLost += 1;
     }
 
-    team.goals[0] += game.goals[0];
-    team.goals[1] += game.goals[1];
 
+    if(game.opponents[0].toString() === team._id.toString()){ //check if the team is the first or second opponent
+        team.goals[0] += game.goals[0]; //add the goals from the game to the team
+        team.goals[1] += game.goals[1];
+
+        if(game.gamePhase === 'Group_Stage'){
+            team.goalsGroupStage[0] += game.goals[0]; //add the goals from the game to the gropstage goals
+            team.goalsGroupStage[1] += game.goals[1];        
+        }
+    }
+    else{
+        team.goals[0] += game.goals[1];
+        team.goals[1] += game.goals[0];
+
+        if(game.gamePhase === 'Group_Stage'){
+            team.goalsGroupStage[0] += game.goals[1]; //add the goals from the game to the gropstage goals
+            team.goalsGroupStage[1] += game.goals[0];        
+        }
+    }
     return await team.save();
 };
 
@@ -292,7 +354,7 @@ router.get('/live', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
         
-        res.render('layouts/liveGame', { game, noActiveGame: false });
+        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false });
     } catch (err) {
         console.error('Error fetching live games: ', err);
         res.status(500).send('Internal Server Error');

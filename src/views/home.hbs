@@ -1,11 +1,128 @@
 <body>
-    <div class="container mt-5">
-        <h2>Welcome to Tournament Planner</h2>
+
+
+    <div class="container-fluid">
+        <div class="container mt-5 mb-5 text-center">
+            <h1>Budeturnier 2025</h1>
+        </div>
     </div>
-    This webapp enables you to manage your tournament and display the live game on a second screen.
 
-    <br><br>
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <img src="/images/Werbung1.jpg" class="img-fluid" alt="Werbung1">
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <img src="/images/Werbung2.jpg" class="img-fluid" alt="Werbung2">
+        </div>
+    </div>
+
+    <!-- Groups Section -->
+    <div class="page-divider">
+    <section class="text-center mt-2 mb-2">
+        <h1 class="mb-2">Tabelle</h1>
+
+        {{#each teamsByGroup}}
+            <h2 class="h4 mb-3">Group {{groupName}}</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-light">
+                         <tr>
+                                <th scope="col">Platz</th>
+                                <th scope="col">Team</th>
+                                <th scope="col">Sp</th>
+                                <th scope="col">T</th>
+                                <th scope="col">TD</th>
+                                <th scope="col">Pkt</th>
+                            </tr>
+                    </thead>
+                    <tbody>
+                        {{#each teams}}
+                            <tr>
+                                <td>{{this.rank}}</td>
+                                <td>{{this.name}}</td>
+                                <td>{{this.gamesPlayed}}</td>
+                                <td>{{this.goalsGroupStage.[0]}}:{{this.goalsGroupStage.[1]}}</td>
+                                <td>{{this.goalsDifferenceGroupStage}}</td>
+                                <td>{{this.points_General}}</td>
+                            </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        {{/each}}
+
+        <p class="small">Disclaimer: The ranking is based on the following criteria: 1) Points; 2) Goal difference; 3) Goals scored</p>
+    </section>
+    </div>
+
+    <!-- Schedule List Section -->
+    <div class="page-divider">
+    <section style="text-align: center;">
+
+        <h1>Spielplan</h1>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                        <tr>
+                            <th>Nr.</th>
+                            <th>Beginn</th>
+                            <th>Gruppe</th>
+                            <th colspan="2" >Spiel</th>
+                            <th>Ergebnis</th>
+                        </tr>
+                </thead>
+                <tbody>
+                    {{#each gameslist}}
+                        <tr class={{#streq this.status 'active'}} "bg-info"{{/streq}}    {{#streq this.gamePhase 'Group_Stage'}}  {{else}}"bg-light"{{/streq}} >
+                            <td>{{this.number}}</td>
+                            <td>{{formatTime this.time}}</td>
+                            {{#streq this.group.[0] this.group.[1]}}
+                                <td>{{this.group.[0]}}</td>
+                            {{else}}
+                                <td>{{this.group.[0]}} - {{this.group.[1]}}</td>
+                            {{/streq}}
+                            <td>{{this.opponents.[0]}}</td>
+                            <td>{{this.opponents.[1]}}</td>
+                            <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+    </div>
+
+    {{!-- <div id="carouselExampleSlidesOnly" class="carousel slide page-divider" data-bs-ride="carousel">
+    <div class="carousel-inner" style="height: 400px; overflow: hidden;">
+        <div class="carousel-item active" data-bs-interval="5000">
+            <img class="d-block w-100 h-100 object-fit-cover" src="/images/knoll.jpg" alt="Rolladenbau Knoll">
+        </div>
+        <div class="carousel-item" data-bs-interval="5000">
+            <img class="d-block w-80 h-80" src="/images/scheffold.jpg" alt="Scheffold Holzbau">
+        </div>
+        <div class="carousel-item" data-bs-interval="5000">
+            <img class="d-block w-100 h-100 object-fit-cover" src="/images/schlager.png" alt="Schlager Stuckateurbetrieb">
+        </div>
+        <div class="carousel-item" data-bs-interval="5000">
+            <img class="d-block w-100 h-100 object-fit-cover" src="/images/stoeferle_automotive.jpg" alt="Schlager Stuckateurbetrieb">
+        </div>
+        <div class="carousel-item" data-bs-interval="5000">
+            <img class="d-block w-100 h-100 object-fit-cover" src="/images/stoeferle.jpg" alt="Schlager Stuckateurbetrieb">
+        </div>
+    </div>
     
-</body>
+    <!-- Navigation buttons -->
+    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div> --}}
 
-</html>
+</div>
+
+</body>

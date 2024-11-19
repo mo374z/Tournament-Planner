@@ -7,7 +7,12 @@ const Team = mongoose.model('Team');
 
 const MainSettings = mongoose.model('MainSettings');
 
-module.exports = router;
+//module.exports = router;
+
+module.exports = {
+    ScheduleController: router,
+    fetchGamesData
+};
 
 //Code part to enable the authentication for all the following routes
 const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
@@ -44,6 +49,7 @@ router.get('/generate', isAdmin, async (req, res) => {
     const gameDurationGroupStage = mainSettings.gameDurationGroupStage / (1000 * 60); // Convert milliseconds to minutes
     const gameDurationQuarterfinals = mainSettings.gameDurationQuarterfinals / (1000 * 60); // Convert milliseconds to minutes
     const gameDurationSemifinals = mainSettings.gameDurationSemifinals / (1000 * 60); // Convert milliseconds to minutes
+    const gameDurationFinal = mainSettings.gameDurationFinal / (1000 * 60); // Convert milliseconds to minutes
     const timeBetweenGames = mainSettings.timeBetweenGames / (1000 * 60); // Convert milliseconds to minutes
     const timeBetweenGamePhases = mainSettings.timeBetweenGamePhases / (1000 * 60); // Convert milliseconds to minutes
 
@@ -64,7 +70,7 @@ router.get('/generate', isAdmin, async (req, res) => {
 
     const StartTimeSemifinals = lastQuarterFinalsGameEndTime; // Set the start time for the Semifinals
     StartTimeSemifinals.setMinutes( StartTimeSemifinals.getMinutes() + timeBetweenGamePhases);
-    const {lastSemiFinalsGameEndTime, returnGameNumber2} = await generateSemiFinalsSchedule(StartTimeSemifinals, gameDurationSemifinals, timeBetweenGames, initialStatus, gameNumber , "Semifinals", "Halbfinale");
+    const {lastSemiFinalsGameEndTime, returnGameNumber2} = await generateSemiFinalsSchedule(StartTimeSemifinals, gameDurationSemifinals, gameDurationFinal, timeBetweenGames, initialStatus, gameNumber , "Semifinals", "Halbfinale");
     gameNumber = returnGameNumber2;
 
     // Delay the redirect by 1 seconds to allow time for the schedule generation
@@ -102,12 +108,163 @@ router.get('/updateSemiFinals', isAdmin, async (req, res) => {
 
 
 
+
+
+//router to create custom games
+router.get('/createCustomGame', isAdmin, async (req, res) => {
+    try {
+        const teams = await Team.find({});
+
+        //use fetchGamesData function to get the games and timeBetweenGames
+        const { games, timeBetweenGames } = await fetchGamesData();
+
+        // Fetch time between games from main settings
+        const mainSettings = await MainSettings.findOne();
+        const tournamentStartTime = mainSettings.TornamentStartTime;
+
+        const NewGame = new Game({
+            // _id: new mongoose.Types.ObjectId(),
+            number: 0,
+            time: tournamentStartTime,
+            duration: 8,
+            status: 'Scheduled',
+            opponents: [teams[0]._id, teams[1]._id],
+            goals: [0, 0],
+            gamePhase: 'Custom',
+            gameDisplayName: 'Custom'
+        });
+
+        res.render('layouts/createCustomGame', {
+            game: NewGame,
+            teams: teams,
+            gameslist: games,
+        });
+    } catch (err) {
+        console.error('Error fetching teams for create game: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+// Handle the saving of a custom game
+router.post('/saveCustomGame', isAdmin, async (req, res) => {
+    try {
+        const {
+            time,
+            useUserInputTime,
+            duration,
+            team1,
+            team2,
+            goals1,
+            goals2,
+            status,
+            gamePhase,
+            gameDisplayName,
+            existingGame,
+            position
+        } = req.body;
+
+        console.log("useUserInputTime: " + useUserInputTime);
+
+        // Fetch the details of the selected existing game
+        const selectedGame = await Game.findById(existingGame);
+
+        let newGameNumber = 0;
+        let newGameTime = new Date();
+
+        // Fetch time between games from main settings
+        const mainSettings = await MainSettings.findOne();
+        const timeBetweenGames = mainSettings.timeBetweenGames / (1000 * 60); // Convert milliseconds to minutes
+
+
+        let customTimeDifference = 0;
+
+
+        if (position === 'true') { //wenn es and der Stelle des ausgewählten Spiels eingefügt werden soll
+                
+            newGameNumber = selectedGame.number;
+
+            if(useUserInputTime === 'true') {
+                newGameTime = new Date(time);
+                customTimeDifference = newGameTime - selectedGame.time;
+            } else{                    
+                newGameTime = new Date(selectedGame.time);
+            }
+        } else {
+
+            newGameNumber = selectedGame.number + 1;
+            if(useUserInputTime === 'true') {
+                newGameTime = new Date(time);
+                let NextGameTime = new Date(selectedGame.time);
+                NextGameTime.setMinutes(NextGameTime.getMinutes() + parseInt(selectedGame.duration) + parseInt(timeBetweenGames));
+                customTimeDifference = NextGameTime - selectedGame.time;
+
+            } else{
+                newGameTime = new Date(selectedGame.time);
+                newGameTime.setMinutes(newGameTime.getMinutes() + parseInt(selectedGame.duration) + parseInt(timeBetweenGames));
+
+            }
+        }
+
+        // Create a new custom game based on the submitted form data
+        const customGame = new Game({
+            number: newGameNumber,
+            time: newGameTime,
+            duration: parseInt(duration),
+            opponents: [team1, team2],
+            goals: [parseInt(goals1), parseInt(goals2)],
+            status: status,
+            gamePhase: gamePhase,
+            gameDisplayName: gameDisplayName
+        });
+
+        // Insert the custom game at the specified position
+        const games = await Game.find().sort({ number: 1 });
+
+        let index = games.findIndex(game => game._id.toString() === existingGame);
+        if (index !== -1) {
+            if (position === 'true') { //wenn es and der Stelle des ausgewählten Spiels eingefügt werden soll
+                games.splice(index, 0, customGame);
+            } else {
+                games.splice(index + 1, 0, customGame);
+            }
+
+            // Update the game numbers after insertion
+            for (let i = index + 1; i < games.length; i++) {
+                games[i].number = i + 1;
+                await games[i].save();
+            }
+        }
+
+        // Save the custom game to the database
+        await customGame.save();
+
+        const timeDifference = customGame.duration * 60000 + timeBetweenGames * 60000 + customTimeDifference; // Convert minutes to milliseconds
+
+        updateSubsequentGamesTime(customGame._id, timeDifference); // Update the time of subsequent games
+
+        //add a delay of 1 second to allow the updateSubsequentGamesTime function to finish
+        setTimeout(() => {
+            res.redirect('/schedule/list');
+        }, 1000); // 1000 milliseconds (1 seconds) delay
+               
+    } catch (err) {
+        console.error('Error saving custom game: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
+
+
+
 // render the page to edit the game
 router.get('/:id', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
-        const teams = await Team.find({});
+                const teams = await Team.find({});
 
         res.render('layouts/editGame', {
             game: game,
@@ -132,6 +289,7 @@ const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
                 $gt: game.number
             }
         }).sort('number').exec();
+
 
         for (const game of subsequentGames) {
             // calculate new time for each subsequent game based on the prevoius game's time
@@ -216,11 +374,29 @@ async function editTeamInformation(oldGame, newGame) {
         opponent2GamesLostChange = changes.gamesLostChange2;
         opponent1GamesDrawChange = changes.gamesDrawChange1;
         opponent2GamesDrawChange = changes.gamesDrawChange2;
+        opponent1GoalGroupStageChange = 0;
+        opponent2GoalGroupStageChange = 0;
 
         if (oldGame.gamePhase === 'Group_Stage') {
             opponent1PointGroupStageChange = opponent1PointChange;
             opponent2PointGroupStageChange = opponent2PointChange;
+            opponent1GoalGroupStageChange = opponent1GoalChange;
+            opponent2GoalGroupStageChange = opponent2GoalChange;
         }
+
+        // Fetch the current state of the team
+        const team1 = await Team.findById(oldGame.opponents[0]).exec();
+        const team2 = await Team.findById(oldGame.opponents[1]).exec();
+
+        // Calculate the changes based on the current state
+        const goalsChange1a = opponent1GoalChange + team1.goals[0];
+        const goalsChange1b = opponent2GoalChange + team1.goals[1];
+        const goalsGroupStageChange1a = opponent1GoalGroupStageChange + team1.goalsGroupStage[0];
+        const goalsGroupStageChange1b = opponent2GoalGroupStageChange + team1.goalsGroupStage[1];
+        const goalsChange2a = opponent2GoalChange + team2.goals[0];
+        const goalsChange2b = opponent1GoalChange + team2.goals[1];
+        const goalsGroupStageChange2a = opponent2GoalGroupStageChange + team2.goalsGroupStage[0];
+        const goalsGroupStageChange2b = opponent1GoalGroupStageChange + team2.goalsGroupStage[1];
 
         // Update team information
         Team.findByIdAndUpdate(oldGame.opponents[0], {
@@ -232,7 +408,8 @@ async function editTeamInformation(oldGame, newGame) {
                 points_General: opponent1PointChange
             },
             $set: {
-                goals: [opponent1GoalChange + oldGame.goals[0], opponent2GoalChange + oldGame.goals[1]]
+                goals: [goalsChange1a, goalsChange1b],
+                goalsGroupStage : [goalsGroupStageChange1a, goalsGroupStageChange1b]
             }
         }).exec();
 
@@ -245,7 +422,8 @@ async function editTeamInformation(oldGame, newGame) {
                 points_General: opponent2PointChange
             },
             $set: {
-                goals: [opponent2GoalChange + oldGame.goals[1], opponent1GoalChange + oldGame.goals[0]]
+                goals: [goalsChange2a, goalsChange2b],
+                goalsGroupStage : [goalsGroupStageChange2a, goalsGroupStageChange2b]
             }
         }).exec();
     }
@@ -264,7 +442,7 @@ function getPoints(game) {
     }
 }
 
-router.post('/:id/edit', isAdmin, async (req, res) => { //implement dislayName saving !
+router.post('/:id/edit', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
         let {
@@ -396,6 +574,10 @@ async function fetchGamesData() {
             game.isGamePlayable = await isGamePlayable(game);
         }
 
+        // Sort games by game number
+        games.sort((a, b) => a.number - b.number);
+        
+
         return { games, timeBetweenGames: mainSettings.timeBetweenGames/60000 };
     } catch (err) {
         console.log('Error in data retrieval: ' + err);
@@ -499,3 +681,8 @@ async function clearGamesCollection() {
         console.error('Error clearing Games collection: ', err);
     }
 }
+
+
+
+
+

@@ -82,7 +82,7 @@ async function insertDefaultValues(db) { // Insert default values into the new d
 
 
     // Insert default mainSettings
-    const collection = db.collection('mainSettings');
+    const collection = db.collection('mainsettings');
     await collection.insertOne({
         TornamentStartTime: defaultStartTime,
         timeBetweenGames: defaultTimeBetweenGames,

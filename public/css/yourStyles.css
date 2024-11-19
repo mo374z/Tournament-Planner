@@ -1,0 +1,38 @@
+body {
+    background-color: #ECEDF0;
+}
+.page-divider {
+    background: #fff;
+    box-shadow: 0 4px 8px #7474741a;
+    border-radius: 0.5em;
+    margin-bottom: 1em;
+    padding: 1em;
+    overflow: hidden;
+    object-fit: contain;
+    object-position: center;
+    overflow-x: auto;
+}
+
+.container-fluid {
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.zoom {
+    transition: transform .2s; /* Animation */
+    width: 90px;
+    height: 90px;
+    margin: 0 auto;
+  }
+  
+  .zoom:hover {
+    transform: scale(1.1); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+  }
+
+  img {
+    width : auto;
+    height: 400px; /*to preserve the aspect ratio of the image*/
+}

@@ -1,8 +1,9 @@
 <div class="container text-center">
     <h3>{{viewTitle}}</h3>
-    <form action="/schedule/{{game._id}}/edit" method="POST" autocomplete="off" style="max-width: 300px; margin: 0 auto;">
-        <label for="time">Game Time:</label><br>
-        <input type="datetime-local" id="time" name="time" value="{{formatDateTime game.time}}" required class="form-control mb-2">
+    <form action="/schedule/saveCustomGame" method="POST" autocomplete="off" style="max-width: 300px; margin: 0 auto;">
+ 
+
+        
 
         <label for="duration">Duration (minutes):</label><br>
         <input type="number" id="duration" name="duration" value="{{game.duration}}" required class="form-control mb-2">
@@ -27,11 +28,9 @@
         {{/streq}}
 
         <label for="goals1">Goals (Team 1):</label><br>
-        {{#streq game.status "Ended"}}
+
         <input type="number" id="goals1" name="goals1" value="{{game.goals.[0]}}" required class="form-control mb-2" min="0">
-        {{else}}
-        <p><b>{{game.goals.[0]}}</b></p>
-        {{/streq}}
+
 
         <label for="team2">Team 2:</label><br>
         {{#streq game.status "Ended"}}
@@ -53,22 +52,54 @@
         </select><br>
 
         <label for="goals2">Goals (Team 2):</label><br>
-        {{#streq game.status "Ended"}}
         <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required class="form-control mb-2" min="0">
-        {{else}}
-        <p><b>{{game.goals.[1]}}</b></p>
-        {{/streq}}
 
         <label for="status">Status:</label><br>
-        <p><b>{{game.status}}</b></p>
+        <input type="text" id="status" name="status" value="{{game.status}}" required class="form-control mb-2">
 
-        <label for="gamePhase">Game Phase:</label><br>
-        <p><b>{{game.gamePhase}}</b></p>
+        <label for="gamePhase">Game Phase: <br> ("Group_Stage", "Quarterfinals 1", "Semifinals 1", "Finals 1")</label><br>
+        <input type="text" id="gamePhase" name="gamePhase" value="{{game.gamePhase}}" required class="form-control mb-2">
 
         <label for="gameDisplayName">Display Name: </label><br>
         <input type="text" id="gameDisplayName" name="gameDisplayName" value="{{game.gameDisplayName}}" required class="form-control mb-2">
 
-        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <br>
+        </br>
+
+
+                <label for="time">Game Time:</label><br>
+        <input type="datetime-local" id="time" name="time" value="{{formatDateTime game.time}}" required class="form-control mb-2">
+
+        <input type="checkbox" id="useUserInputTime" name="useUserInputTime" value="true" class="form-check-input mb-2">
+        <label for="useUserInputTime">Use User Input Time as Game start Time <br>(else the time is set with the game selected below)</label>
+        
+        <br> </br>     
+
+        <!-- Dropdown menu for selecting an existing game -->
+        <strong>
+            <label for="existingGame">Bei welchem game soll das Custom Game eingefügt werden:</label>
+        </strong>
+        <select id="existingGame" name="existingGame" class="form-select mb-2">
+            {{#each gameslist}}
+                <option value="{{this._id}}">{{this.number}}: {{formatTime this.time}} - {{this.opponents.[0]}} vs {{this.opponents.[1]}} - {{this.gamePhase}}</option>
+            {{/each}}
+        </select>
+
+        <strong><label for="position">Position:</label><br></strong>
+        <select id="position" name="position" class="form-select mb-2">            
+            <option value="true">An dieser Stelle</option>
+            <option value="false">Danach</option>
+        </select>   
+
+
+            
+        
+
+
+
+        <button type="submit" class="btn btn-primary">Add game</button>
         <a href="/schedule/list" class="btn btn-secondary">Back to List</a>
     </form>
 </div>
+
+

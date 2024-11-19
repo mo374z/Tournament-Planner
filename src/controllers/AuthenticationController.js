@@ -33,12 +33,12 @@ router.get('/register',verifyToken, isAdmin,  (req, res) => {
 
 // User list endpoint
 router.get('/list', verifyToken, isAdmin, async (req, res) => {
-    const users = await User.find({});
+    const users = await User.find({}); // Fetch all users from the database
     res.render('layouts/userlist', { users }); // 'userlist' ist der Name Ihrer Benutzerliste-Vorlage
   });
 
 
-// router.get('/createDevUser', async (req, res) => {      // Create a Development User - only for testing
+// router.get('/createDevUser', async (req, res) => {      // Create a Development User - only for testing adress: /user/createDevUser
 //     try {
 //         let password = "admin";
 //         const username = "admin";
@@ -60,7 +60,7 @@ router.get('/list', verifyToken, isAdmin, async (req, res) => {
 
 //         // You might also generate a JWT token here for immediate login after registration
 
-//         res.status(201).send('Dev User Registration successful');
+//         res.status(201).send('Dev User Registration successful - Username: admin, Password: admin');
 //         //res.redirect('/user/login');
 //     } catch (error) {
 //         console.error('Error during registration:', error);

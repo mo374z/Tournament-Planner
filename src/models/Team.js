@@ -24,6 +24,9 @@ var TeamSchema = new mongoose.Schema({
     goals: { // Tore (geschossene Tore [0] - erhaltene Tore[1])
         type: Array,
     },
+    goalsGroupStage:{
+        type: Array,
+    },
     sektWon: {
         type: Number,
     },
@@ -41,30 +44,84 @@ var TeamSchema = new mongoose.Schema({
 
 const Team = mongoose.model('Team', TeamSchema);
 
-async function getRank(team){
+async function getRank(team, groupRank = false){
     const allTeamsInGroup = await Team.find({group: team.group}).exec();
 
     // Sort teams based on points, goal difference, and goals scored
-    const sortedTeams = allTeamsInGroup.sort((a, b) => {
-        if (a.points_Group_Stage !== b.points_Group_Stage) {
-            return b.points_Group_Stage - a.points_Group_Stage;
-        } else {
-            const goalDifferenceA = a.goals[0] - a.goals[1];
-            const goalDifferenceB = b.goals[0] - b.goals[1];
-
-            if (goalDifferenceA !== goalDifferenceB) {
-                return goalDifferenceB - goalDifferenceA;
-            } else {
-                return b.goals[0] - a.goals[0];
-            }
-        }
-    });
+    const sortedTeams = rankTeams(allTeamsInGroup, groupRank);
 
     // Find the index of the current team in the sorted array to determine its rank
     const teamIndex = sortedTeams.findIndex(t => t._id.equals(team._id));
     return teamIndex + 1;
 }
 
+// returns the overall rank of a team in the tournament
+async function getTeamRank(rank){
+    const allTeams = await Team.find({}).exec();
+    const sortedTeams = rankTeams(allTeams);
+
+    // return the team at the given rank
+    return sortedTeams[rank];
+}
+
+// returns the rank of a team in a group
+async function getTeamGroupRank(rank, group){
+    const allTeamsInGroup = await Team.find({group: group}).exec();
+    const sortedTeams = rankTeams(allTeamsInGroup, true);
+
+    // return the team at the given rank
+    return sortedTeams[rank];
+}
+
+function rankTeams(teams, groupRank = false){
+    // Sort teams based on points, goal difference, and goals scored
+    const sortedTeams = teams.sort((a, b) => {
+        if (groupRank) {
+            if (a.points_Group_Stage !== b.points_Group_Stage) {
+                return b.points_Group_Stage - a.points_Group_Stage;
+            } else {
+                const goalDifferenceA = a.goalsGroupStage[0] - a.goalsGroupStage[1];
+                const goalDifferenceB = b.goalsGroupStage[0] - b.goalsGroupStage[1];
+
+                if (goalDifferenceA !== goalDifferenceB) {
+                    return goalDifferenceB - goalDifferenceA;
+                } else {
+                    return b.goalsGroupStage[0] - a.goalsGroupStage[0];
+                }
+            }
+        } else {
+            if (a.points_Group_Stage !== b.points_Group_Stage) {
+                return b.points_Group_Stage - a.points_Group_Stage;
+            } else {
+                const goalDifferenceA = a.goals[0] - a.goals[1];
+                const goalDifferenceB = b.goals[0] - b.goals[1];
+
+                if (goalDifferenceA !== goalDifferenceB) {
+                    return goalDifferenceB - goalDifferenceA;
+                } else {
+                    return b.goals[0] - a.goals[0];
+                }
+            }
+        }
+    });
+
+    return sortedTeams;
+}
+
+function getAllGroupNames(teams){
+    groupNames = [];
+    for (const team of teams) {
+        if (!groupNames.includes(team.group)) {
+            groupNames.push(team.group);
+        }
+    }
+    return groupNames;
+}
+
 module.exports =  {
-    getRank
+    getRank,
+    getTeamRank,
+    getTeamGroupRank,
+    rankTeams,
+    getAllGroupNames
 }
