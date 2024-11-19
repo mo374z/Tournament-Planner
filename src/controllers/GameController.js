@@ -7,6 +7,7 @@ const MainSettings = mongoose.model('MainSettings');
 const genCounters = mongoose.model('generalCounters');
 const socketIo = require('socket.io');
 const app = express();
+
 const {updateSocketConfig} = require('../config/socketConfig');
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));

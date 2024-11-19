@@ -67,8 +67,6 @@ app.engine('hbs', exphbs.engine({
 app.set('view engine', 'hbs');
 app.use(express.static(__dirname + '/public'))
 app.use(express.static(path.join(__dirname, 'src/public')));
-
-// Routes
 app.use("/", PublicPageController);
 app.use("/team", TeamController);
 app.use("/schedule", ScheduleController);

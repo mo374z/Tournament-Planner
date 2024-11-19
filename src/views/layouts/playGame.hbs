@@ -226,7 +226,6 @@
     }
     disableActiveGameButton('{{ game.status }}');
 
-
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
        socket.on('connect', () => {
