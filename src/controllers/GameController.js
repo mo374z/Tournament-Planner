@@ -241,12 +241,11 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
             // Increment the score for the specified team
             game.goals[req.params.teamId-1] += parseInt(req.params.i);
             
-            const { teamId: Sekt_Team_ID, allGoals } = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
-
+            const { addRemoveSekt, allGoals} = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
             const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
 
             if (req.params.i == -1) {            // -            // If the goal is decremented, remove the last goal from the game and player
-                await removeLastGoalfromGameAndPlayer(game, req.params.teamId - 1);
+                await removeLastGoalfromGameAndPlayer(game, req.params.teamId - 1); 
             }
             else {                               // +           // If the goal is incremented, add the goal to the game object
                 // Add this goal to the goal log into the game object
@@ -257,7 +256,7 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
                     teamIndex: req.params.teamId - 1,
                     newScore: game.goals,   
                     goalIndex: game.goalsLog.length + 1,
-                    sekt_won: Sekt_Team_ID != 0, //set the sekt_won to true if a sekt is won (Sekt_Team_ID is not 0)
+                    sekt_won: addRemoveSekt === 1 ? true : false,
                     goalIndexTournament: allGoals
                 });
             }
@@ -266,19 +265,34 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
 
             res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
 
-            if(Sekt_Team_ID != 0){
-                console.log('Sekt Team ID: ', Sekt_Team_ID);
-                const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
-                team.sektWon += 1; // Increment the sektWon counter for the team
-                console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
-                await team.save(); // Save the updated team
+            if(addRemoveSekt !== 0){ // If the Sekt is won or removed
+                const Sekt_Team_ID = parseInt(req.params.teamId); // Get the team ID that gets the Sekt
+                if(addRemoveSekt === 1){ // If the sekt is won, increment the sektWon counter for the team
+                    //console.log('Sekt Team ID: ', Sekt_Team_ID);
+                    const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
+                    team.sektWon += 1; // Increment the sektWon counter for the team
+                    console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
+                    await team.save(); // Save the updated team
 
-                io.emit('Sekt', Sekt_Team_ID);
+                    io.emit('Sekt', Sekt_Team_ID); // Emit an event to the TV page to show the Sekt
+                }
+                else if(addRemoveSekt === -1){ // If the sekt is removed, decrement the sektWon counter for the team ?
+
+                    //This solutuion is not perfect because if the goal wich let to the sekt is frm the other team whats happens then ?
+
+                    // //console.log('Sekt Team ID: ', Sekt_Team_ID);
+                    // const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
+                    // team.sektWon -= 1; // Decrement the sektWon counter for the team
+                    // console.log('Sektcounter decremented for team: ', team.name, ' to: ', team.sektWon);
+                    // await team.save(); // Save the updated team
+                    
+                }
             }
 
             io.emit('updateLiveGame', updatedGame);
         }
     } catch (err) {
+        console.error('Error changing score: ', err); 
         res.status(500).send('Internal Server Error');
     }
 });
@@ -414,23 +428,37 @@ async function updateGenGoalsCounter(increment, teamId) {
         if (!counters) {
             counters = new genCounters({ allGoals: 0 , gamesPlayed:0 , goalSektCounter: 0}); // Create a new counters document with allGoals set to 0
         }
-        counters.allGoals += increment; // Increment allGoals counter
-        counters.goalSektCounter -= increment; // Decrement goalSektCounter counter
-
+        counters.allGoals += increment; // Increment allGoals counter (if increment is negative, it will decrement)
         if(counters.allGoals <= -1){counters.allGoals = 0;} // If allGoals can not be negative, set it to 0
+
+        console.log(teamId);
+        const TeamID = teamId;
+
+
+        counters.goalSektCounter -= increment; // Decrement goalSektCounter counter (if increment is negative, it will increment)
+        console.log('goalSektCounter: ', counters.goalSektCounter);
+        
+        const mainSettings = await MainSettings.findOne({}); // Fetch main settings
+        const goalsforSekt = mainSettings.goalsforSekt;
     
-        if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less, reset it to default value
-            const mainSettings = await MainSettings.findOne({}); // Fetch main settings
-            counters.goalSektCounter = mainSettings.goalsforSekt;
+        if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less the team wins an Sekt, reset it to default value
+            console.log('Sekt won by team: ', TeamID);
+            counters.goalSektCounter = goalsforSekt
             await counters.save(); // Save the updated counter value            
-            return { teamId: teamId, allGoals: counters.allGoals }; // Returning an object with named properties
+            return { addRemoveSekt: +1, allGoals: counters.allGoals}; // Returning an object with named properties
+        }
+        else if(counters.goalSektCounter > goalsforSekt){ // If goalSektCounter counter is higher than the default value, reset it to default value (this means that the teams sekt is withdrawn)
+            counters.goalSektCounter = 1; // Reset the goalSektCounter counter to 1 because when the goal wich had set the counter to the goalsforSekt is removed, the counter should be 1 goal until sekt is won
+            await counters.save(); // Save the updated counter value
+            // return { teamId: TeamID, allGoals: counters.allGoals, removeSekt: true}; // Returning an object with named properties
+            return { addRemoveSekt: -1, allGoals: counters.allGoals}; // Returning an object with named properties
         }
         else{
             await counters.save(); // Save the updated counter value
-            return { teamId: 0, allGoals: counters.allGoals }; // Returning an object with named properties
-        }        
+            return { addRemoveSekt: 0, allGoals: counters.allGoals}; // Returning an object with named properties
+        }       
     } catch (err) {
         console.error('Error updating allGoals counter: ', err);
-        return { teamId: 0, allGoals: -1 }; // Returning an object with named properties
+        return { addRemoveSekt: 0, allGoals: -1}; // Returning an object with named properties
     }
 }
