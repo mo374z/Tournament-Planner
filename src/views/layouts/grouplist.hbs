@@ -1,27 +1,35 @@
-<section style="text-align: center;">
-    <h1>Groups List</h1>
+<section class="text-center mt-5 mb-5">
+    <h1 class"mb-4">Groups List</h1>
 
+    <div class="page-divider">
     {{#each teamsByGroup}}
-        <h2>Group {{groupName}}</h2>
-        <table style="margin: 0 auto; width: 80%; border-collapse: collapse;">
-            <thead>
-                <tr style="background-color: #f2f2f2; height: 40px;">
-                    <th style="width: 50%; border: 1px solid #ddd;">Team Name</th>
-                    <!-- Add more table headers as needed -->
+        <h2 class="h4 mb-3">Group {{groupName}}</h2>
+        <table class="table table-bordered table-striped mx-auto" style="width: 80%;">
+            <thead class="thead-light">
+                <tr>
+                    <th scope="col" class="w-10">Rank</th>
+                    <th scope="col" class="w-40">Team Name</th>
+                    <th scope="col" class="w-20">Games Played</th>
+                    <th scope="col" class="w-20">Goals</th>
+                    <th scope="col" class="w-20">Goals Difference</th>
+                    <th scope="col" class="w-20">Points</th>
                 </tr>
             </thead>
             <tbody>
                 {{#each teams}}
-                    <tr style="border: 1px solid #ddd; height: 30px;">
-                        <td style="border: 1px solid #ddd;">{{this.name}}</td>
-                        <!-- Display other team information as needed -->
+                    <tr>
+                        <td>{{this.rank}}</td>
+                        <td>{{this.name}}</td>
+                        <td>{{this.gamesPlayed_Group_Stage}}</td>
+                        <td>{{this.goalsGroupStage.[0]}}:{{this.goalsGroupStage.[1]}}</td>
+                        <td>{{this.goalsDifferenceGroupStage}}</td>
+                        <td>{{this.points_Group_Stage}}</td>
                     </tr>
                 {{/each}}
             </tbody>
         </table>
     {{/each}}
+    </div>
 
-    <br><br>
-
-    <a href="/" style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Back to Main</a>
+    Disclaimer: The ranking is based on the following criteria: 1) Points; 2) Goal difference; 3) Goals scored
 </section>

@@ -1,57 +1,79 @@
 <section style="text-align: center;">
-    <title>Schedule List</title>
-    <h1>Schedule List</h1>
-    <h3>
-        <a href="/schedule/generate" style="text-decoration: none; color: #fff; background-color: #007bff; padding: 5px 10px; border-radius: 3px;" onclick="return confirm('Are you sure you want to clear the Schedule and create new?');">Generate Schedule from Teams</a>
-    </h3>
-    <table style="margin: 0 auto; width: 80%; border-collapse: collapse;">
-        <thead>
-            <tr style="background-color: #f2f2f2; height: 60px;">
-                <th style="width: 10%; border: 1px solid #ddd;">Number</th>
-                <th style="width: 20%; border: 1px solid #ddd;">Time ({{timeBetweenGames}} min Abstand)</th>
-                <th style="width: 30%; border: 1px solid #ddd;">Opponents</th>
-                <th style="width: 20%; border: 1px solid #ddd;">Goals</th>
-                <th style="width: 15%; border: 1px solid #ddd;">Duration</th>
-                <th style="width: 10%; border: 1px solid #ddd;">Group</th>
-                <th style="width: 10%; border: 1px solid #ddd;">Status</th>
-                <th style="width: 5%; border: 1px solid #ddd;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{#each list}}
-            <tr style="border: 1px solid #ddd; height: 50px;">
-                <td style="border: 1px solid #ddd; font-weight: bold;">{{this.number}}</td>
-                <td style="border: 1px solid #ddd;">{{formatTime this.time}}</td>
-                <td style="border: 1px solid #ddd;">{{this.opponents}}</td>
-                <td style="border: 1px solid #ddd;">{{this.goals.[0]}}:{{this.goals.[1]}}</td>
-                <td style="border: 1px solid #ddd;">{{this.duration}} minutes</td>
-                <td style="border: 1px solid #ddd;">{{this.group}}</td>
-                <td style="border: 1px solid #ddd;">{{this.status}}</td>
-   
-         <td style="border: 1px solid #ddd;">
-            <div style="white-space: nowrap;">
-                <a href="/schedule/{{this.id}}" style="text-decoration: none; color: #fff; background-color: #007bff; padding: 8px 15px; border-radius: 3px; margin-right: 5px;">Edit Game</a>
-                <a href="/game/{{this.id}}/play" style="text-decoration: none; color: #fff; background-color: #178f0c; padding: 8px 15px; border-radius: 3px;">Start Game</a>
-            </div>
-        </td>
 
-            </tr>
-            {{/each}}
-        </tbody>
-    </table>
+
+    <h1>Schedule List</h1>
+    
+        <div class="row justify-content-center page-divider">
+            <div class="col-auto">
+
+                <table class="table table-responsive table-bordered">
+                <thead>
+                    <tr>
+                        <th>Number</th>
+                        <th>Time <small>({{timeBetweenGames}}min)</small></th>
+                        <th colspan="2">Team Opponents</th>
+                        <th>Goals</th>
+                        <th>Duration</th>
+                        <th colspan="2">Groups</th>
+                        <th>Status</th>
+                        <th>Game Phase</th>
+                        <th>Display Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each list}}
+                    <tr {{#streq this.gamePhase 'Group_Stage'}}  {{else}}class="bg-light"{{/streq}}>
+                        <td>{{this.number}}</td>
+                        <td>{{formatTime this.time}}</td>
+                        <td>{{this.opponents.[0]}}</td>
+                        <td>{{this.opponents.[1]}}</td>
+                        <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                        <td>{{this.duration}} minutes</td>
+                        <td>{{this.group.[0]}}</td>
+                        <td>{{this.group.[1]}}</td>
+                        <td>{{this.status}}</td>
+                        <td>{{this.gamePhase}}</td>
+                        <td>{{this.gameDisplayName}}</td>
+
+                        <td>
+                            <div style="white-space: nowrap;">
+                            {{#streq this.status 'active'}} {{!-- if the game is ended, the edit button is disabled --}}
+                                <a href="/schedule/{{this.id}}" class="btn btn-secondary disabled" >Edit Game</a>   
+                            {{else}}
+                                <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>   
+                            {{/streq}}                
+
+                            {{#if this.isGamePlayable}} {{!-- isGamePlayable is a helper function to check if the game is playable --}}	
+                                <a href="/game/{{this.id}}/play" class="btn btn-success">Open Game</a>
+                            {{else}}    
+                                {{#streq this.status 'Scheduled'}}                        
+                                    <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                                {{else}}
+                                    <a href="/game/{{this.id}}/play" class="btn btn-secondary disabled">Open Game</a>
+                                {{/streq}}
+                            {{/if}}
+
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+{{!-- 
+    <a href="/schedule/updateQuarterFinals" class="btn btn-success">Update  Quarter Final Games </a>
+
+    <a href="/schedule/updateSemiFinals" class="btn btn-info">Update  Semi Final Games </a> --}}
+
 
     <br><br>
 
-    <a href="/" style="text-decoration: none; color: #fff; background-color: #13380a; padding: 8px 15px; border-radius: 3px;">Zurück zu Main</a>
+    <a href="/schedule/createCustomGame" class="btn btn-success">Eigenes Game erstellen/hinzufügen</a>
+
+    <br><br>
 </section>
 
-<script>
-    // Helper function to format time in "hh:mm" format
-    Handlebars.registerHelper('formatTime', function(time) {
-        const formattedTime = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        return formattedTime;
-    });
-</script>
-
-
-
+<script>console.log( this.isGamePlayable )</script>

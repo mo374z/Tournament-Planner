@@ -1,0 +1,74 @@
+
+<div style="text-align: center;">
+    <h3>{{viewTitle}}</h3>
+    <form action='/team' method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
+        <input type="hidden" name="_id" value="{{team._id}}"> 
+        
+        <div style="margin-bottom: 10px;">
+            <label for="name">Name</label><br>
+            <input type="text" name="name" placeholder="Team Name" value="{{team.name}}" style="width: 100%; padding: 5px;">
+        </div>
+
+        {{#if isNew}}
+            <div style="margin-bottom: 10px;">
+                <label for="group">Gruppe</label><br>
+                <input type="text" name="group" placeholder="Gruppe" value="{{team.group}}" style="width: 100%; padding: 5px;">
+            </div>
+        {{else}}
+            <div style="margin-bottom: 10px;">
+                <label for="group">Gruppe</label><br>
+                <p>{{team.group}}</p>
+            </div>
+        {{/if}}
+
+        <div style="margin-bottom: 10px;">
+            <label for="gamesPlayed">Spiele gespielt</label><br>
+            <p>{{team.gamesPlayed}}</p>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label for="gamesWon">Spiele gewonnen</label><br>
+            <p>{{team.gamesWon}}</p>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label for="gamesLost">Spiele verloren</label><br>
+            <p>{{team.gamesLost}}</p>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label for="gamesDraw">Spiele unentschieden</label><br>
+            <p>{{team.gamesDraw}}</p>
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label for="goals">Tore</label><br>
+            <p>{{team.goals.[0]}} - {{team.goals.[1]}}</p>   <!-- (geschossene Tore [0] - erhaltene Tore[1]) -->
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label for="goals">Tore Gruppenphase</label><br>
+            <p>{{team.goalsGroupStage.[0]}} - {{team.goalsGroupStage.[1]}}</p>   <!-- (geschossene Tore [0] - erhaltene Tore[1]) -->
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label for="sektWon">Sekt gewonnen</label><br>
+            <p>{{team.sektWon}}</p>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <label for="points">Punkte Gruppenphase</label><br>
+            <p>{{team.points_Group_Stage}}</p>
+        </div>
+
+         <div style="margin-bottom: 10px;">
+            <label for="points">Punkte Gesamt</label><br>
+            <p>{{team.points_General}}</p>
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-primary">Team Speichern</button>
+            <a href="/team/list" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
