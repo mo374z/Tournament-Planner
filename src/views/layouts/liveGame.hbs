@@ -74,8 +74,7 @@
 
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <script>
-    const socket = io('http://localhost:2053');
-    //const socket = io('https://budescharfeseck.de:2053');
+    const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
     socket.on('connect', () => {
     console.log('Socket connected');

@@ -126,7 +126,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
 <script>
-
     // update the date and time
     function updateDateTime() {
         const now = new Date();
@@ -136,8 +135,7 @@
     // call the `updateDateTime` function every second
     setInterval(updateDateTime, 1000);
 
-    const socket = io('http://localhost:2053');
-    //const socket = io('https://budescharfeseck.de:2053');
+    const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
     socket.on('reloadTVPage', () => {
         location.reload();
