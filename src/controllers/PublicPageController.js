@@ -9,8 +9,9 @@ const MainSettings = mongoose.model('MainSettings');
 
 module.exports = router;
 
-
-const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
+const {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth');
+const {updateSocketConfig} = require('../config/socketConfig');
+const socketConfig = updateSocketConfig(process.argv.slice(2));
 
 const cookieParser = require('cookie-parser');
 router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
@@ -85,6 +86,7 @@ async function renderTVPage(req, res) {
             const teamsByGroup = await getTeamsByGroup();
 
             res.render('layouts/TVPage', {
+                socketConfig: socketConfig,
                 gameslist: games,
                 teamsByGroup,
                 timeBetweenGames,

@@ -1,70 +1,63 @@
 const express = require('express');
 var router = express.Router();
-
 const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
 const MainSettings = mongoose.model('MainSettings');
-
 const genCounters = mongoose.model('generalCounters');
-
 const socketIo = require('socket.io');
 const app = express();
 
+const {updateSocketConfig} = require('../config/socketConfig');
 
-const fs = require('fs');
-const https = require('https');
+const socketConfig = updateSocketConfig(process.argv.slice(2));
 
-const server = https.createServer({
-    key: fs.readFileSync('./private-key.pem'),             // set the correct path to your private key
-    cert: fs.readFileSync('./certificate.pem'),
-  }, app);
+const socketPort = socketConfig.socketPort;
+const useHttps = socketConfig.protocol === 'https';
 
-
-
-// const http = require('http');
-// const server = http.createServer(app); // comment this 2 lines and uncomment the above lines to enable https
+let server;
+if (useHttps) {
+    const https = require('https');
+    const fs = require('fs');
+    server = https.createServer({
+        key: fs.readFileSync('./private-key.pem'),
+        cert: fs.readFileSync('./certificate.pem'),
+    }, app);
+} else {
+    const http = require('http');
+    server = http.createServer(app);
+}
 
 module.exports = router;
-const cors = require('cors'); // Import cors middleware
-
-
-
+const cors = require('cors');
 
 //Code part to enable the authentication for all the following routes
-const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+const {verifyToken, checkLoginStatus, isAdmin} = require('../middleware/auth');
+const cookieParser = require('cookie-parser');
+router.use(cookieParser());
+router.use(verifyToken);
+router.use((req, res, next) => {
     res.locals.username = req.username;
     res.locals.userrole = req.userRole;
     next();
-  });
-//--------------------------------------------------------------
-
+});
 
 const {updateQuarterFinalsSchedule} = require('./QuarterFinalsController');
 const {updateSemiFinalsSchedule} = require('./SemiFinalsController');
 
-
-// Start the Websocet server on port 2053
-const PORT = process.env.PORT || 2053;
-server.listen(PORT, () => {
-    console.log(`Server for Websocet recieving is running on port ${PORT}`);
+// Start the Websocket server
+server.listen(socketPort, () => {
+    console.log(`${useHttps ? 'HTTPS' : 'HTTP'} Websocket server running on port ${socketPort}`);
 });
-
-
 
 // Enable CORS for Socket.IO
 const io = socketIo(server, {
     cors: {
-      origin: '*', //'http://localhost:3000',  // Change this to your actual frontend URL in production for security - we changed this to * to handle a CORS error
-      methods: ['GET', 'POST'], // Add the allowed methods
-      credentials: true,
+        origin: '*',
+        methods: ['GET', 'POST'],
+        credentials: true,
     }
-  });
+});
 
 app.use(cors());
 
@@ -171,7 +164,7 @@ router.get('/:id/play', async (req, res) => {
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
 
-        res.render('layouts/playGame', { game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
+        res.render('layouts/playGame', { socketConfig:socketConfig, game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
     } catch (err) {
         console.error('Error fetching game for play: ', err);
         res.status(500).send('Internal Server Error');
@@ -361,7 +354,7 @@ router.get('/live', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
         
-        res.render('layouts/liveGame', { game, noActiveGame: false });
+        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false });
     } catch (err) {
         console.error('Error fetching live games: ', err);
         res.status(500).send('Internal Server Error');

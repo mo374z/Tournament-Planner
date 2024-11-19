@@ -1,28 +1,34 @@
-const https = require('https');    //https server erstellen
-const fs = require('fs');
-
+const bodyparser = require('body-parser');
 const path = require('path');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 const express = require('express');
 const handlebars = require('handlebars');
 const exphbs = require('express-handlebars');
-const { allowInsecurePrototypeAccess } = require('@handlebars/allow-prototype-access');
+const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access');
 const app = express();
+const mongoose = require('mongoose');
 
 require('./src/models/db');
+const {updateSocketConfig} = require('./src/config/socketConfig');
+const {TeamController} = require("./src/controllers/TeamController");
+const {ScheduleController} = require("./src/controllers/ScheduleController");
+const MainSettingController = require("./src/controllers/MainSettingController");
+const GameController = require("./src/controllers/GameController");
+const AuthenticationController = require("./src/controllers/AuthenticationController");
+const PublicPageController = require("./src/controllers/PublicPageController");
 
-const mongoose = require('mongoose');
-const Game = mongoose.model('Game');
+const socketConfig = updateSocketConfig(process.argv.slice(2));
 
+const port = socketConfig.port;
+const useHttps = socketConfig.protocol === 'https';
 
-const bodyparser = require('body-parser');
+console.log('Starting server with the following configuration:', socketConfig);
 
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
-
-
-
 app.set('views', path.join(__dirname, '/src/views/'));
-
 app.engine('hbs', exphbs.engine({
   handlebars: allowInsecurePrototypeAccess(handlebars),
   defaultLayout: 'main',
@@ -35,7 +41,7 @@ app.engine('hbs', exphbs.engine({
     },
     formatDateTime: function (time) {
       time.setHours(time.getHours() + 1);
-      const formattedTime = new Date(time).toISOString().slice(0, 16); // Adjust the slice based on your datetime-local format
+      const formattedTime = new Date(time).toISOString().slice(0, 16);
       return formattedTime;
     },
     eq: function (v1, v2) {
@@ -45,87 +51,46 @@ app.engine('hbs', exphbs.engine({
       console.log(v1, v2);
       return v1 === v2;
     },
-
-
     log: function (...args) {
       console.log('Logging:', ...args);
-      return ''; // Return an empty string to avoid adding content to the rendered template
+      return '';
     },
     milliToMin: function (milliseconds) {
-      return milliseconds / (1000 * 60); // Convert milliseconds to minutes
+      return milliseconds / (1000 * 60);
     },
     streq: function (a, b, options) {
       return a === b ? options.fn(this) : options.inverse(this);
     }
-
   }
 }));
 
 app.set('view engine', 'hbs');
-
 app.use(express.static(__dirname + '/public'))
-
-
-
-// app.listen(3000, () => {                                      //http server erstellen
-//   console.log("Webserver started at localhost port 3000");
-// });
-
-// Create an HTTPS server                                  //https server erstellen
-const httpsServer = https.createServer({
-  key: fs.readFileSync('private-key.pem'),
-  cert: fs.readFileSync('certificate.pem'),
-}, app);
-
-// Listen on port 443
-httpsServer.listen(443, () => {
-  console.log('HTTPS server running on port 443');
-});
-
-
-app.use(express.static(path.join(__dirname, 'src/public'))); // Statische Dateien wie CSS, Bilder, JS, etc. werden aus dem Ordner "public" geladen
-
-// import the necessary script for the application
-const {TeamController} = require("./src/controllers/TeamController");
-const {ScheduleController} = require("./src/controllers/ScheduleController");
-const MainSettingController = require("./src/controllers/MainSettingController");
-const GameController = require("./src/controllers/GameController");
-const AuthenticationController = require("./src/controllers/AuthenticationController");
-
-const PublicPageController = require("./src/controllers/PublicPageController");
-
-
-
-// const  {verifyToken, checkLoginStatus , isAdmin} =  require('./src/middleware/auth'); // Pfad zu Ihrer auth.js-Datei
-
-// // app.get('/', (request, response) => {
-// //   response.render('home');
-// // });
-
-
-
-
-
-// const cookieParser = require('cookie-parser');
-// app.use(cookieParser());
-
-// app.get('/', checkLoginStatus, (req, res) => {
-//   const username = req.username;
-//   const userrole = req.userRole;
-//   res.render('home', { username , userrole}); // 'main' ist der Name Ihrer Hauptseite-Vorlage
-// });
-
-
+app.use(express.static(path.join(__dirname, 'src/public')));
 app.use("/", PublicPageController);
-
-
-
 app.use("/team", TeamController);
 app.use("/schedule", ScheduleController);
 app.use("/mainSettings", MainSettingController);
 app.use("/game", GameController);
-
 app.use("/user", AuthenticationController);
 
-
-
+// Server configuration
+if (useHttps) {
+  try {
+    const httpsServer = https.createServer({
+      key: fs.readFileSync('private-key.pem'),
+      cert: fs.readFileSync('certificate.pem'),
+    }, app);
+    
+    httpsServer.listen(port, () => {
+      console.log(`HTTPS server running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Failed to start HTTPS server:', error.message);
+    process.exit(1);
+  }
+} else {
+  app.listen(port, () => {
+    console.log(`HTTP server started at localhost port ${port}`);
+  });
+}

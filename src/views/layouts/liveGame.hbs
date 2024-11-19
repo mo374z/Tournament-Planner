@@ -19,7 +19,6 @@
         {{#if noActiveGame}}
         <p class="mt-3" id="noActiveGameMessage">No active game</p>
         {{/if}}
-
         <span id="timerStatus" class="ml-2"></span>
     </div>
 
@@ -44,7 +43,7 @@
             <img class="d-block mx-auto max-height-100" src="/images/henle_edit.jpg" alt="Hofladen Henle">
         </div>
         <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/gretzinger_edit.jpg" alt="Hofladen Henle">
+            <img class="d-block mx-auto max-height-100" src="/images/gretzinger_edit.jpg" alt="Getzinger">
         </div>
     </div>
     
@@ -67,8 +66,7 @@
 
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <script>
-    //const socket = io('http://localhost:2053');
-    const socket = io('https://budescharfeseck.de:2053');
+    const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
     socket.on('connect', () => {
     console.log('Socket connected');
