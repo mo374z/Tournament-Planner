@@ -140,43 +140,12 @@ function removeLastGoalfromGameAndPlayer(game, opponentIndex) {
                     console.log("No goals of the team in the game");
                     resolve();
                 } else {
-                    //console.log(lastGoal[0]);
-                    // Check if a player was assigned to the goal
-                    if (lastGoal[0].player) {
-                        // Get the player
-                        const player = await Player.findById(lastGoal[0].player).exec();
-                        //Check if the player has goals
-                        if(player.total_goals === 0){
-                            console.log("Player has no goals");
-                            resolve();
-                        }
-                        //check if the player has the goal in his goals array
-                        const goalIndex = player.goals.findIndex(goal => goal.gameId.toString() === game._id.toString() && goal.goalId.toString() === lastGoal[0]._id.toString());
-                        if(goalIndex === -1){
-                            console.log("Player has this goal not in his goals array");
-                            resolve();
-                        }
-                        console.log("Removing goal index " + lastGoal[0].goalIndex + " from player " + player.name);
-                        // Remove the goal from the player with the gameId and goalId
-                        player.goals = player.goals.filter(goal => goal.gameId.toString() !== game._id.toString() || goal.goalId.toString() !== lastGoal[0]._id.toString());
-                        // Remove the goal from the player if it's not at 0 already
-                        if(player.total_goals > 0){
-                            player.total_goals -= 1;
-                        }
-                        // Save the player
-                        await player.save();
+                    
+                    if (lastGoal[0].player) {                           // Check if a player was assigned to the goal
+                        await removeGoalFromPlayer(lastGoal[0], game, opponentIndex);
                     } else {
                         console.log("No player was assigned to the goal");
                     }
-
-
-                    if(lastGoal[0].player){
-                        const player = await Player.findById(lastGoal[0].player).exec();
-                        console.log("Goal nr. " + lastGoal[0].goalIndex + " from team " + game.opponents[opponentIndex] + " at " + lastGoal[0].gameTimestamp + " was removed. Player " + player.name + " was assigned to the goal");
-                    } else {
-                        console.log("Goal nr. " + lastGoal[0].goalIndex + " from team " + game.opponents[opponentIndex] + " at " + lastGoal[0].gameTimestamp + " was removed. No player was assigned to the goal");
-                    }
-
 
                     //Update Goal indexes if necessary
                     //Check if there are goals from the other team in the game wich are newer than the removed goal
@@ -203,6 +172,38 @@ function removeLastGoalfromGameAndPlayer(game, opponentIndex) {
             reject(err);
         }
     });
+}
+
+
+
+async function removeGoalFromPlayer(goal, game, opponentIndex) {
+    const player = await Player.findById(goal.player).exec();
+    // Check if the player has goals
+    if (player.total_goals === 0) {
+        console.log("Player has no goals");
+        return;
+    }
+    // Check if the player has the goal in his goals array
+    const goalIndex = player.goals.findIndex(g => g.gameId.toString() === game._id.toString() && g.goalId.toString() === goal._id.toString());
+    if (goalIndex === -1) {
+        console.log("Player has this goal not in his goals array");
+        return;
+    }
+    console.log("Removing goal index " + goal.goalIndex + " from player " + player.name);
+    // Remove the goal from the player with the gameId and goalId
+    player.goals = player.goals.filter(g => g.gameId.toString() !== game._id.toString() || g.goalId.toString() !== goal._id.toString());
+    // Remove the goal from the player if it's not at 0 already
+    if (player.total_goals > 0) {
+        player.total_goals -= 1;
+    }
+    // Save the player
+    await player.save();
+
+    if (goal.player) {
+        console.log("Goal nr. " + goal.goalIndex + " from team " + game.opponents[opponentIndex] + " at " + goal.gameTimestamp + " was removed from Game and Player. Player " + player.name + " was assigned to the goal");
+    } else {
+        console.log("Goal nr. " + goal.goalIndex + " from team " + game.opponents[opponentIndex] + " at " + goal.gameTimestamp + " was removed. No player was assigned to the goal");
+    }
 }
 
 module.exports = {
