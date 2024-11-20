@@ -49,7 +49,7 @@ app.engine('hbs', exphbs.engine({
     eq: function (v1, v2) {
       return v1.equals(v2);
     },
-    gl: function (v1, v2) {
+    eqref: function (v1, v2) {
       return v1 === v2;
     },
     stringeq: function (v1, v2) {

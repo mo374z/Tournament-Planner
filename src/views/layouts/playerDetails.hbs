@@ -58,7 +58,7 @@
                 
                 <td>{{formatedgameTimestamp}}</td>
                 <td>
-                    {{#if (gl Playerteamindex 0)}}
+                    {{#if (eqref Playerteamindex 0)}}
                     <strong>{{newScore.[0]}}</strong> : {{newScore.[1]}}
                     {{else}}
                     {{newScore.[0]}} : <strong>{{newScore.[1]}}</strong>
@@ -66,7 +66,7 @@
                 </td>
                 <td>
                     {{!-- display only opponent not own team --}}
-                    {{#if (gl Playerteamindex 0)}}
+                    {{#if (eqref Playerteamindex 0)}}
                     {{opponents.[1]}}
                     {{else}}
                     {{opponents.[0]}}
