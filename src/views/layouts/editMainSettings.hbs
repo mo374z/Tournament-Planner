@@ -105,7 +105,7 @@
 
 
         <form action="/mainSettings/restoreDB" method="post">
-        <label for="dbRestoreName"><strong>Restore database:</strong></label><br>
+        <label for="dbRestoreName"><strong>Backups wiederherstellen:</strong></label><br>
         <select id="dbRestoreName" name="dbRestoreName" required style="margin-bottom: 10px;">
             {{#each backupDbs}}
             <option value="{{this}}">{{this}}</option>

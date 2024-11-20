@@ -10,6 +10,7 @@
         <table class="table table-responsive table-bordered">
             <thead>
                 <tr>
+                <th scope="col"></th>
                 <th scope="col">Name</th>
                 <th scope="col">Group</th>
                 <th scope="col">Games Played</th>
@@ -29,6 +30,7 @@
             <tbody>
                 {{#each list}}
                 <tr>
+                <td>{{this.index}}</td>
                 <td>{{this.name}}</td>
                 <td>{{this.group}}</td>
                 <td>{{this.gamesPlayed}}</td>

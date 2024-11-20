@@ -39,6 +39,10 @@ var TeamSchema = new mongoose.Schema({
     gamesPlayed_Group_Stage: {
         type: Number,
     },
+    //array of opponents the team has played against (maybe add this later)
+    // opponents: {
+    //     type: Array,
+    // },
 
 });
 
