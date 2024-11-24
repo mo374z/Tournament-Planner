@@ -1,6 +1,4 @@
 <body>
-
-
     <div class="container-fluid">
         <div class="container mt-5 mb-5 text-center">
             <h1>Budeturnier 2025</h1>
@@ -93,6 +91,16 @@
     </section>
     </div>
 
+    <div class="container-fluid">
+        <div class="alert alert-danger text-center mt-3 {{#unless infoBannerMessage}}d-none{{/unless}}">
+            <marquee behavior="scroll" direction="left" style="font-size: 20px;">{{infoBannerMessage}}</marquee>
+        </div>
+
+        <div id="connectionIndicator" class="text-center mt-3">
+            <span id="connectionStatusText" class="text-success">Verbunden</span>
+        </div>
+    </div>
+
     {{!-- <div id="carouselExampleSlidesOnly" class="carousel slide page-divider" data-bs-ride="carousel">
     <div class="carousel-inner" style="height: 400px; overflow: hidden;">
         <div class="carousel-item active" data-bs-interval="5000">
@@ -124,5 +132,4 @@
 </div> --}}
 
 </div>
-
 </body>

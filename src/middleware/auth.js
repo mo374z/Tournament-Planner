@@ -5,7 +5,7 @@ const jwtSecretkey =
 
 
 function verifyToken(req, res, next) {
-    console.log('verifyToken');
+    //console.log('verifyToken');
     const token = req.cookies.jwt; // Extract token from the cookie
 
     if (!token) {
@@ -25,8 +25,6 @@ function verifyToken(req, res, next) {
 
 
 function checkLoginStatus(req, res, next) {
-
-    console.log('checkLoginStatus');
     const token = req.cookies.jwt;
 
     if (!token) {

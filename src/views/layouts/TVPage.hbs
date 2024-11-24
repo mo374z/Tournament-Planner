@@ -5,7 +5,7 @@
         <div class="col-md-3 page-divider">
             <h1>Tabelle</h1>
             {{#each teamsByGroup}}
-            <h2 class="h4 mb-3">Group {{groupName}}</h2>
+            <h2 class="h4 mb-3">Gruppe {{groupName}}</h2>
             <div class="table-container">
                 <table class="table table-bordered table-striped">
                     <thead class="thead-light">
@@ -118,10 +118,15 @@
                 </div>
             </div>
         </div>
-
-
     </div>
-</div>
+
+    <div class="alert alert-danger text-center mt-3 {{#unless infoBannerMessage}}d-none{{/unless}}">
+        <marquee behavior="scroll" direction="left" style="font-size: 20px;">{{infoBannerMessage}}</marquee>
+    </div>
+
+    <div id="connectionIndicator" class="text-center mt-3">
+        <span id="connectionStatusText" class="text-success">Verbunden</span>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
@@ -132,12 +137,37 @@
         const currentDateTime = now.toLocaleTimeString();
         document.querySelector('#currentTime').textContent = currentDateTime;
     }
-    // call the `updateDateTime` function every second
+
+    updateDateTime();
     setInterval(updateDateTime, 1000);
 
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
     socket.on('reloadTVPage', () => {
         location.reload();
+    });
+
+    socket.on('connect', () => {
+        console.log('Socket connected');
+        document.getElementById('connectionStatusText').classList.remove('text-danger');
+        document.getElementById('connectionStatusText').classList.add('text-success');
+        document.getElementById('connectionStatusText').textContent = 'Verbunden';
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        document.getElementById('connectionStatusText').classList.remove('text-success');
+        document.getElementById('connectionStatusText').classList.add('text-danger');
+        document.getElementById('connectionStatusText').textContent = 'Getrennt';
+    });
+
+    socket.on('updateInfoBanner', (message) => {
+        const infoBanner = document.querySelector('.alert-danger marquee');
+        if (message) {
+            infoBanner.textContent = message;
+            infoBanner.parentElement.classList.remove('d-none');
+        } else {
+            infoBanner.parentElement.classList.add('d-none');
+        }
     });
 </script>

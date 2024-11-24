@@ -64,9 +64,7 @@
         <h4>Database Settings</h4>
         <p><strong><span style="color: red;">Current DB: "{{dbName}}"</span></strong></p>
 
-        <a href="/mainSettings/backupDB" class="btn btn-dark">Erstelle Backup</a>
-
-
+        <h5>Available Databases:</h5>
         <table class="mx-auto" style="margin-left: auto; margin-right: auto;">
             <thead>
                 <tr>
@@ -102,7 +100,9 @@
         <input type="submit" value="Switch database" class="btn btn-primary" style="margin-bottom: 20px;" onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
         </form>
 
+        <h5>Backup/Restore Database:</h5>
 
+        <a href="/mainSettings/backupDB" class="btn btn-dark">Erstelle Backup der aktuellen DB</a>
 
         <form action="/mainSettings/restoreDB" method="post">
         <label for="dbRestoreName"><strong>Backups wiederherstellen:</strong></label><br>

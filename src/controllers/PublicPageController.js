@@ -28,15 +28,11 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 //import the fetchGamesData function from the ScheduleController
 const {fetchGamesData} = require('./ScheduleController');
 const {getTeamsByGroup} = require('./TeamController');
-
-
+const {getInfoBannerMessage} = require('./GameController');
 
 
 router.get('/', (req, res) => {
-
     renderPublicPage(req, res);
-    //res.render('home');
-
 });
 
 
@@ -45,34 +41,28 @@ router.get('/TV', checkLoginStatus, (req, res) => {
 });
 
 
-
-
-
 async function renderPublicPage(req, res) {
 
     fetchGamesData().then(async ({ games, timeBetweenGames }) => {
 
-
         try {
             const teamsByGroup = await getTeamsByGroup();
+            const infoBannerMessage = getInfoBannerMessage(); // Get the current info banner message
 
             res.render('home', {
                 gameslist: games,
                 teamsByGroup,
                 timeBetweenGames,
+                infoBannerMessage // Send the infoBannerMessage to the Public page
             });
 
         } catch (err) {
             console.log('Error in retrieval: ' + err);
         }
-        
-        
 
     }).catch((error) => {
         console.log(error);
     });
-
-    
 }
 
 
@@ -81,26 +71,24 @@ async function renderTVPage(req, res) {
 
     fetchGamesData().then(async ({ games, timeBetweenGames }) => {
 
-
         try {
             const teamsByGroup = await getTeamsByGroup();
+            const infoBannerMessage = getInfoBannerMessage(); // Get the current info banner message
 
             res.render('layouts/TVPage', {
                 socketConfig: socketConfig,
                 gameslist: games,
                 teamsByGroup,
                 timeBetweenGames,
+                infoBannerMessage // Send the infoBannerMessage to the TV page
             });
 
         } catch (err) {
             console.log('Error in retrieval: ' + err);
         }
         
-        
-
     }).catch((error) => {
         console.log(error);
     });
 
-    
 }

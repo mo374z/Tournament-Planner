@@ -66,6 +66,10 @@
     </button>
 </div>
 
+<div id="connectionIndicator" class="text-center mt-3">
+    <span id="connectionStatusText" class="text-success">Verbunden</span>
+</div>
+
     {{!-- <div class="text-center">
         <p><strong>Game Time:</strong> {{ formatTime game.time }}</p>
         <p><strong>Status:</strong> {{ game.status }}</p>
@@ -78,8 +82,17 @@
 
     socket.on('connect', () => {
     console.log('Socket connected');
+    document.getElementById('connectionStatusText').classList.remove('text-danger');
+    document.getElementById('connectionStatusText').classList.add('text-success');
+    document.getElementById('connectionStatusText').textContent = 'Verbunden';
     });
     
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        document.getElementById('connectionStatusText').classList.remove('text-success');
+        document.getElementById('connectionStatusText').classList.add('text-danger');
+        document.getElementById('connectionStatusText').textContent = 'Getrennt';
+    });
 
     socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
         const minutes = Math.floor(timerValue / 60);
