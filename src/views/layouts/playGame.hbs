@@ -113,8 +113,8 @@
     <div class="container mt-5">
         <h3 class="text-decoration-underline">Info-Banner</h3>
         <div class="input-group mb-3">
-            <input type="text" id="infoBannerMessage" class="form-control" placeholder="Aktuell keine Nachricht !" autocomplete="off" value="{{ infoBannerMessage }}" style="border-width: 2px">
-            <button class="btn btn-primary" onclick="updateInfoBanner()">Infobanner updaten</button>
+            <input type="text" id="infoBannerMessage" class="form-control" placeholder="Aktuell keine Nachricht !" autocomplete="off" style="border-width: 2px">
+            <button class="btn btn-primary" id="infoBannerButton" onclick="updateInfoBanner()">Infobanner updaten</button>
         </div>
     </div>
 
@@ -289,14 +289,40 @@
         document.getElementById('nextGameDisplayName').textContent = nextGame.gameDisplayName;
     });
 
+    let infoBannerMessage = '{{ infoBannerMessage }}';
+
     socket.on('updateInfoBanner', (message) => {
         document.getElementById('infoBannerMessage').value = message;
+        infoBannerMessage = message;
         //flash the textfield with a green border to indicate that the message has been updated
         document.getElementById('infoBannerMessage').style.borderColor = 'green';
+        document.getElementById('infoBannerMessage').value = '';
+        if(infoBannerMessage === '' || infoBannerMessage === null) {
+            document.getElementById('infoBannerMessage').placeholder = 'Aktuell keine Nachricht !';
+            document.getElementById('infoBannerButton').textContent = 'Infobanner updaten';
+            document.getElementById('infoBannerButton').classList.remove('btn-danger');
+        } else {
+            document.getElementById('infoBannerMessage').placeholder = 'Aktuell: ' + message;
+            document.getElementById('infoBannerButton').textContent = 'Infobanner zurücksetzen';
+            document.getElementById('infoBannerButton').classList.add('btn-danger');
+        }
+        
 
         setTimeout(() => {
             document.getElementById('infoBannerMessage').style.borderColor = '';
         }, 1000);
+    });
+
+    document.getElementById('infoBannerMessage').addEventListener('input', () => {
+        const message = document.getElementById('infoBannerMessage').value;
+
+        if((message === '' || message === null) && infoBannerMessage !== '') {
+            document.getElementById('infoBannerButton').textContent = 'Infobanner zurücksetzen';
+            document.getElementById('infoBannerButton').classList.add('btn-danger');
+        } else {           
+            document.getElementById('infoBannerButton').textContent = 'Infobanner updaten';
+            document.getElementById('infoBannerButton').classList.remove('btn-danger');
+        }
     });
 
     function updateInfoBanner() {
@@ -335,6 +361,12 @@
                 otherGameActiveWarning.style.display = 'none';
                 inactiveGameWarning.style.display = 'block';
             }
+        }
+
+        if (infoBannerMessage) {
+            document.getElementById('infoBannerMessage').placeholder = 'Aktuelle Nachricht: ' + message;
+            document.getElementById('infoBannerButton').textContent = 'Infobanner zurücksetzen';
+            document.getElementById('infoBannerButton').classList.add('btn-danger');
         }
     });
 </script>
