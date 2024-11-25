@@ -28,7 +28,9 @@ if (useHttps) {
     server = http.createServer(app);
 }
 
-module.exports = router;
+
+
+
 const cors = require('cors');
 
 //Code part to enable the authentication for all the following routes
@@ -62,11 +64,11 @@ const io = socketIo(server, {
 
 app.use(cors());
 
-
 let timerInterval = null;
 let timer = 0;
 let isPaused = true;
 
+let infoBannerMessage = ''; // Variable to store the info banner message
 
 // WebSocket logic
 io.on('connection', (socket) => {
@@ -145,6 +147,12 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('updateInfoBanner', (message) => {
+        infoBannerMessage = message;
+        console.log('Info banner message updated to: ', message);
+        io.emit('updateInfoBanner', message);
+    });
+
 });
 
 
@@ -188,7 +196,7 @@ router.get('/:id/play', async (req, res) => {
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
 
-        res.render('layouts/playGame', { socketConfig:socketConfig, game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
+        res.render('layouts/playGame', { socketConfig:socketConfig, game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool, infoBannerMessage });
     } catch (err) {
         console.error('Error fetching game for play: ', err);
         res.status(500).send('Internal Server Error');
@@ -407,7 +415,7 @@ router.get('/live', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
         
-        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false });
+        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage });
     } catch (err) {
         console.error('Error fetching live games: ', err);
         res.status(500).send('Internal Server Error');
@@ -455,3 +463,5 @@ async function updateGenGoalsCounter(increment, teamId) {
         return { addRemoveSekt: 0, allGoals: -1}; // Returning an object with named properties
     }
 }
+
+module.exports = {router, getInfoBannerMessage: () => infoBannerMessage};
