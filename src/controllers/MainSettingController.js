@@ -77,8 +77,7 @@ router.get('/', async (req, res) => {
 
         const dbName = mongoose.connection.db.databaseName;
 
-        const backupDbs = listBackups();  // Get a list of all backups
-        console.log('backupDbs:', backupDbs);
+        const backupDbs = listBackups();  // Get a list of all backup databases
 
         // Render the edit page with the MainSettings data
         res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName, backupDbs });

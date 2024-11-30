@@ -8,8 +8,19 @@ function verifyToken(req, res, next) {
     //console.log('verifyToken');
     const token = req.cookies.jwt; // Extract token from the cookie
 
-    if (!token) {
-        return res.status(401).send('Access denied');
+    if (!token) {        
+        return res.status(401).send(`
+                    <html>
+                        <head>
+                            <title>Access Denied</title>
+                        </head>
+                        <body>
+                            <h1>Access Denied</h1>
+                            <p>You do not have permission to access this page.</p>
+                            <button onclick="window.location.href='/user/login'">Go to Login Page</button>
+                        </body>
+                    </html>
+                `);
     }
 
     jwt.verify(token, jwtSecretkey, (err, decoded) => {
