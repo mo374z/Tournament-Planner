@@ -32,6 +32,10 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
+        //Check if the folder exists, if not create it
+        if (!fs.existsSync(path.join(__dirname, '../../public/templates/'))) {
+            fs.mkdirSync(path.join(__dirname, '../../public/templates/'), { recursive: true });
+        }
         cb(null, 'public/templates/');
     },
     filename: function (req, file, cb) {
@@ -78,7 +82,6 @@ router.post('/generate', async (req, res) => {
     const imageModule = new ImageModule({
         centered: true, // Center the image
         getImage: function(tagValue) {
-            console.log(`Loading image from path: ${tagValue}`);
             return fs.readFileSync(tagValue);
         },
         getSize: function(img, tagValue, tagName) {
@@ -99,12 +102,18 @@ router.post('/generate', async (req, res) => {
         teamName: team.name,
         group: team.group,
         rank: rank.toString(),
-        image: path.join(__dirname, '../../public', team.imagePath || 'public/teampictures/default.jpg')
+        image: path.join(__dirname, '../../public', team.imagePath || '/teampictures/default.jpg')
     };
 
     doc.render(placeholders);
 
     const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+
+    // Save the certificate to the server
+    //Check if the folder exists, if not create it
+    if (!fs.existsSync(path.join(__dirname, '../../public/certificates/'))) {
+        fs.mkdirSync(path.join(__dirname, '../../public/certificates/'), { recursive: true });
+    }
     const outputPath = path.join(__dirname, '../../public/certificates/', `${team.name}_certificate.docx`);
     fs.writeFileSync(outputPath, buffer);
 
