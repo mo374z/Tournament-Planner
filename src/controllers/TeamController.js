@@ -90,12 +90,11 @@ router.get('/list', async (req, res) => {
         const Teams = await Team.find({});
         const groups = await Team.distinct('group');
         
-        Teams.forEach(team => {
+        Teams.forEach(async team => {
             team.index = Teams.indexOf(team) + 1;
             team.goalsDifference = team.goals[0] - team.goals[1];
             team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
-            team.rank = getRank(team);
-            team.index = Teams.indexOf(team) + 1;
+            team.rank = await getRank(team);
         });
 
         res.render('layouts/teamlist', {
