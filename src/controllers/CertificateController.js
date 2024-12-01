@@ -29,6 +29,7 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
 
 
 //Generate the certificate and download it bzw. save it on the server in the folder public/certificates
+//uses https://www.npmjs.com/package/docxtemplater-image-module-free 
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
