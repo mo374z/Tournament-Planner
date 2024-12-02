@@ -13,10 +13,6 @@ var MainSettingsSchema = new mongoose.Schema({
         type: Number,
         required: 'This field is required'
     },
-    gameDurationGroupStage: {   //minutes
-        type: Number,
-        required: 'This field is required'
-    },
     gameDurationQuarterfinals: {    //minutes
         type: Number,
         required: 'This field is required'
@@ -41,7 +37,10 @@ var MainSettingsSchema = new mongoose.Schema({
         type: Number,
         required: 'This field is required'
     },
-
+    groups: {
+        type: [String],
+        default: []
+    }
 });
 
 mongoose.model('MainSettings', MainSettingsSchema);

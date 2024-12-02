@@ -20,6 +20,7 @@ const AuthenticationController = require("./src/controllers/AuthenticationContro
 const PublicPageController = require("./src/controllers/PublicPageController");
 const ScorerController = require("./src/controllers/ScorerController").router;
 const PlayerController = require("./src/controllers/PlayerController");
+const CertificateController = require("./src/controllers/CertificateController");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -74,7 +75,10 @@ app.engine('hbs', exphbs.engine({
     },
     streq: function (a, b, options) {
       return a === b ? options.fn(this) : options.inverse(this);
-    }
+    },
+    gt: function (a, b) {      
+        return a > b ? true : false;
+    },
   }
 }));
 
@@ -88,8 +92,20 @@ app.use("/mainSettings", MainSettingController);
 app.use("/game", GameController);
 app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
+app.use("/certificate", CertificateController);
 
 app.use("/user", AuthenticationController);
+
+app.use(express.static(path.join(__dirname, 'public/teampictures')));
+const uploadDir = path.join(__dirname, 'public/teampictures');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('Created upload directory:', uploadDir);
+} else {
+  console.log('Upload directory already exists:', uploadDir);
+}
+
+
 
 // Server configuration
 if (useHttps) {

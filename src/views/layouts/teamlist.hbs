@@ -1,60 +1,145 @@
-    <section class="text-center">
-        <div class="container-fluid">
-        <h1>Teams List</h1>
-        <p>
-            <a href="/Team" class="btn btn-primary" role="button">Create New Team</a>
-        </p>
-        <div class="row justify-content-center page-divider">
-            <div class="col-auto">
-
-        <table class="table table-responsive table-bordered">
-            <thead>
-                <tr>
-                <th scope="col"></th>
-                <th scope="col">Name</th>
-                <th scope="col">Group</th>
-                <th scope="col">Games Played</th>
-                <th scope="col">Games Won</th>
-                <th scope="col">Games Lost</th>
-                <th scope="col">Games Draw</th>
-                <th scope="col">Goals</th>
-                <th scope="col">Goals Difference</th>
-                <th scope="col">Goals Group_Stage</th>
-                <th scope="col">Goals Difference Group_Stage</th>
-                <th scope="col">Sekt Won</th>
-                <th scope="col">Points Group_Stage</th>
-                <th scope="col">Points General</th>
-                <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#each list}}
-                <tr>
+<div class="text-center">
+    <h1 >Teamverwaltung</h1>
+    <hr>
+</div>
+<div class="container">
+    <h2>Neues Team hinzufügen</h2>
+    <form action="/team/add" method="POST" onsubmit="return validateForm()">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" class="form-control" id="name" name="name" value="" required>
+        </div>
+        <div class="form-group">
+            <label for="group">Gruppe auswählen (Gruppen sind in der <a href="/mainSettings">Einstellungen</a> verwalbar):</label>
+            <select class="form-control" id="group" name="group" required>
+                {{#each groups}}
+                    <option value="{{this}}">{{this}}</option>
+                {{/each}}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Hinzufügen</button>
+    </form>
+</div>
+<div class="container-fluid text-center">
+    <hr>
+    <h2 >Liste der Teams:</h2>
+    <h8>Durch klicken auf eine Spaltenüberschrift, kann die Tabelle sortiert werden.</h8>
+    <table class="table table-bordered table-responsive table-striped table-hover" id="teamTable">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(0)">Index</th>
+                <th style="text-align: center;" onclick="sortTable(1)">Name</th>
+                <th style="text-align: center;" onclick="sortTable(2)">Gruppe</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(3)">Spiele gespielt</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(4)">Spiele gewonnen</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(5)">Spiele verloren</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(6)">Spiele unentsch.</th>
+                <th colspan="3" style="text-align: center;">Spiele in der Gruppenphase</th>
+                <th style="text-align: center;"  rowspan="2" onclick="sortTable(10)">Sekt gewonnen</th>
+                <th colspan="3" style="text-align: center;">Spiele im Tunier</th>
+                <th style="text-align: center;" rowspan="2">Aktionen</th>
+            </tr>
+            <tr style="background-color: #f2f2f2;">
+                <th style="text-align: center;"><input type="text" id="nameFilter" onkeyup="filterTable(0)" placeholder="Filter Name"></th>
+                <th style="text-align: center;"><input type="text" id="groupFilter" onkeyup="filterTable(1)" placeholder="Filter Gruppe" style="width: 100px;"></th>
+                
+                <th style="text-align: center;" onclick="sortTable(7)">Tore</th>
+                <th style="text-align: center;" onclick="sortTable(8)">Tordifferenz</th>
+                <th style="text-align: center;" onclick="sortTable(9)">Punkte</th>
+                
+                <th style="text-align: center;" onclick="sortTable(11)">Tore</th>
+                <th style="text-align: center;" onclick="sortTable(12)">Tordifferenz</th>
+                <th style="text-align: center;" onclick="sortTable(13)">Punkte Gesamt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each list}}
+            <tr>
                 <td>{{this.index}}</td>
-                <td>{{this.name}}</td>
+                <td><strong>{{this.name}}</strong></td>
                 <td>{{this.group}}</td>
                 <td>{{this.gamesPlayed}}</td>
                 <td>{{this.gamesWon}}</td>
                 <td>{{this.gamesLost}}</td>
                 <td>{{this.gamesDraw}}</td>
-                <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
-                <td>{{this.goalsDifference}}</td>  
-                <td>{{this.goalsGroupStage.[0]}}:{{this.goalsGroupStage.[1]}}</td>
-                <td>{{this.goalsDifferenceGroupStage}}</td>                              
-                <td>{{this.sektWon}}</td>
+                <td><strong>{{this.goalsGroupStage.[0]}}</strong>:{{this.goalsGroupStage.[1]}}</td>
+                <td>{{this.goalsDifferenceGroupStage}}</td>
                 <td>{{this.points_Group_Stage}}</td>
+                <td>{{this.sektWon}}</td>
+                <td><strong>{{this.goals.[0]}}</strong>:{{this.goals.[1]}}</td>
+                <td>{{this.goalsDifference}}</td>
                 <td>{{this.points_General}}</td>
-                    <td>
-                        <a href="/team/{{this.id}}" class="btn btn-primary" role="button">Edit</a>
-                        <a href="/team/delete/{{this.id}}" onclick="return confirm('Are you sure you want to delete this record?');" class="btn btn-danger" role="button">Delete</a>
-                    </td>
-                </tr>
-                {{/each}}
-            </tbody>
-        </table>
-        </div>
-        </div>
 
-        <a href="/team/clearTeamCounters" onclick="return confirm('Are you sure you want to clear all team counters?');" class="btn btn-primary" role="button">Clear All Team Counters</a>
-        </div>
-    </section>
+                <td>
+                    <a href="/team/details/{{this.id}}" class="btn btn-primary" role="button">Details</a>
+                    <a href="/team/delete/{{this.id}}" onclick="return confirm('Bist du sicher, dass du das Team ' + '{{this.name}}' + ' löschen möchtest?');" class="btn btn-danger" role="button">Löschen</a>
+                </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    <a href="/team/clearTeamCounters" onclick="return confirm('Are you sure you want to clear all team counters?');" class="btn btn-primary" role="button">Clear All Team Counters</a>
+</div>
+
+<script>
+let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
+
+function validateForm() {
+    const name = document.getElementById('name').value.trim();
+    const group = document.getElementById('group').value;
+    const newGroup = document.getElementById('newGroup').value.trim();
+
+    if (!name) {
+        alert('Bitte geben Sie einen Namen ein.');
+        return false;
+    }
+
+    if (group === 'Neu' && !newGroup) {
+        alert('Bitte geben Sie eine neue Gruppe ein.');
+        return false;
+    }
+
+    return true;
+}
+
+document.getElementById('group').addEventListener('change', function() {
+    const newGroupInput = document.getElementById('newGroup');
+    if (this.value === 'Neu') {
+        newGroupInput.style.display = 'block';
+    } else {
+        newGroupInput.style.display = 'none';
+    }
+});
+
+function sortTable(columnIndex) {
+    const table = document.getElementById("teamTable");
+    const rows = Array.from(table.rows).slice(2); // Skip header rows
+    const isNumericColumn = columnIndex === 0 || (columnIndex >= 3 && columnIndex <= 13); // Check if the column is numeric
+    const direction = sortDirections[columnIndex] ? 1 : -1; // Determine sort direction 
+    const sortedRows = rows.sort((a, b) => {
+        const cellA = isNumericColumn ? parseFloat(a.cells[columnIndex].innerText) : a.cells[columnIndex].innerText.toLowerCase();
+        const cellB = isNumericColumn ? parseFloat(b.cells[columnIndex].innerText) : b.cells[columnIndex].innerText.toLowerCase();
+        if (isNumericColumn) {
+            return direction * (parseFloat(cellA) - parseFloat(cellB));
+        } else {
+            if (cellA < cellB) return -1 * direction;
+            if (cellA > cellB) return 1 * direction;
+            return 0;
+        }
+    });
+    sortedRows.forEach(row => table.tBodies[0].appendChild(row));
+    sortDirections[columnIndex] = !sortDirections[columnIndex]; // Toggle sort direction
+}
+
+function filterTable(columnIndex) {
+    const input = document.getElementById(["nameFilter", "groupFilter"][columnIndex]);
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById("teamTable");
+    const rows = table.tBodies[0].rows;
+    for (let i = 0; i < rows.length; i++) {
+        const cellText = rows[i].cells[columnIndex+1].innerText.toLowerCase();
+        rows[i].style.display = cellText.includes(filter) ? "" : "none";
+    }
+}
+
+</script>

@@ -122,7 +122,7 @@ io.on('connection', (socket) => {
     });
 
     //add a consol log on the server side to see if the client is connected
-    console.log('A user connected');
+    console.log('A user connected to the Websocket server');
 
     socket.on('getNextGame', async () => {
         try {
@@ -274,6 +274,8 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
                     team.sektWon += 1; // Increment the sektWon counter for the team
                     console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
                     await team.save(); // Save the updated team
+
+                    await genCounters.findOneAndUpdate({}, { $inc: { wonSektBottles: 1 } }); // Increment the wonSektBottles counter
 
                     io.emit('Sekt', Sekt_Team_ID); // Emit an event to the TV page to show the Sekt
                 }
