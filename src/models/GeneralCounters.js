@@ -10,7 +10,10 @@ var CountersSchema = new mongoose.Schema({
     goalSektCounter: {
         type: Number
     },
-
+    wonSektBottles: {
+        type: Number,
+        default: 0
+    }
 });
 
 mongoose.model('generalCounters', CountersSchema);

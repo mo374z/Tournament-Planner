@@ -42,20 +42,43 @@
     </div>
 
     <div class="page-divider">
+        <h2>Gruppen verwalten</h2>
+        <form action="/mainSettings/addGroup" method="POST" style="width: 300px; margin: 0 auto;">
+            <div class="form-group">
+                <label for="groupName">Neue Gruppe hinzufügen:</label>
+                <input type="text" class="form-control" id="groupName" name="groupName" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Gruppe hinzufügen</button>
+        </form>
+        <br>
+        <h4>Bestehende Gruppen:</h4>
+        <div style="text-align: center;">
+            {{#each mainSettings.groups}}
+            <div>
+                <strong>{{this}}</strong>
+                <form action="/mainSettings/deleteGroup" method="POST" style="display:inline;" onsubmit="return confirm('Achtung ! Gruppe nur löschen wenn keine Manschaften bzw. atueller Spielplan mit der Gruppe generiert ist ! Willst du wirklich löschen?');">
+                    <input type="hidden" name="groupName" value="{{this}}">
+                    <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
+                </form>
+            </div>
+            {{/each}}
+        </div>
+    </div>
+
+    <div class="page-divider">
         <h4>General Counters</h4>
         <p>All Goals: {{ generalCounters.allGoals }}</p>
         <p>Games Played: {{ generalCounters.gamesPlayed }}</p>
         <p>Goal Sekt Counter: {{ generalCounters.goalSektCounter }}</p>
+        <p>Gewonnene Sektflaschen: {{ generalCounters.wonSektBottles }}</p>
         
         <!-- Add the button to reset counters -->
         <a href="mainSettings/resetCounters" class="btn btn-danger" onclick="return confirm('Willst du wirklich alle Zähler löschen ?');" style="margin-bottom: 1em">Clear General Counters</a>
         <br>
         <a href="/team/clearTeamCounters" onclick="return confirm('Are you sure you want to clear all team counters?');" class="btn btn-danger" role="button" style="margin-bottom: 1em">Clear Counters in all Teams </a>
         <br>
-        <a href="/player/reset-total-goals" onclick="return confirm('Are you sure you want to clear all player counters?');" class="btn btn-danger" role="button" style="margin-bottom: 1em">Clear Counters and Goals from all Players </a>
+        <a href="#" onclick="resetPlayers()" class="btn btn-danger" role="button" style="margin-bottom: 1em">Clear Counters and Goals from all Players</a>
     </div>
-
-
 
     <div class="page-divider">
         <h4>Users</h4>
@@ -122,3 +145,22 @@
                  
     </div>   
 </div>
+
+<script>
+function resetPlayers() {
+    if (confirm('Sind Sie sicher, dass Sie alle Tore der Spieler zurücksetzen möchten?')) {
+        fetch('/player/reset-total-goals', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Zurücksetzen...');
+            }
+        });
+    }
+}
+</script>

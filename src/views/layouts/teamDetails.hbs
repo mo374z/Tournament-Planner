@@ -12,7 +12,7 @@
     <hr>
     <div class="row">
         <div class="col-md-6">
-            <h2 style="text-decoration: underline;">Team Informationen</h2>
+            <h2 >Team Informationen</h2>
             <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
                 <tr>
                     <th>ID:</th>
@@ -72,7 +72,7 @@
             </table>
         </div>
         <div class="col-md-6">
-            <h2 style="text-decoration: underline;">Spieler</h2>
+            <h2 >Spieler</h2>
             <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
                 <thead>
                     <tr>
@@ -97,11 +97,11 @@
                     {{/each}}
                 </tbody>
             </table>
-            <a href="/player" class="btn btn-primary">Zur Spielerverwaltung</a>
+            <a href="/player?teamId={{team._id}}" class="btn btn-primary">Zur Spielerverwaltung</a>
         </div>
     </div>
     <hr>
-    <h2 style="text-decoration: underline;">Kommende Spiele</h2>
+    <h2 >Kommende Spiele</h2>
     <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
         <thead>
             <tr>
@@ -129,7 +129,7 @@
         </tbody>
     </table>
     <hr>
-    <h2 style="text-decoration: underline;">Bisherige Spiele von {{team.name}}</h2>
+    <h2 >Bisherige Spiele von {{team.name}}</h2>
     <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
         <thead>
             <tr>
@@ -169,7 +169,7 @@
         </tbody>
     </table>
     <hr>
-    <h2 style="text-decoration: underline;">Tore</h2>
+    <h2 >Tore</h2>
     <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
         <thead>
             <tr>
@@ -211,7 +211,7 @@
         </tbody>
     </table>
  <hr>
-    <h2 style="text-decoration: underline;">Team Bild</h2>
+    <h2 >Team Bild</h2>
     <form action='/team/uploadImage' method="POST" enctype="multipart/form-data">
         <input type="hidden" name="_id" value="{{team._id}}">
         <div class="form-group">

@@ -28,9 +28,21 @@
 document.getElementById('teamSearch').addEventListener('input', function() {
     const searchValue = this.value.toLowerCase();
     const options = document.getElementById('team').options;
+    let hasResults = false;
+    let resultsLength = 0;
     for (let i = 0; i < options.length; i++) {
         const optionText = options[i].text.toLowerCase();
-        options[i].style.display = optionText.includes(searchValue) ? '' : 'none';
+        if (optionText.includes(searchValue)) {
+            options[i].style.display = '';
+            resultsLength++;
+            if(resultsLength === 1) {
+                options[i].selected = true;
+            }
+            hasResults = true;
+        } else {
+            options[i].style.display = 'none';
+        }
     }
+    document.getElementById('team').size = hasResults ? resultsLength : 1;
 });
 </script>

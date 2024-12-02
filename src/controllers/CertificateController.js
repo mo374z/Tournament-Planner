@@ -115,7 +115,7 @@ router.post('/generate', async (req, res) => {
     if (!fs.existsSync(path.join(__dirname, '../../public/certificates/'))) {
         fs.mkdirSync(path.join(__dirname, '../../public/certificates/'), { recursive: true });
     }
-    const outputPath = path.join(__dirname, '../../public/certificates/', `${team.name}_certificate.docx`);
+    const outputPath = path.join(__dirname, '../../public/certificates/', `${rank}_${team.name}_certificate.docx`);
     fs.writeFileSync(outputPath, buffer);
 
     res.download(outputPath);

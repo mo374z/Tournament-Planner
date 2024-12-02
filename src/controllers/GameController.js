@@ -275,6 +275,8 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
                     console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
                     await team.save(); // Save the updated team
 
+                    await genCounters.findOneAndUpdate({}, { $inc: { wonSektBottles: 1 } }); // Increment the wonSektBottles counter
+
                     io.emit('Sekt', Sekt_Team_ID); // Emit an event to the TV page to show the Sekt
                 }
                 else if(addRemoveSekt === -1){ // If the sekt is removed, decrement the sektWon counter for the team ?
