@@ -2,3 +2,6 @@
 *backup/*
 *.pem
 *OneDrive
+/public/teampictures/*
+!/public/teampictures/default.jpg
+/public/certificates/*
