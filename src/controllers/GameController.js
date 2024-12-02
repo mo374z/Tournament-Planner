@@ -406,7 +406,7 @@ router.get('/live', async (req, res) => {
         const game = await Game.findOne({ status: 'active' }).exec();
 
         if (!game) {
-            return res.render('layouts/liveGame', { game: null, noActiveGame: true });
+            return res.render('layouts/liveGame', { socketConfig: socketConfig, game: null, noActiveGame: true, infoBannerMessage });
         }
 
         // Fetch team names using the team IDs from the game object

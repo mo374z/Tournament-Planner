@@ -67,7 +67,7 @@
 </div>
 
 <div id="connectionIndicator" class="text-center mt-3">
-    <span id="connectionStatusText" class="text-success">Verbunden</span>
+    <span id="connectionStatusText" class="text-danger">Verbinde...</span>
 </div>
 
     {{!-- <div class="text-center">
@@ -81,12 +81,12 @@
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
     socket.on('connect', () => {
-    console.log('Socket connected');
-    document.getElementById('connectionStatusText').classList.remove('text-danger');
-    document.getElementById('connectionStatusText').classList.add('text-success');
-    document.getElementById('connectionStatusText').textContent = 'Verbunden';
+        console.log('Socket connected');
+        document.getElementById('connectionStatusText').classList.remove('text-danger');
+        document.getElementById('connectionStatusText').classList.add('text-success');
+        document.getElementById('connectionStatusText').textContent = 'Verbunden';
     });
-    
+
     socket.on('disconnect', () => {
         console.log('Socket disconnected');
         document.getElementById('connectionStatusText').classList.remove('text-success');
@@ -104,8 +104,8 @@
 
     socket.on('updateLiveGame', (updatedGame) => {
         updatePage(updatedGame);
+        console.log('Game updated');
     });
-    
 
     const audio = new Audio('/sounds/Horn.mp3');       // Create an audio element
 
@@ -114,7 +114,7 @@
     });
 
     let gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
-    
+
     async function updatePage(game) {
         updateScore('team1Score', game.goals[0]);
         updateScore('team2Score', game.goals[1]);  
@@ -123,11 +123,8 @@
 
         gameOppNames = [teamName1, teamName2];
         console.log('gameOppNames: ' + gameOppNames);
-        
+
         SetActiveGameMessage(game.status);
-
-
-
     }
 
     function SetActiveGameMessage(status) {        
@@ -150,7 +147,7 @@
     async function updateName(elementId, teamID) {
         // get name based on id
         const response = await fetch(`/team/getTeamName/${teamID}`, { method: 'GET'})
-        
+
         if (response.ok) {
             // get the team name which is returned as a string
             const teamName = await response.text();

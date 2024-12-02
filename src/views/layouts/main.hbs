@@ -15,6 +15,16 @@
     <link rel='stylesheet' href='/css/yourStyles.css' />
     <title>Budeturnier</title>
 
+    <style>
+        {{#if (eqref userrole "beamer")}} 
+        .navbar {
+            display: none;
+        }
+        .container-fluid:hover .navbar {
+            display: flex;
+        }
+        {{/if}}
+    </style>
 
 </head>
 

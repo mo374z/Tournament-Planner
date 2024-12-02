@@ -173,7 +173,7 @@ function enableEdit(button) {
 }
 
 function resetTotalGoals() {
-    if (confirm('Sind Sie sicher, dass Sie alle totalen Tore zurücksetzen möchten?')) {
+    if (confirm('Sind Sie sicher, dass Sie alle Tore der Spieler zurücksetzen möchten? (löscht nur Tore aus Spielern nicht aus "Game")')) {
         fetch('/player/reset-total-goals', {
             method: 'POST',
             headers: {
