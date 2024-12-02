@@ -48,7 +48,11 @@
         <p>Goal Sekt Counter: {{ generalCounters.goalSektCounter }}</p>
         
         <!-- Add the button to reset counters -->
-        <a href="mainSettings/resetCounters" class="btn btn-danger" onclick="return confirm('Willst du wirklich alle Zähler löschen ?');">Clear Counters</a>
+        <a href="mainSettings/resetCounters" class="btn btn-danger" onclick="return confirm('Willst du wirklich alle Zähler löschen ?');" style="margin-bottom: 1em">Clear General Counters</a>
+        <br>
+        <a href="/team/clearTeamCounters" onclick="return confirm('Are you sure you want to clear all team counters?');" class="btn btn-danger" role="button" style="margin-bottom: 1em">Clear Counters in all Teams </a>
+        <br>
+        <a href="/player/reset-total-goals" onclick="return confirm('Are you sure you want to clear all player counters?');" class="btn btn-danger" role="button" style="margin-bottom: 1em">Clear Counters and Goals from all Players </a>
     </div>
 
 

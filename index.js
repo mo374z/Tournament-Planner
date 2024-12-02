@@ -74,7 +74,10 @@ app.engine('hbs', exphbs.engine({
     },
     streq: function (a, b, options) {
       return a === b ? options.fn(this) : options.inverse(this);
-    }
+    },
+    gt: function (a, b) {      
+        return a > b ? true : false;
+    },
   }
 }));
 
@@ -90,6 +93,17 @@ app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
 
 app.use("/user", AuthenticationController);
+
+app.use(express.static(path.join(__dirname, 'public/teampictures')));
+const uploadDir = path.join(__dirname, 'public/teampictures');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('Created upload directory:', uploadDir);
+} else {
+  console.log('Upload directory already exists:', uploadDir);
+}
+
+
 
 // Server configuration
 if (useHttps) {

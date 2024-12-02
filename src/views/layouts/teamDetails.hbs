@@ -1,0 +1,238 @@
+<div class="container">
+    <h1>{{viewTitle}}</h1>
+    <form action='/team/updateName' method="POST" autocomplete="off">
+        <input type="hidden" name="_id" value="{{team._id}}">
+        <div class="form-group">
+            <label for="name">Name anpassen:</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{team.name}}" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Name aktualisieren</button>
+    </form>
+    
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <h2 style="text-decoration: underline;">Team Informationen</h2>
+            <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
+                <tr>
+                    <th>ID:</th>
+                    <td style="padding-left: 20px;">{{team._id}}</td>
+                </tr>
+                <tr>
+                    <th>Gruppe</th>
+                    <td style="padding-left: 20px;">{{team.group}}</td>
+                </tr>
+                <tr>
+                    <th>Spiele gespielt</th>
+                    <td style="padding-left: 20px;">{{team.gamesPlayed}}</td>
+                </tr>
+                <tr>
+                    <th>Spiele gewonnen</th>
+                    <td style="padding-left: 20px;">{{team.gamesWon}}</td>
+                </tr>
+                <tr>
+                    <th>Spiele verloren</th>
+                    <td style="padding-left: 20px;">{{team.gamesLost}}</td>
+                </tr>
+                <tr>
+                    <th>Spiele unentschieden</th>
+                    <td style="padding-left: 20px;">{{team.gamesDraw}}</td>
+                </tr>
+                <tr>
+                    <th>Tore Gruppenphase</th>
+                    <td style="padding-left: 20px;"><strong>{{team.goalsGroupStage.[0]}}</strong> - {{team.goalsGroupStage.[1]}}</td>
+                </tr>
+                <tr>
+                    <th>Punkte Gruppenphase</th>
+                    <td style="padding-left: 20px;">{{team.points_Group_Stage}}</td>
+                </tr>
+                <tr>
+                    <th>Tore</th>
+                    <td style="padding-left: 20px;"><strong>{{team.goals.[0]}}</strong> - {{team.goals.[1]}}</td>
+                </tr>
+                <tr>
+                    <th>Punkte Gesamt</th>
+                    <td style="padding-left: 20px;">{{team.points_General}}</td>
+                </tr>
+                <tr>
+                    <th>Sekt gewonnen</th>
+                    <td style="padding-left: 20px;">{{team.sektWon}}</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td></td>
+                <tr>
+                    <th>Aktueller Rang in der Gruppe</th>
+                    <td style="padding-left: 20px;">{{groupRank}}</td>
+                </tr>
+                <tr>
+                    <th>Aktueller Rang im Turnier</th>
+                    <td style="padding-left: 20px;">{{tournamentRank}}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-md-6">
+            <h2 style="text-decoration: underline;">Spieler</h2>
+            <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Nummer</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each players}}
+                    <tr>
+                        <td style="padding-left: 20px;">{{this.name}}</td>
+                        <td style="padding-left: 20px;">{{this.number}}</td>
+                        <td style="padding-left: 20px;">
+                            <a href="/player/{{this._id}}" class="btn btn-info">Tore anzeigen</a>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="3" style="text-align: center;">Keine Spieler vorhanden</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            <a href="/player" class="btn btn-primary">Zur Spielerverwaltung</a>
+        </div>
+    </div>
+    <hr>
+    <h2 style="text-decoration: underline;">Kommende Spiele</h2>
+    <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
+        <thead>
+            <tr>
+                <th>SpielNr.</th>
+                <th>Uhrzeit</th>
+                <th>Spiel</th>
+                <th>Gegner</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#if upcomingGames.length}}
+            {{#each upcomingGames}}
+            <tr>
+                <td style="padding-left: 20px;">{{number}}</td>
+                <td style="padding-left: 20px;">{{formattedTime}}</td>
+                <td style="padding-left: 20px;">{{gameDisplayName}}</td>
+                <td style="padding-left: 20px;"><a href="/team/details/{{opponent.id}}" style="color: inherit;">{{opponent.name}}</a></td>
+            </tr>
+            {{/each}}
+            {{else}}
+            <tr>
+                <td colspan="5" style="text-align: center;">Keine kommenden Spiele</td>
+            </tr>
+            {{/if}}
+        </tbody>
+    </table>
+    <hr>
+    <h2 style="text-decoration: underline;">Bisherige Spiele von {{team.name}}</h2>
+    <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
+        <thead>
+            <tr>
+                <th>SpielNr.</th>
+                <th>Uhrzeit</th>
+                <th>Spiel</th>
+                <th>Gegner</th>
+                <th>Sieger</th>
+                <th>Endstand</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#if pastGames.length}}
+            {{#each pastGames}}
+            <tr>
+                <td style="padding-left: 20px;">{{number}}</td>
+                <td style="padding-left: 20px;">{{formattedTime}}</td>
+                <td style="padding-left: 20px;">{{gameDisplayName}}</td>
+                <td style="padding-left: 20px;"><a href="/team/details/{{opponent.id}}" style="color: inherit;">{{opponent.name}}</a></td>
+                <td style="padding-left: 20px;">{{winner.name}}</td>
+                <td style="padding-left: 20px;">
+                    {{#if (eqref goals.[0] goals.[1])}}
+                        {{goals.[0]}} - {{goals.[1]}}
+                    {{else if (gt goals.[0] goals.[1])}}
+                        <strong>{{goals.[0]}}</strong> - {{goals.[1]}}
+                    {{else}}
+                        {{goals.[0]}} - <strong>{{goals.[1]}}</strong>
+                    {{/if}}
+                </td>
+            </tr>
+            {{/each}}
+            {{else}}
+            <tr>
+                <td colspan="6" style="text-align: center;">Keine bisherigen Spiele</td>
+            </tr>
+            {{/if}}
+        </tbody>
+    </table>
+    <hr>
+    <h2 style="text-decoration: underline;">Tore</h2>
+    <table class="table table-bordered table-striped" style="width: auto; margin-left: 0;">
+        <thead>
+            <tr>
+                <th>Tor</th>
+                <th>Sp. i. T.</th>
+                <th>Uhrzeit</th>
+                <th>Spielminute</th>
+                <th>Ergebnis</th>
+                <th>Gegner</th>
+                <th>Tor i. Sp</th>
+                <th>Art</th>
+                <th>Tor i. T.</th>
+                <th>Sekt</th>
+                <th>Spieler</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#if goals.length}}
+            {{#each goals}}
+            <tr>
+                <td style="padding-left: 20px;">{{teamGoalIndex}}</td>
+                <td style="padding-left: 20px;">{{gameIndex}}</td>
+                <td style="padding-left: 20px;">{{formattedTimestamp}}</td>
+                <td style="padding-left: 20px;">{{formatedgameTimestamp}}</td>
+                <td style="padding-left: 20px;"><strong>{{newScore.[0]}}</strong> - {{newScore.[1]}}</td>
+                <td style="padding-left: 20px;"><a href="/team/details/{{opponent.id}}" style="color: inherit;">{{opponent.name}}</a></td>
+                <td style="padding-left: 20px;">{{goalIndex}}</td>
+                <td style="padding-left: 20px;">{{gameDisplayName}}</td>
+                <td style="padding-left: 20px;">{{goalIndexTournament}}</td>
+                <td style="padding-left: 20px;">{{#if sekt_won}}Ja{{else}}Nein{{/if}}</td>
+                <td style="padding-left: 20px;">{{playerName}}</td>
+            </tr>
+            {{/each}}
+            {{else}}
+            <tr>
+                <td colspan="12" style="text-align: center;">Keine Tore vorhanden</td>
+            </tr>
+            {{/if}}
+        </tbody>
+    </table>
+ <hr>
+    <h2 style="text-decoration: underline;">Team Bild</h2>
+    <form action='/team/uploadImage' method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="_id" value="{{team._id}}">
+        <div class="form-group">
+            <label for="teamImage">Team Bild hochladen:</label>
+            <input type="file" class="form-control" id="teamImage" name="teamImage" accept="image/*" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Bild hochladen</button>
+    </form>
+    <h3 class="mt-4">Aktuelles Bild:</h3>
+    {{#if imagePath}}
+        <div class="team-image text-center">
+            <img src="{{imagePath}}" alt="Team Bild" style="max-width: 50%; height: auto;">
+            <form action='/team/deleteImage' method="POST" style="margin-top: 10px;">
+                <input type="hidden" name="_id" value="{{team._id}}">
+                <button type="submit" class="btn btn-danger">Bild löschen</button>
+            </form>
+        </div>
+    {{/if}}
+
+
+    <div class="text-center mt-4">
+        <a href="/team/list" class="btn btn-secondary">Zurück zur Teamliste</a>
+    </div>
+</div>

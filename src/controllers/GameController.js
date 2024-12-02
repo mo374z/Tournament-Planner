@@ -122,7 +122,7 @@ io.on('connection', (socket) => {
     });
 
     //add a consol log on the server side to see if the client is connected
-    console.log('A user connected');
+    console.log('A user connected to the Websocket server');
 
     socket.on('getNextGame', async () => {
         try {
