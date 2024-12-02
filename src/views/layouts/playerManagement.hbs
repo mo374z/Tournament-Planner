@@ -188,4 +188,12 @@ function resetTotalGoals() {
         });
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const teamId = urlParams.get('teamId');
+    if (teamId) {
+        document.getElementById('team').value = teamId;
+    }
+});
 </script>

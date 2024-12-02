@@ -11,6 +11,7 @@
                 <p><strong>Endzeit:</strong> <span id="gameEndTime"></span></p>
                 <p><strong>Aktuelle Uhrzeit</strong> <span id="currentTime"></span></p>
                 <p><strong>Spieldauer:</strong> {{ game.duration }}:00 min</p>
+                <p><strong>Name:</strong> {{ game.gameDisplayName }}</p>
                 <p><strong>Status:</strong> {{ game.status }}</p>
                 <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Spiel aktiv setzen</button>
                 <div class="alert alert-success d-none mt-2" role="alert"> Game is now active and on Live Page.</div>
@@ -74,7 +75,9 @@
             <div class="text-start text-justify d-inline-block">
                 <p class="mb-2"><strong>Tore im Tunier:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
                 <p class="mb-2"><strong>Gespielte Spiele:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
+                <p class="mb-2"><strong>Bisher gewonnene Sekt:</strong> <span id="wonSektBottlesCounter">{{ generalCounters.wonSektBottles }}</span></p>
                 <p class="mb-2"><strong>Tore bis zu Sekt:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
+                
 
                 <div class="alert alert-info d-none mt-2" role="alert">
                     This is a info alert to show Sekt for a Team.

@@ -1,32 +1,28 @@
 <div class="text-center">
-    <h1 style="text-decoration: underline;">Teamverwaltung</h1>
+    <h1 >Teamverwaltung</h1>
     <hr>
 </div>
 <div class="container">
-    <details>
-        <summary class="h2">Neues Team hinzufügen</summary>
-        <form action="/team/add" method="POST" onsubmit="return validateForm()">
-            <div class="form-group">
-                <label for="name">Name:</label>
-                <input type="text" class="form-control" id="name" name="name" value="" required>
-            </div>
-            <div class="form-group">
-                <label for="group">Gruppe auswählen oder neue Gruppe hinzufügen:</label>
-                <select class="form-control" id="group" name="group" required>
-                    <option value="Neu">Neu Gruppe:</option>
-                    {{#each groups}}
-                        <option value="{{this}}">{{this}}</option>
-                    {{/each}}
-                </select>
-                <input type="text" class="form-control mt-2" id="newGroup" name="newGroup" placeholder="Name der Neuen Gruppe eingeben" style="display: block;">
-            </div>
-            <button type="submit" class="btn btn-primary mt-3">Hinzufügen</button>
-        </form>
-    </details>
+    <h2>Neues Team hinzufügen</h2>
+    <form action="/team/add" method="POST" onsubmit="return validateForm()">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" class="form-control" id="name" name="name" value="" required>
+        </div>
+        <div class="form-group">
+            <label for="group">Gruppe auswählen (Gruppen sind in der <a href="/mainSettings">Einstellungen</a> verwalbar):</label>
+            <select class="form-control" id="group" name="group" required>
+                {{#each groups}}
+                    <option value="{{this}}">{{this}}</option>
+                {{/each}}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Hinzufügen</button>
+    </form>
 </div>
 <div class="container-fluid text-center">
     <hr>
-    <h2 style="text-decoration: underline;">Liste der Teams:</h2>
+    <h2 >Liste der Teams:</h2>
     <h8>Durch klicken auf eine Spaltenüberschrift, kann die Tabelle sortiert werden.</h8>
     <table class="table table-bordered table-responsive table-striped table-hover" id="teamTable">
         <thead>

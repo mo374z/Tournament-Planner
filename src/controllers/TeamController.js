@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 const Game = mongoose.model('Game');
 const Player = mongoose.model('Player');
+const MainSettings = mongoose.model('MainSettings');
 
 
 //Code part to enable the authentication for all the following routes
@@ -88,14 +89,14 @@ router.post('/deleteImage', async (req, res) => {
 router.get('/list', async (req, res) => {
     try {
         const Teams = await Team.find({});
-        const groups = await Team.distinct('group');
+        const mainSettings = await MainSettings.findOne({});
+        const groups = mainSettings ? mainSettings.groups : [];
         
-        Teams.forEach(team => {
+        Teams.forEach(async team => {
             team.index = Teams.indexOf(team) + 1;
             team.goalsDifference = team.goals[0] - team.goals[1];
             team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
-            team.rank = getRank(team);
-            team.index = Teams.indexOf(team) + 1;
+            team.rank = await getRank(team);
         });
 
         res.render('layouts/teamlist', {

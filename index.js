@@ -20,6 +20,7 @@ const AuthenticationController = require("./src/controllers/AuthenticationContro
 const PublicPageController = require("./src/controllers/PublicPageController");
 const ScorerController = require("./src/controllers/ScorerController").router;
 const PlayerController = require("./src/controllers/PlayerController");
+const CertificateController = require("./src/controllers/CertificateController");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -91,6 +92,7 @@ app.use("/mainSettings", MainSettingController);
 app.use("/game", GameController);
 app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
+app.use("/certificate", CertificateController);
 
 app.use("/user", AuthenticationController);
 

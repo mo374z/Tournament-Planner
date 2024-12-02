@@ -1,0 +1,48 @@
+<div class="container">
+    <h1>Urkunden-Generator</h1>
+    <form action="/certificate/uploadTemplate" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="template">Neues Urkunden-Template hochladen:</label>
+            <input type="file" class="form-control" id="template" name="template" accept=".docx" required>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Template hochladen</button>
+    </form>
+    {{#if templateExists}}
+    <a href="/certificate/downloadTemplate" class="btn btn-secondary mt-3">Aktuelles Template herunterladen</a>
+    {{/if}}
+    <hr>
+    <form action="/certificate/generate" method="POST">
+        <div class="form-group">
+            <label for="team">Mannschaft auswählen:</label>
+            <input type="text" class="form-control" id="teamSearch" placeholder="Mannschaft suchen...">
+            <select class="form-control mt-2" id="team" name="teamId" required>
+                {{#each teams}}
+                    <option value="{{this._id}}">{{this.name}} (Platz: {{this.rank}})</option>
+                {{/each}}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Urkunde generieren</button>
+    </form>
+</div>
+<script>
+document.getElementById('teamSearch').addEventListener('input', function() {
+    const searchValue = this.value.toLowerCase();
+    const options = document.getElementById('team').options;
+    let hasResults = false;
+    let resultsLength = 0;
+    for (let i = 0; i < options.length; i++) {
+        const optionText = options[i].text.toLowerCase();
+        if (optionText.includes(searchValue)) {
+            options[i].style.display = '';
+            resultsLength++;
+            if(resultsLength === 1) {
+                options[i].selected = true;
+            }
+            hasResults = true;
+        } else {
+            options[i].style.display = 'none';
+        }
+    }
+    document.getElementById('team').size = hasResults ? resultsLength : 1;
+});
+</script>
