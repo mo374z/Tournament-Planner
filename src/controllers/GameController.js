@@ -433,18 +433,15 @@ async function updateGenGoalsCounter(increment, teamId) {
         counters.allGoals += increment; // Increment allGoals counter (if increment is negative, it will decrement)
         if(counters.allGoals <= -1){counters.allGoals = 0;} // If allGoals can not be negative, set it to 0
 
-        console.log(teamId);
         const TeamID = teamId;
 
-
         counters.goalSektCounter -= increment; // Decrement goalSektCounter counter (if increment is negative, it will increment)
-        console.log('goalSektCounter: ', counters.goalSektCounter);
         
         const mainSettings = await MainSettings.findOne({}); // Fetch main settings
         const goalsforSekt = mainSettings.goalsforSekt;
     
         if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less the team wins an Sekt, reset it to default value
-            console.log('Sekt won by team: ', TeamID);
+            // console.log('Sekt won by team: ', TeamID);
             counters.goalSektCounter = goalsforSekt
             await counters.save(); // Save the updated counter value            
             return { addRemoveSekt: +1, allGoals: counters.allGoals}; // Returning an object with named properties
