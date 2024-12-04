@@ -264,7 +264,7 @@ router.get('/:id', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
-                const teams = await Team.find({});
+        const teams = await Team.find({});
 
         res.render('layouts/editGame', {
             game: game,
@@ -469,10 +469,17 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
         const oldGameTime = existingGame.time;
         const oldGameduration = existingGame.duration;
 
-        if (team1 === undefined) {
+
+        // Check if the selected team values are dummy names if true retain the existing dummy teams
+        if (team1 === existingGame.opponents[0].name && existingGame.opponents[0].isDummy) {
+            team1 = existingGame.opponents[0];
+        } else if (team1 === undefined) {
             team1 = existingGame.opponents[0];
         }
-        if (team2 === undefined) {
+
+        if (team2 === existingGame.opponents[1].name && existingGame.opponents[1].isDummy) {
+            team2 = existingGame.opponents[1];
+        } else if (team2 === undefined) {
             team2 = existingGame.opponents[1];
         }
 
@@ -504,8 +511,10 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
 
         const timeDifference = updatedGame.time - oldGameTime;
         const mainTimeDifference = timeDifference + gameDurationdifference;
-
-        await updateSubsequentGamesTime(gameId, mainTimeDifference);
+        
+        if(mainTimeDifference !== 0) {
+            await updateSubsequentGamesTime(gameId, mainTimeDifference);
+        }
 
         res.redirect('/schedule/list');
     } catch (err) {
@@ -599,9 +608,11 @@ async function getTeamDataById(teamId) {
     try {
         if (teamId.isDummy) {
             return { name: teamId.name, group: teamId.group };
-        } else {
+        } else if (mongoose.Types.ObjectId.isValid(teamId)) {
             const team = await Team.findById(teamId);
             return team ? { name: team.name, group: team.group } : { name: 'Team not found', group: 'Group not found' };
+        } else {
+            return { name: 'Invalid Team ID', group: 'Invalid Group' };
         }
     } catch (err) {
         console.error('Error fetching team data: ', err);

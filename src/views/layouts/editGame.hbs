@@ -1,74 +1,100 @@
-<div class="container text-center">
-    <h3>{{viewTitle}}</h3>
-    <form action="/schedule/{{game._id}}/edit" method="POST" autocomplete="off" style="max-width: 300px; margin: 0 auto;">
-        <label for="time">Game Time:</label><br>
-        <input type="datetime-local" id="time" name="time" value="{{formatDateTime game.time}}" required class="form-control mb-2">
+<div class="container text-center mt-5">
+    <h4 class="mb-4">Bearbeiten von Spiel Nr. {{game.number}}</h4>
+    <form action="/schedule/{{game._id}}/edit" method="POST" autocomplete="off" class="mx-auto" style="max-width: 400px;">
+        <div class="mb-3">
+            <label for="time" class="form-label text-decoration-underline">Spiel Startzeit:</label>
+            <input type="datetime-local" id="time" name="time" value="{{formatDateTime game.time}}" required class="form-control">
+        </div>
 
-        <label for="duration">Duration (minutes):</label><br>
-        <input type="number" id="duration" name="duration" value="{{game.duration}}" required class="form-control mb-2">
+        <div class="mb-3">
+            <label for="duration" class="form-label text-decoration-underline">Spiel Dauer (in Minuten):</label>
+            <input type="number" id="duration" name="duration" value="{{game.duration}}" required class="form-control">
+        </div>
 
-        <label for="team1">Team 1:</label><br>
-        {{#streq game.status "Ended"}}
-            {{#each teams}}
-                {{#if (eq this._id (lookup ../game.opponents 0))}}
-                    <p><b>{{this.name}}</b></p>
-                {{/if}}
-            {{/each}}
-        {{else}}
-            <select id="team1" name="team1" required class="form-select mb-2">
+        <div class="mb-3">
+            <label for="team1" class="form-label text-decoration-underline">Team 1:</label>
+            {{#streq game.status "Ended"}}
                 {{#each teams}}
-                    {{#if (eq this._id (lookup ../game.opponents 0))}}
-                        <option value="{{this._id}}" selected>{{this.name}}</option>
-                    {{else}}
-                        <option value="{{this._id}}">{{this.name}}</option>
+                    {{#if (eq this._id ../game.opponents.[0]._id)}}
+                        <p class="form-control-plaintext"><b>{{this.name}}</b></p>
                     {{/if}}
                 {{/each}}
-            </select><br>
-        {{/streq}}
+            {{else}}
+                <select id="team1" name="team1" required class="form-select">
+                    {{#each teams}}
+                        {{#if (eq this._id ../game.opponents.[0]._id)}}
+                            <option value="{{this._id}}" selected>{{this.name}}</option>
+                        {{else}}
+                            <option value="{{this._id}}">{{this.name}}</option>
+                        {{/if}}
+                    {{/each}}
+                    {{#if game.opponents.[0].isDummy}}
+                        <option value="{{game.opponents.[0].name}}" selected>{{game.opponents.[0].name}}</option>
+                    {{/if}}
+                </select>
+            {{/streq}}
+        </div>
 
-        <label for="goals1">Goals (Team 1):</label><br>
-        {{#streq game.status "Ended"}}
-        <input type="number" id="goals1" name="goals1" value="{{game.goals.[0]}}" required class="form-control mb-2" min="0">
-        {{else}}
-        <p><b>{{game.goals.[0]}}</b></p>
-        {{/streq}}
+        <div class="mb-3">
+            <label for="goals1" class="form-label text-decoration-underline">Tore (Team 1):</label>
+            {{#streq game.status "Ended"}}
+                <input type="number" id="goals1" name="goals1" value="{{game.goals.[0]}}" required class="form-control" min="0">
+            {{else}}
+                <p class="form-control-plaintext"><b>{{game.goals.[0]}}</b></p>
+            {{/streq}}
+        </div>
 
-        <label for="team2">Team 2:</label><br>
-        {{#streq game.status "Ended"}}
-            {{#each teams}}
-                {{#if (eq this._id (lookup ../game.opponents 1))}}
-                    <p><b>{{this.name}}</b></p>
-                {{/if}}
-            {{/each}}
-        {{else}}
-        <select id="team2" name="team2" required class="form-select mb-2">
-            {{#each teams}}
-                {{#if (eq this._id (lookup ../game.opponents 1))}}
-                    <option value="{{this._id}}" selected>{{this.name}}</option>
-                {{else}}
-                    <option value="{{this._id}}">{{this.name}}</option>
-                {{/if}}
-            {{/each}}
-        {{/streq}}
-        </select><br>
+        <div class="mb-3">
+            <label for="team2" class="form-label text-decoration-underline">Team 2:</label>
+            {{#streq game.status "Ended"}}
+                {{#each teams}}
+                    {{#if (eq this._id ../game.opponents.[1]._id)}}
+                        <p class="form-control-plaintext"><b>{{this.name}}</b></p>
+                    {{/if}}
+                {{/each}}
+            {{else}}
+                <select id="team2" name="team2" required class="form-select">
+                    {{#each teams}}
+                        {{#if (eq this._id ../game.opponents.[1]._id)}}
+                            <option value="{{this._id}}" selected>{{this.name}}</option>
+                        {{else}}
+                            <option value="{{this._id}}">{{this.name}}</option>
+                        {{/if}}
+                    {{/each}}
+                    {{#if game.opponents.[1].isDummy}}
+                        <option value="{{game.opponents.[1].name}}" selected>{{game.opponents.[1].name}}</option>
+                    {{/if}}
+                </select>
+            {{/streq}}
+        </div>
 
-        <label for="goals2">Goals (Team 2):</label><br>
-        {{#streq game.status "Ended"}}
-        <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required class="form-control mb-2" min="0">
-        {{else}}
-        <p><b>{{game.goals.[1]}}</b></p>
-        {{/streq}}
+        <div class="mb-3">
+            <label for="goals2" class="form-label text-decoration-underline">Tore (Team 2):</label>
+            {{#streq game.status "Ended"}}
+                <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required class="form-control" min="0">
+            {{else}}
+                <p class="form-control-plaintext"><b>{{game.goals.[1]}}</b></p>
+            {{/streq}}
+        </div>
 
-        <label for="status">Status:</label><br>
-        <p><b>{{game.status}}</b></p>
+        <div class="mb-3">
+            <label for="status" class="form-label text-decoration-underline">Status:</label>
+            <p class="form-control-plaintext"><b>{{game.status}}</b></p>
+        </div>
 
-        <label for="gamePhase">Game Phase:</label><br>
-        <p><b>{{game.gamePhase}}</b></p>
+        <div class="mb-3">
+            <label for="gamePhase" class="form-label text-decoration-underline">Spielphase:</label>
+            <p class="form-control-plaintext"><b>{{game.gamePhase}}</b></p>
+        </div>
 
-        <label for="gameDisplayName">Display Name: </label><br>
-        <input type="text" id="gameDisplayName" name="gameDisplayName" value="{{game.gameDisplayName}}" required class="form-control mb-2">
+        <div class="mb-3">
+            <label for="gameDisplayName" class="form-label text-decoration-underline">Anzeigename:</label>
+            <input type="text" id="gameDisplayName" name="gameDisplayName" value="{{game.gameDisplayName}}" required class="form-control">
+        </div>
 
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a href="/schedule/list" class="btn btn-secondary">Back to List</a>
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+            <a href="/schedule/list" class="btn btn-secondary">Zurück</a>
+        </div>
     </form>
 </div>

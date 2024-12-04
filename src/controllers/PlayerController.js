@@ -98,6 +98,16 @@ router.get('/:id', async (req, res) => {
         const team = await Team.findById(player.team).exec();
         const goals = await Promise.all(player.goals.map(async (goal, index) => { // Fetch goal details for each goal
             const game = await Game.findById(goal.gameId).exec(); // Fetch game details
+            if (!game) {
+                console.error('Game not found for goal');
+                res.status(500).send('No game found for goal');
+                return null;
+            }
+            if(game.goalsLog.length === 0){
+                console.log("No goals in the game");
+                res.status(500).send('No goals in the game');
+                return null;
+            }
             const goalDetails = game.goalsLog.id(goal.goalId); // Fetch goal details from the game goalsLog
             if (!goalDetails) {
                 console.error('Goal not found in game goalsLog');

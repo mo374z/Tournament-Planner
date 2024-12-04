@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -18,10 +16,6 @@ const  {verifyToken, checkLoginStatus , isAdmin} = require('../middleware/auth')
 
 const jwtSecretkey =
   "4715aed3c946f7b0a38e6b534a8583628d84e96d10fbc04700770d572af3dce43625dd";
-
-
-
-
 
 
 router.get('/register',verifyToken, isAdmin,  (req, res) => {
@@ -170,7 +164,19 @@ router.get('/deleteAdmin', async (req, res) => {
     }
 });
 
-
+// Route zum Löschen eines Benutzers
+router.post('/user/delete', verifyToken, isAdmin, async (req, res) => {
+    try {
+        const { username } = req.body;
+        if (username !== req.username) {
+            await User.deleteOne({ username });
+        }
+        res.redirect('/user/list');
+    } catch (err) {
+        console.error('Fehler beim Löschen des Benutzers:', err);
+        res.status(500).send('Interner Serverfehler');
+    }
+});
 
 
 
