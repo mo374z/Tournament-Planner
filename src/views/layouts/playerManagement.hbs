@@ -74,6 +74,7 @@
                             <button type="button" class="btn btn-primary edit-button" onclick="enableEdit(this)">Bearbeiten</button>
                             <button type="submit" class="btn btn-secondary save-button" style="display: none;">Speichern</button>
                             <a href="/player/{{_id}}" class="btn btn-info">Tore anzeigen</a>
+                            <button type="button" class="btn btn-danger delete-button" onclick="deletePlayer('{{_id}}')">Löschen</button>
                         </td>
                     </form>
                 </tr>
@@ -184,6 +185,23 @@ function resetTotalGoals() {
                 location.reload();
             } else {
                 alert('Fehler beim Zurücksetzen der totalen Tore.');
+            }
+        });
+    }
+}
+
+function deletePlayer(playerId) {
+    if (confirm('Sind Sie sicher, dass Sie diesen Spieler löschen möchten?')) {
+        fetch(`/player/delete/${playerId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Löschen des Spielers.');
             }
         });
     }

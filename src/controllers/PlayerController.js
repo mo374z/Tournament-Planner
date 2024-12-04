@@ -91,6 +91,17 @@ router.post('/reset-total-goals', async (req, res) => {
     }
 });
 
+// Route to delete a player
+router.delete('/delete/:id', async (req, res) => {
+    try {
+        await Player.findByIdAndDelete(req.params.id).exec();
+        res.status(200).send('Player deleted successfully');
+    } catch (err) {
+        console.error('Error deleting player: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 // Route to display player details
 router.get('/:id', async (req, res) => {
     try {
