@@ -38,6 +38,7 @@ router.get('/list', async (req, res) => {
 const { generateSemiFinalsSchedule, updateSemiFinalsSchedule } = require('./SemiFinalsController');
 const { generateQuarterFinalsSchedule, updateQuarterFinalsSchedule } = require('./QuarterFinalsController');
 const { get, find } = require('lodash');
+const e = require('express');
 
 router.get('/generate', isAdmin, async (req, res) => {
 
@@ -525,11 +526,13 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
 
 
 function renderScheduleList(req, res) { //TODO: add isGamePlayable function from helper here
+    const editMode = req.query.editMode === 'true';
     fetchGamesData()
     .then(({ games, timeBetweenGames }) => {
             res.render('layouts/schedulelist', {
                 list: games,
-                timeBetweenGames: timeBetweenGames
+                timeBetweenGames: timeBetweenGames,
+                editMode: editMode
             });
         })
         .catch(err => {
@@ -692,6 +695,52 @@ async function clearGamesCollection() {
         console.error('Error clearing Games collection: ', err);
     }
 }
+
+router.get('/:id/move/up', isAdmin, async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId);
+        if (game.number > 1 && game.status === 'Scheduled') {
+            const previousGame = await Game.findOne({ number: game.number - 1 });
+            if (previousGame.status === 'Scheduled') {
+                [game.number, previousGame.number] = [previousGame.number, game.number];
+                [game.time, previousGame.time] = [previousGame.time, game.time];
+                await game.save();
+                await previousGame.save();
+                await updateSubsequentGamesTime(game._id, 0);
+                res.redirect('/schedule/list');
+            }
+            else {
+                console.log('Previous game is not scheduled');
+            }
+        }
+    } catch (err) {
+        console.error('Error moving game up: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.get('/:id/move/down', isAdmin, async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId);
+        const nextGame = await Game.findOne({ number: game.number + 1 });
+        if (nextGame && game.status === 'Scheduled' && nextGame.status === 'Scheduled') {
+            [game.number, nextGame.number] = [nextGame.number, game.number];
+            [game.time, nextGame.time] = [nextGame.time, game.time];
+            await game.save();
+            await nextGame.save();
+            await updateSubsequentGamesTime(game._id, 0);
+            res.redirect('/schedule/list');
+        }
+        else {
+            console.log('Next game is not scheduled');
+        }        
+    } catch (err) {
+        console.error('Error moving game down: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 
 
