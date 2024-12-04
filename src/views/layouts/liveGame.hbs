@@ -162,17 +162,14 @@
         }
     }
 
-    socket.on('Sekt', (teamNum) => {
-        console.log('Sekt for Team: ' + teamNum);
-        console.log('Sekt for Team: ' + gameOppNames[teamNum-1]);    // teamNum is 1 or 2, but array index is 0 or 1
-
-        // show  bootstrap info-alert for 60 seconds to indicate Sekt
+    socket.on('Sekt', (team) => {
+        console.log('Sekt for Team: ' + team.name);
         const alert = document.querySelector('.alert-info');
-        alert.textContent = 'Eine Flasche Sekt für ' + gameOppNames[teamNum-1]; // Set the Sekt-alert message
+         alert.innerHTML = '<h4 class="alert-heading">Sekt für ' + team.name + ' !</h4>';
         alert.classList.remove('d-none');
         setTimeout(() => {
             alert.classList.add('d-none');
-        }, 20000); // Hide the alert after 20 seconds
+        }, 20000);
     });
 
     socket.emit('getData'); //Call for game data when page loads

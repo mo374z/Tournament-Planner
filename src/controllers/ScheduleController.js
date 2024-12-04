@@ -37,8 +37,7 @@ router.get('/list', async (req, res) => {
 // Import the functions to generate the Semischedule
 const { generateSemiFinalsSchedule, updateSemiFinalsSchedule } = require('./SemiFinalsController');
 const { generateQuarterFinalsSchedule, updateQuarterFinalsSchedule } = require('./QuarterFinalsController');
-const { get, find } = require('lodash');
-const e = require('express');
+
 
 router.get('/generate', isAdmin, async (req, res) => {
 

@@ -269,7 +269,6 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
             if(addRemoveSekt !== 0){ // If the Sekt is won or removed
                 const Sekt_Team_ID = parseInt(req.params.teamId); // Get the team ID that gets the Sekt
                 if(addRemoveSekt === 1){ // If the sekt is won, increment the sektWon counter for the team
-                    //console.log('Sekt Team ID: ', Sekt_Team_ID);
                     const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
                     team.sektWon += 1; // Increment the sektWon counter for the team
                     console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
@@ -277,7 +276,7 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
 
                     await genCounters.findOneAndUpdate({}, { $inc: { wonSektBottles: 1 } }); // Increment the wonSektBottles counter
 
-                    io.emit('Sekt', Sekt_Team_ID); // Emit an event to the TV page to show the Sekt
+                    io.emit('Sekt', team); // Emit an event to the TV page to show the Sekt
                 }
                 else if(addRemoveSekt === -1){ // If the sekt is removed, decrement the sektWon counter for the team ?
 
