@@ -1,7 +1,35 @@
-<h1>Benutzerliste</h1>
+<div class="container mt-5">
+  <h1 class="text-center">Benutzerliste</h1>
 
-<ul>
-  {{#each users}}
-    <li>{{this.username}} - Rolle: {{this.role}}</li>
-  {{/each}}
-</ul>
+  <table class="table table-striped table-bordered mt-4 text-center">
+    <thead class="table-dark">
+      <tr>
+        <th>Benutzername</th>
+        <th>Rolle</th>
+        <th>Aktion</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each users}}
+        <tr>
+          <td>{{this.username}}</td>
+          <td>{{this.role}}</td>
+          <td>
+            {{#unless (eqref this.username ../username)}}
+              <form action="/user/delete" method="POST" style="display:inline;" onsubmit="return confirm('Willst du wirklich diesen Benutzer löschen?');">
+                <input type="hidden" name="username" value="{{this.username}}">
+                <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
+              </form>
+            {{else}}
+              <span>Aktueller Benutzer</span>
+            {{/unless}}
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <div class="text-center mt-4">
+    <a href="/mainSettings" class="btn btn-secondary">Zurück</a>
+  </div>
+</div>

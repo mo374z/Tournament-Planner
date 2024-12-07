@@ -113,6 +113,23 @@ router.post('/assignPlayer', async (req, res) => {
 });
 
 
+async function removeAllPlayerfromAllGameGoals() {
+    try {
+        const games = await Game.find().exec();
+        for (const game of games) {
+            for (const goal of game.goalsLog) {
+                if (goal.player) {
+                    goal.player = null;
+                }
+            }
+            await game.save();
+        }
+    } catch (err) {
+        console.error('Error removing player from all goals: ', err);
+        throw err;
+    }
+}
+
 
 //funtion to remove a goal from the database
 function removeLastGoalfromGameAndPlayer(game, opponentIndex) {
@@ -208,5 +225,6 @@ async function removeGoalFromPlayer(goal, game, opponentIndex) {
 
 module.exports = {
     router,
-    removeLastGoalfromGameAndPlayer
+    removeLastGoalfromGameAndPlayer,
+    removeAllPlayerfromAllGameGoals
 };

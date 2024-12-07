@@ -269,7 +269,6 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
             if(addRemoveSekt !== 0){ // If the Sekt is won or removed
                 const Sekt_Team_ID = parseInt(req.params.teamId); // Get the team ID that gets the Sekt
                 if(addRemoveSekt === 1){ // If the sekt is won, increment the sektWon counter for the team
-                    //console.log('Sekt Team ID: ', Sekt_Team_ID);
                     const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
                     team.sektWon += 1; // Increment the sektWon counter for the team
                     console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
@@ -277,7 +276,7 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
 
                     await genCounters.findOneAndUpdate({}, { $inc: { wonSektBottles: 1 } }); // Increment the wonSektBottles counter
 
-                    io.emit('Sekt', Sekt_Team_ID); // Emit an event to the TV page to show the Sekt
+                    io.emit('Sekt', team); // Emit an event to the TV page to show the Sekt
                 }
                 else if(addRemoveSekt === -1){ // If the sekt is removed, decrement the sektWon counter for the team ?
 
@@ -406,7 +405,7 @@ router.get('/live', async (req, res) => {
         const game = await Game.findOne({ status: 'active' }).exec();
 
         if (!game) {
-            return res.render('layouts/liveGame', { game: null, noActiveGame: true });
+            return res.render('layouts/liveGame', { socketConfig: socketConfig, game: null, noActiveGame: true, infoBannerMessage });
         }
 
         // Fetch team names using the team IDs from the game object
@@ -434,18 +433,15 @@ async function updateGenGoalsCounter(increment, teamId) {
         counters.allGoals += increment; // Increment allGoals counter (if increment is negative, it will decrement)
         if(counters.allGoals <= -1){counters.allGoals = 0;} // If allGoals can not be negative, set it to 0
 
-        console.log(teamId);
         const TeamID = teamId;
 
-
         counters.goalSektCounter -= increment; // Decrement goalSektCounter counter (if increment is negative, it will increment)
-        console.log('goalSektCounter: ', counters.goalSektCounter);
         
         const mainSettings = await MainSettings.findOne({}); // Fetch main settings
         const goalsforSekt = mainSettings.goalsforSekt;
     
         if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less the team wins an Sekt, reset it to default value
-            console.log('Sekt won by team: ', TeamID);
+            // console.log('Sekt won by team: ', TeamID);
             counters.goalSektCounter = goalsforSekt
             await counters.save(); // Save the updated counter value            
             return { addRemoveSekt: +1, allGoals: counters.allGoals}; // Returning an object with named properties

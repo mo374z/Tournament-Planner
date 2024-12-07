@@ -74,13 +74,14 @@
                             <button type="button" class="btn btn-primary edit-button" onclick="enableEdit(this)">Bearbeiten</button>
                             <button type="submit" class="btn btn-secondary save-button" style="display: none;">Speichern</button>
                             <a href="/player/{{_id}}" class="btn btn-info">Tore anzeigen</a>
+                            <button type="button" class="btn btn-danger delete-button" onclick="deletePlayer('{{_id}}')">Löschen</button>
                         </td>
                     </form>
                 </tr>
             {{/each}}
         </tbody>
     </table>
-    <button type="button" class="btn btn-danger mt-3" onclick="resetTotalGoals()">Alle Total Goals zurücksetzen und Tore aus Spieler löschen</button>
+    <button type="button" class="btn btn-danger mt-3" onclick="resetTotalGoals()">Alle Total Goals zurücksetzen, Tore aus Spielern und Spieler aus Spieltoren löschen</button>
 </div>
 
 <script>
@@ -173,7 +174,7 @@ function enableEdit(button) {
 }
 
 function resetTotalGoals() {
-    if (confirm('Sind Sie sicher, dass Sie alle totalen Tore zurücksetzen möchten?')) {
+    if (confirm('Sind Sie sicher, dass Sie alle Tore der Spieler zurücksetzen möchten? (löscht Tore aus Spielern, und Spieler aus allen Toren in "Games" )')) {
         fetch('/player/reset-total-goals', {
             method: 'POST',
             headers: {
@@ -184,6 +185,23 @@ function resetTotalGoals() {
                 location.reload();
             } else {
                 alert('Fehler beim Zurücksetzen der totalen Tore.');
+            }
+        });
+    }
+}
+
+function deletePlayer(playerId) {
+    if (confirm('Sind Sie sicher, dass Sie diesen Spieler löschen möchten?')) {
+        fetch(`/player/delete/${playerId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Löschen des Spielers.');
             }
         });
     }

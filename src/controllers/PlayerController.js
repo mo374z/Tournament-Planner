@@ -6,7 +6,7 @@ const Team = mongoose.model('Team');
 const Game = mongoose.model('Game');
 const router = express.Router();
 
-
+const { removeAllPlayerfromAllGameGoals } = require('./ScorerController');
 
 //Code part to enable the authentication for all the following routes
 const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
@@ -81,12 +81,25 @@ router.post('/edit/:id', async (req, res) => {
 router.post('/reset-total-goals', async (req, res) => {
     try {
         await Player.updateMany({}, { total_goals: 0 }).exec(); // Reset total goals for all players
-        //Remove goals from all players
+        // Remove goals from the players goal array
         await Player.updateMany({}, { $set: { goals: [] } }).exec();
+        // Remove all players from all game goals
+        await removeAllPlayerfromAllGameGoals(); // Remove all players from all game goals
 
         res.status(200).send('Total goals reset successfully');
     } catch (err) {
         console.error('Error resetting total goals: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Route to delete a player
+router.delete('/delete/:id', async (req, res) => {
+    try {
+        await Player.findByIdAndDelete(req.params.id).exec();
+        res.status(200).send('Player deleted successfully');
+    } catch (err) {
+        console.error('Error deleting player: ', err);
         res.status(500).send('Internal Server Error');
     }
 });
@@ -98,6 +111,16 @@ router.get('/:id', async (req, res) => {
         const team = await Team.findById(player.team).exec();
         const goals = await Promise.all(player.goals.map(async (goal, index) => { // Fetch goal details for each goal
             const game = await Game.findById(goal.gameId).exec(); // Fetch game details
+            if (!game) {
+                console.error('Game not found for goal');
+                res.status(500).send('No game found for goal');
+                return null;
+            }
+            if(game.goalsLog.length === 0){
+                console.log("No goals in the game");
+                res.status(500).send('No goals in the game');
+                return null;
+            }
             const goalDetails = game.goalsLog.id(goal.goalId); // Fetch goal details from the game goalsLog
             if (!goalDetails) {
                 console.error('Goal not found in game goalsLog');

@@ -5,3 +5,4 @@
 /public/teampictures/*
 !/public/teampictures/default.jpg
 /public/certificates/*
+/keytokens.yaml

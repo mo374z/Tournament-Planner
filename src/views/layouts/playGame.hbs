@@ -273,12 +273,10 @@
 
     const gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
 
-    socket.on('Sekt', (teamNum) => {
-        console.log('Sekt for Team: ' + teamNum);
-        console.log('Sekt for Team: ' + gameOppNames[teamNum-1]);
-
+    socket.on('Sekt', (team) => {
+        console.log('Sekt for Team: ' + team.name);
         const alert = document.querySelector('.alert-info');
-        alert.textContent = 'Sekt für ' + gameOppNames[teamNum-1];
+        alert.innerHTML = '<h5 class="alert-heading">Sekt für ' + team.name + ' !</h5><p class="mb-0">(' + team.sektWon + '. Sekt des Teams)</p>';
         alert.classList.remove('d-none');
         setTimeout(() => {
             alert.classList.add('d-none');

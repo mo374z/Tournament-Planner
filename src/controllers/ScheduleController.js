@@ -37,7 +37,7 @@ router.get('/list', async (req, res) => {
 // Import the functions to generate the Semischedule
 const { generateSemiFinalsSchedule, updateSemiFinalsSchedule } = require('./SemiFinalsController');
 const { generateQuarterFinalsSchedule, updateQuarterFinalsSchedule } = require('./QuarterFinalsController');
-const { get, find } = require('lodash');
+
 
 router.get('/generate', isAdmin, async (req, res) => {
 
@@ -264,7 +264,7 @@ router.get('/:id', isAdmin, async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
-                const teams = await Team.find({});
+        const teams = await Team.find({});
 
         res.render('layouts/editGame', {
             game: game,
@@ -469,10 +469,17 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
         const oldGameTime = existingGame.time;
         const oldGameduration = existingGame.duration;
 
-        if (team1 === undefined) {
+
+        // Check if the selected team values are dummy names if true retain the existing dummy teams
+        if (team1 === existingGame.opponents[0].name && existingGame.opponents[0].isDummy) {
+            team1 = existingGame.opponents[0];
+        } else if (team1 === undefined) {
             team1 = existingGame.opponents[0];
         }
-        if (team2 === undefined) {
+
+        if (team2 === existingGame.opponents[1].name && existingGame.opponents[1].isDummy) {
+            team2 = existingGame.opponents[1];
+        } else if (team2 === undefined) {
             team2 = existingGame.opponents[1];
         }
 
@@ -504,8 +511,10 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
 
         const timeDifference = updatedGame.time - oldGameTime;
         const mainTimeDifference = timeDifference + gameDurationdifference;
-
-        await updateSubsequentGamesTime(gameId, mainTimeDifference);
+        
+        if(mainTimeDifference !== 0) {
+            await updateSubsequentGamesTime(gameId, mainTimeDifference);
+        }
 
         res.redirect('/schedule/list');
     } catch (err) {
@@ -516,11 +525,13 @@ router.post('/:id/edit', isAdmin, async (req, res) => {
 
 
 function renderScheduleList(req, res) { //TODO: add isGamePlayable function from helper here
+    const editMode = req.query.editMode === 'true';
     fetchGamesData()
     .then(({ games, timeBetweenGames }) => {
             res.render('layouts/schedulelist', {
                 list: games,
-                timeBetweenGames: timeBetweenGames
+                timeBetweenGames: timeBetweenGames,
+                editMode: editMode
             });
         })
         .catch(err => {
@@ -599,9 +610,11 @@ async function getTeamDataById(teamId) {
     try {
         if (teamId.isDummy) {
             return { name: teamId.name, group: teamId.group };
-        } else {
+        } else if (mongoose.Types.ObjectId.isValid(teamId)) {
             const team = await Team.findById(teamId);
             return team ? { name: team.name, group: team.group } : { name: 'Team not found', group: 'Group not found' };
+        } else {
+            return { name: 'Invalid Team ID', group: 'Invalid Group' };
         }
     } catch (err) {
         console.error('Error fetching team data: ', err);
@@ -681,6 +694,52 @@ async function clearGamesCollection() {
         console.error('Error clearing Games collection: ', err);
     }
 }
+
+router.get('/:id/move/up', isAdmin, async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId);
+        if (game.number > 1 && game.status === 'Scheduled') {
+            const previousGame = await Game.findOne({ number: game.number - 1 });
+            if (previousGame.status === 'Scheduled') {
+                [game.number, previousGame.number] = [previousGame.number, game.number];
+                [game.time, previousGame.time] = [previousGame.time, game.time];
+                await game.save();
+                await previousGame.save();
+                await updateSubsequentGamesTime(game._id, 0);
+                res.redirect('/schedule/list');
+            }
+            else {
+                console.log('Previous game is not scheduled');
+            }
+        }
+    } catch (err) {
+        console.error('Error moving game up: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.get('/:id/move/down', isAdmin, async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId);
+        const nextGame = await Game.findOne({ number: game.number + 1 });
+        if (nextGame && game.status === 'Scheduled' && nextGame.status === 'Scheduled') {
+            [game.number, nextGame.number] = [nextGame.number, game.number];
+            [game.time, nextGame.time] = [nextGame.time, game.time];
+            await game.save();
+            await nextGame.save();
+            await updateSubsequentGamesTime(game._id, 0);
+            res.redirect('/schedule/list');
+        }
+        else {
+            console.log('Next game is not scheduled');
+        }        
+    } catch (err) {
+        console.error('Error moving game down: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 
 
