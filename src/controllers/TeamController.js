@@ -3,12 +3,14 @@ var router = express.Router();
 
 const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
+const Game = mongoose.model('Game');
+const Player = mongoose.model('Player');
+const MainSettings = mongoose.model('MainSettings');
 
 
 //Code part to enable the authentication for all the following routes
 const  {verifyToken, checkLoginStatus , isAdmin}=  require('../middleware/auth'); // Pfad zur auth.js-Datei
 const cookieParser = require('cookie-parser'); 
-const { get } = require('lodash');
 router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
 
 router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
@@ -17,88 +19,122 @@ router.use((req, res, next) => {            // Middleware, um Benutzerinformatio
     res.locals.userrole = req.userRole;
     next();
   });
+
+  router.use(isAdmin);                       // Alle nachfolgenden Routen sind nur für Admins zugänglich
 //--------------------------------------------------------------
 
 const { getRank } = require('../models/Team');
 
-router.get('/', (req,res) => {
-    res.render('layouts/createUpdateTeam', {
-        viewTitle: 'Insert Team',
-        isNew: true,
-    });
+const multer = require('multer'); // For file upload
+const path = require('path');
+const fs = require('fs');
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/teampictures/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, req.body._id + path.extname(file.originalname));
+    }
 });
 
-router.post('/', (req, res) => {
-    if(req.body._id == ''){
-        insertRecord(req,res);
-    }
-    else{
-        updateRecord(req,res);
-    }
-})
+const upload = multer({ storage: storage });
 
-async function insertRecord(req, res) {
-    var team = new Team();
-    team.name = req.body.name;
-    team.group = req.body.group;
-    team.gamesPlayed = 0;
-    team.gamesWon = 0;
-    team.gamesLost = 0;
-    team.gamesDraw = 0;
-    team.goals = [0,0]; 
-    team.goalsGroupStage = [0,0]; 
-    team.sektWon = 0;
-    team.points_Group_Stage = 0;
-    team.points_General = 0;
-    team.gamesPlayed_Group_Stage = 0;
-
+router.post('/uploadImage', upload.single('teamImage'), async (req, res) => {
     try {
-        const doc = await team.save();
-        res.redirect('team/list');
-    } catch (err) {
-        console.log('Error during insert: ' + err);
-    }
-}
-
-async function updateRecord(req, res) {
-    try {
-        const teamId = req.body._id;
-        const updatedData = {
-            name: req.body.name,
-        };
-        const updatedTeam = await Team.findOneAndUpdate({ _id: teamId }, updatedData, { new: true }).exec();
-        if (updatedTeam) {
-            res.redirect('team/list');
+        const team = await Team.findById(req.body._id).exec();
+        if (team) {
+            team.imagePath = '/teampictures/' + req.file.filename;
+            await team.save();
+            console.log('Image uploaded successfully:', req.file.filename);
+            res.redirect('/team/details/' + req.body._id);
         } else {
+            console.log('Team not found for ID:', req.body._id);
             res.status(404).send('Team not found');
         }
     } catch (err) {
-        console.log('Error during update: ' + err);
+        console.log('Error during image upload:', err);
         res.status(500).send('Internal Server Error');
     }
-}
+});
 
+
+router.post('/deleteImage', async (req, res) => {
+    try {
+        console.log('Deleting image for team ID:', req.body._id);
+        const team = await Team.findById(req.body._id).exec();
+        if (team && team.imagePath) {
+            const imagePath = path.join(__dirname, '../../public', team.imagePath);
+            fs.unlink(imagePath, async (err) => {
+                if (err) {
+                    console.log('Error deleting image:', err);
+                    res.status(500).send('Internal Server Error');
+                } else {
+                    team.imagePath = null;
+                    await team.save();
+                    console.log('Image deleted successfully');
+                    res.redirect('/team/details/' + req.body._id);
+                }
+            });
+        } else {
+            console.log('Team or image not found for ID:', req.body._id);
+            res.status(404).send('Team or image not found');
+        }
+    } catch (err) {
+        console.log('Error during image deletion:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 router.get('/list', async (req, res) => {
     try {
-      const Teams = await Team.find({ });
-      
-        Teams.forEach(team => {
+        const Teams = await Team.find({});
+        const mainSettings = await MainSettings.findOne({});
+        const groups = mainSettings ? mainSettings.groups : [];
+        
+        Teams.forEach(async team => {
+            team.index = Teams.indexOf(team) + 1;
             team.goalsDifference = team.goals[0] - team.goals[1];
             team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
-            team.rank = getRank(team);
+            team.rank = await getRank(team);
         });
 
-      res.render('layouts/teamlist', {
+        res.render('layouts/teamlist', {
             list: Teams,
+            groups: groups,
         });
     } catch (err) {
-      console.log('Error in retrieval: ' + err);
+        console.log('Error in retrieval: ' + err);
     }
-  });
+});
 
+router.post('/add', async (req, res) => {
+    try {
+        const { name, group, newGroup } = req.body;
+        const teamGroup = group === 'Neu' ? newGroup : group;
 
+        const team = new Team({
+            name: name,
+            group: teamGroup,
+            gamesPlayed: 0,
+            gamesWon: 0,
+            gamesLost: 0,
+            gamesDraw: 0,
+            goals: [0, 0],
+            goalsGroupStage: [0, 0],
+            sektWon: 0,
+            points_Group_Stage: 0,
+            points_General: 0,
+            gamesPlayed_Group_Stage: 0,
+        });
+
+        await team.save();
+        res.redirect('/team/list');
+    } catch (err) {
+        console.log('Error during insert: ' + err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 router.get('/grouplist', async (req, res) => {
     try {
@@ -208,24 +244,6 @@ router.get('/clearTeamCounters', isAdmin, async (req, res) => {   //Clear Team C
 });
 
 
-router.get('/:id', isAdmin, async (req, res) => {     //Create and Update Team only for Admins
-    try {
-        const team = await Team.findById(req.params.id).exec();
-        if (team) {                                                             // If the team was found
-            res.render('layouts/createUpdateTeam', {
-                viewTitle: "Update Team With id: " + req.params.id + " !",
-                team: team,
-            });
-        } else {
-            res.status(404).send('Team not found');
-        }
-    } catch (err) {
-        console.log('Error: ' + err);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-
 router.get('/delete/:id' , isAdmin, async (req, res) => {   //Delete Team only for Admins
     try {
         const deletedTeam = await Team.findByIdAndDelete(req.params.id).exec();
@@ -280,7 +298,122 @@ router.get('/getTeamRank/:id', async (req, res) => {
     }
 });
 
+router.get('/details/:id', async (req, res) => {
+    try {
+        const team = await Team.findById(req.params.id).exec();
+        if (team) {
+            const players = await Player.find({ team: team._id }).exec();
+            const goals = await getGoalsForTeam(team._id);
+            const upcomingGames = await getUpcomingGamesForTeam(team._id);
+            const pastGames = await getPastGamesForTeam(team._id);
+            const tournamentRank = await getRank(team);
+            const groupRank = await getRank(team, true);
+            res.render('layouts/teamDetails', {
+                viewTitle: "Team Details: " + team.name,
+                team: team,
+                players: players,
+                goals: goals,
+                upcomingGames: upcomingGames,
+                pastGames: pastGames,
+                tournamentRank: tournamentRank,
+                groupRank: groupRank,
+                imagePath: team.imagePath || '/teampictures/default.jpg',
+            });
+        } else {
+            res.status(404).send('Team not found');
+        }
+    } catch (err) {
+        console.log('Error: ' + err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
+router.post('/updateName', async (req, res) => {
+    try {
+        const { _id, name } = req.body;
+        const team = await Team.findById(_id).exec();
+        if (team) {
+            team.name = name;
+            await team.save();
+            console.log('Team name updated successfully:', name);
+            res.redirect('/team/details/' + _id);
+        } else {
+            console.log('Team not found for ID:', _id);
+            res.status(404).send('Team not found');
+        }
+    } catch (err) {
+        console.log('Error during team name update:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+async function getUpcomingGamesForTeam(teamId) {
+    const games = await Game.find({ "opponents": teamId, "status": { $in: ["Scheduled", "active"] } }).exec();
+    return Promise.all(games.map(async game => {
+        const opponents = await Promise.all(game.opponents.map(async opponentId => {
+            const team = await Team.findById(opponentId).exec();
+            return team ? { id: team._id, name: team.name } : { id: opponentId, name: 'Team not found' };
+        }));
+        const opponent = opponents.find(opponent => opponent.id.toString() !== teamId.toString());
+        return {
+            ...game._doc,
+            opponent: opponent,
+            formattedTime: new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+    }));
+}
+
+async function getPastGamesForTeam(teamId) {
+    const games = await Game.find({ "opponents": teamId, "status": "Ended" }).exec();
+    return Promise.all(games.map(async game => {
+        const opponents = await Promise.all(game.opponents.map(async opponentId => {
+            const team = await Team.findById(opponentId).exec();
+            return team ? { id: team._id, name: team.name } : { id: opponentId, name: 'Team not found' };
+        }));
+        const opponent = opponents.find(opponent => opponent.id.toString() !== teamId.toString());
+        const winner = game.goals[0] > game.goals[1] ? opponents[0] : (game.goals[0] < game.goals[1] ? opponents[1] : { name: 'Unentschieden' });
+        return {
+            ...game._doc,
+            opponent: opponent,
+            winner: winner,
+            formattedTime: new Date(game.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+    }));
+}
+
+async function getGoalsForTeam(teamId) {
+    const games = await Game.find({ "goalsLog.teamIndex": { $exists: true } }).exec();
+    const goals = [];
+    let teamGoalIndex = 0;
+    for (const game of games) {        
+        for (const goal of game.goalsLog) {
+            const teamIndex = goal.teamIndex;
+            const teamIdFromGame = game.opponents[teamIndex].toString();
+            if (teamIdFromGame === teamId.toString()) {
+                teamGoalIndex++;
+                const player = goal.player ? await Player.findById(goal.player).exec() : null;
+                const opponents = await Promise.all(game.opponents.map(async opponentId => {
+                    const team = await Team.findById(opponentId).exec();
+                    return team ? { id: team._id, name: team.name } : { id: opponentId, name: 'Team not found' };
+                }));
+                const opponent = opponents.find(opponent => opponent.id.toString() !== teamId.toString());
+                goals.push({
+                    ...goal._doc,
+                    gameDisplayName: game.gameDisplayName,
+                    gameIndex: game.number,
+                    opponent: opponent,
+                    formattedTimestamp: new Date(goal.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                    formatedgameTimestamp: new Date(goal.gameTimestamp * 1000).toISOString().slice(14, 19),
+                    playerName: player ? player.name : 'Unbekannt',
+                    teamGoalIndex: teamGoalIndex,
+                });
+            }
+        }
+    }
+    // Sort goals by timestamp in descending order
+    goals.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return goals;
+}
 
 async function updateRanks(teamsByGroup) {
     for (const group of teamsByGroup) {

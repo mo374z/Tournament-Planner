@@ -68,6 +68,7 @@ router.get('/', async (req, res) => {
                 allGoals: 0,
                 gamesPlayed: 0,
                 goalSektCounter: 0,
+                wonSektBottles: 0,
             });
             await generalCounters.save();
         }
@@ -77,8 +78,7 @@ router.get('/', async (req, res) => {
 
         const dbName = mongoose.connection.db.databaseName;
 
-        const backupDbs = listBackups();  // Get a list of all backups
-        console.log('backupDbs:', backupDbs);
+        const backupDbs = listBackups();  // Get a list of all backup databases
 
         // Render the edit page with the MainSettings data
         res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName, backupDbs });
@@ -232,7 +232,49 @@ router.get('/resetCounters', async (req, res) => {
     }
 });
 
+// Route to add a new group
+router.post('/addGroup', async (req, res) => {
+    try {
+        const { groupName } = req.body;
+        let mainSettings = await MainSettings.findOne({});
+        if (!mainSettings) {
+            mainSettings = new MainSettings({
+                TornamentStartTime: defaultStartTime,
+                timeBetweenGames: defaultTimeBetweenGames,
+                gameDurationGroupStage: defaultGameDurationGroupStage,
+                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                gameDurationSemifinals: defaultGameDurationSemiFinals,
+                gameDurationFinal: defaultGameDurationFinal,
+                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
+                goalsforSekt: defaultgoalsforSekt,
+                groups: []
+            });
+        }
+        if (!mainSettings.groups.includes(groupName)) {
+            mainSettings.groups.push(groupName);
+            await mainSettings.save();
+        }
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error adding group:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
-
+// Route to delete a group
+router.post('/deleteGroup', async (req, res) => {
+    try {
+        const { groupName } = req.body;
+        let mainSettings = await MainSettings.findOne({});
+        if (mainSettings) {
+            mainSettings.groups = mainSettings.groups.filter(group => group !== groupName);
+            await mainSettings.save();
+        }
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error deleting group:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 module.exports = router;

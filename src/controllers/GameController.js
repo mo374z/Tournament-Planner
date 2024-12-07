@@ -28,7 +28,9 @@ if (useHttps) {
     server = http.createServer(app);
 }
 
-module.exports = router;
+
+
+
 const cors = require('cors');
 
 //Code part to enable the authentication for all the following routes
@@ -44,6 +46,7 @@ router.use((req, res, next) => {
 
 const {updateQuarterFinalsSchedule} = require('./QuarterFinalsController');
 const {updateSemiFinalsSchedule} = require('./SemiFinalsController');
+const { removeLastGoalfromGameAndPlayer } = require('./ScorerController');
 
 // Start the Websocket server
 server.listen(socketPort, () => {
@@ -61,11 +64,11 @@ const io = socketIo(server, {
 
 app.use(cors());
 
-
 let timerInterval = null;
 let timer = 0;
 let isPaused = true;
 
+let infoBannerMessage = ''; // Variable to store the info banner message
 
 // WebSocket logic
 io.on('connection', (socket) => {
@@ -119,7 +122,36 @@ io.on('connection', (socket) => {
     });
 
     //add a consol log on the server side to see if the client is connected
-    console.log('A user connected');
+    console.log('A user connected to the Websocket server');
+
+    socket.on('getNextGame', async () => {
+        try {
+            const currentGame = await Game.findOne({ status: 'active' }).exec();
+            if (currentGame) {
+                const nextGame = await Game.findOne({ number: currentGame.number + 1 }).exec();
+                if (nextGame) {
+                    const team1 = await Team.findById(nextGame.opponents[0]).exec();
+                    const team2 = await Team.findById(nextGame.opponents[1]).exec();
+                    nextGame.opponents[0] = team1 ? team1.name : 'Team not found';
+                    nextGame.opponents[1] = team2 ? team2.name : 'Team not found';
+                    socket.emit('nextGameData', {
+                        time: nextGame.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        opponents: nextGame.opponents,
+                        duration: nextGame.duration,
+                        gameDisplayName: nextGame.gameDisplayName
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching next game: ', err);
+        }
+    });
+
+    socket.on('updateInfoBanner', (message) => {
+        infoBannerMessage = message;
+        console.log('Info banner message updated to: ', message);
+        io.emit('updateInfoBanner', message);
+    });
 
 });
 
@@ -164,7 +196,7 @@ router.get('/:id/play', async (req, res) => {
         // Fetch and pass counters data
         const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
 
-        res.render('layouts/playGame', { socketConfig:socketConfig, game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool});
+        res.render('layouts/playGame', { socketConfig:socketConfig, game, durationInMillis, generalCounters: counters , areOtherGamesActiveBool, infoBannerMessage });
     } catch (err) {
         console.error('Error fetching game for play: ', err);
         res.status(500).send('Internal Server Error');
@@ -209,30 +241,60 @@ router.post('/:id/change-score/:teamId/:i', async (req, res) => {
         } else {
             // Increment the score for the specified team
             game.goals[req.params.teamId-1] += parseInt(req.params.i);
-            const updatedGame = await game.save();
-
-            const Sekt_Team_ID = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId)); // Update the allGoals counter and check if a Sekt is won
-
-
+            
+            const { addRemoveSekt, allGoals} = await updateGenGoalsCounter(parseInt(req.params.i), parseInt(req.params.teamId));
             const updatedCounters = await genCounters.findOne({}); // Fetch updated counters
 
+            if (req.params.i == -1) {            // -            // If the goal is decremented, remove the last goal from the game and player
+                await removeLastGoalfromGameAndPlayer(game, req.params.teamId - 1); 
+            }
+            else {                               // +           // If the goal is incremented, add the goal to the game object
+                // Add this goal to the goal log into the game object
+                game.goalsLog.push({
+                    timestamp: new Date(),
+                    //Save the game timpstamp in seconds wich is the game duration minus the current timer value
+                    gameTimestamp: game.duration*60 - timer,
+                    teamIndex: req.params.teamId - 1,
+                    newScore: game.goals,   
+                    goalIndex: game.goalsLog.length + 1,
+                    sekt_won: addRemoveSekt === 1 ? true : false,
+                    goalIndexTournament: allGoals
+                });
+            }
 
+            const updatedGame = await game.save(); // Save the updated game object
 
             res.status(200).json({ updatedGame, updatedCounters }); // Send the updated game object and counters as JSON
 
-            if(Sekt_Team_ID != 0){
-                console.log('Sekt Team ID: ', Sekt_Team_ID);
-                const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
-                team.sektWon += 1; // Increment the sektWon counter for the team
-                console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
-                await team.save(); // Save the updated team
+            if(addRemoveSekt !== 0){ // If the Sekt is won or removed
+                const Sekt_Team_ID = parseInt(req.params.teamId); // Get the team ID that gets the Sekt
+                if(addRemoveSekt === 1){ // If the sekt is won, increment the sektWon counter for the team
+                    const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
+                    team.sektWon += 1; // Increment the sektWon counter for the team
+                    console.log('Sektcounter incremented for team: ', team.name, ' to: ', team.sektWon);
+                    await team.save(); // Save the updated team
 
-                io.emit('Sekt', Sekt_Team_ID);
+                    await genCounters.findOneAndUpdate({}, { $inc: { wonSektBottles: 1 } }); // Increment the wonSektBottles counter
+
+                    io.emit('Sekt', team); // Emit an event to the TV page to show the Sekt
+                }
+                else if(addRemoveSekt === -1){ // If the sekt is removed, decrement the sektWon counter for the team ?
+
+                    //This solutuion is not perfect because if the goal wich let to the sekt is frm the other team whats happens then ?
+
+                    // //console.log('Sekt Team ID: ', Sekt_Team_ID);
+                    // const team = await Team.findById(game.opponents[Sekt_Team_ID-1]).exec(); // Fetch the team that gets the Sekt
+                    // team.sektWon -= 1; // Decrement the sektWon counter for the team
+                    // console.log('Sektcounter decremented for team: ', team.name, ' to: ', team.sektWon);
+                    // await team.save(); // Save the updated team
+                    
+                }
             }
 
             io.emit('updateLiveGame', updatedGame);
         }
     } catch (err) {
+        console.error('Error changing score: ', err); 
         res.status(500).send('Internal Server Error');
     }
 });
@@ -343,7 +405,7 @@ router.get('/live', async (req, res) => {
         const game = await Game.findOne({ status: 'active' }).exec();
 
         if (!game) {
-            return res.render('layouts/liveGame', { game: null, noActiveGame: true });
+            return res.render('layouts/liveGame', { socketConfig: socketConfig, game: null, noActiveGame: true, infoBannerMessage });
         }
 
         // Fetch team names using the team IDs from the game object
@@ -354,7 +416,7 @@ router.get('/live', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
         
-        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false });
+        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage });
     } catch (err) {
         console.error('Error fetching live games: ', err);
         res.status(500).send('Internal Server Error');
@@ -368,23 +430,36 @@ async function updateGenGoalsCounter(increment, teamId) {
         if (!counters) {
             counters = new genCounters({ allGoals: 0 , gamesPlayed:0 , goalSektCounter: 0}); // Create a new counters document with allGoals set to 0
         }
-        counters.allGoals += increment; // Increment allGoals counter
-        counters.goalSektCounter -= increment; // Decrement goalSektCounter counter
-
+        counters.allGoals += increment; // Increment allGoals counter (if increment is negative, it will decrement)
         if(counters.allGoals <= -1){counters.allGoals = 0;} // If allGoals can not be negative, set it to 0
+
+        const TeamID = teamId;
+
+        counters.goalSektCounter -= increment; // Decrement goalSektCounter counter (if increment is negative, it will increment)
+        
+        const mainSettings = await MainSettings.findOne({}); // Fetch main settings
+        const goalsforSekt = mainSettings.goalsforSekt;
     
-        if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less, reset it to default value
-            const mainSettings = await MainSettings.findOne({}); // Fetch main settings
-            counters.goalSektCounter = mainSettings.goalsforSekt;
+        if(counters.goalSektCounter <= 0){	// If goalSektCounter counter is 0 or less the team wins an Sekt, reset it to default value
+            // console.log('Sekt won by team: ', TeamID);
+            counters.goalSektCounter = goalsforSekt
             await counters.save(); // Save the updated counter value            
-            return teamId;
+            return { addRemoveSekt: +1, allGoals: counters.allGoals}; // Returning an object with named properties
+        }
+        else if(counters.goalSektCounter > goalsforSekt){ // If goalSektCounter counter is higher than the default value, reset it to default value (this means that the teams sekt is withdrawn)
+            counters.goalSektCounter = 1; // Reset the goalSektCounter counter to 1 because when the goal wich had set the counter to the goalsforSekt is removed, the counter should be 1 goal until sekt is won
+            await counters.save(); // Save the updated counter value
+            // return { teamId: TeamID, allGoals: counters.allGoals, removeSekt: true}; // Returning an object with named properties
+            return { addRemoveSekt: -1, allGoals: counters.allGoals}; // Returning an object with named properties
         }
         else{
             await counters.save(); // Save the updated counter value
-            return 0;
-        }        
+            return { addRemoveSekt: 0, allGoals: counters.allGoals}; // Returning an object with named properties
+        }       
     } catch (err) {
         console.error('Error updating allGoals counter: ', err);
-        return 0;
+        return { addRemoveSekt: 0, allGoals: -1}; // Returning an object with named properties
     }
 }
+
+module.exports = {router, getInfoBannerMessage: () => infoBannerMessage};

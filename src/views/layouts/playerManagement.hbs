@@ -1,0 +1,217 @@
+<div class="container">
+    <h1>Spielerverwaltung</h1>
+    <hr>
+    <h2>Neuen Spieler hinzufügen</h2>
+    <form action="/player/add" method="POST" onsubmit="return validateForm()">
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" class="form-control" id="name" name="name">
+        </div>
+        <div class="form-group">
+            <label for="number">Trikot Nummer:</label>
+            <input type="text" class="form-control" id="number" name="number">
+        </div>
+        <div class="form-group">
+            <label for="team">Team:</label>
+            <select class="form-control" id="team" name="team" required>
+                {{#each teams}}
+                    <option value="{{_id}}">{{name}}</option>
+                {{/each}}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Hinzufügen</button>
+    </form>
+    <hr>
+    <h2>Spielerliste</h2>
+    <h8>Durch klicken auf eine Spaltenüberschrift, kann die Tabelle sortiert werden.</h8>
+    <table class="table table-bordered table-responsive table-striped table-hover " id="playerTable">
+    <thead>
+        <tr style="background-color: #f2f2f2;">
+            <th style="text-align: center;" onclick="sortTable(0)">Teamname</th>
+            <th style="text-align: center;" onclick="sortTable(1)">Spielername</th>
+            <th style="text-align: center;" onclick="sortTable(2)">Trikot Nummer</th>
+            <th style="text-align: center;" onclick="sortTable(3)">Total Goals</th>
+            <th style="text-align: center;" onclick="sortTable(4)">Tor-Rang</th>
+            <th style="text-align: center;">Aktionen</th>
+        </tr>
+        <tr>
+            <th style="text-align: center;"><input type="text" id="teamFilter" onkeyup="filterTable(0)" placeholder="Filter Teamname"></th>
+            <th style="text-align: center;"><input type="text" id="nameFilter" onkeyup="filterTable(1)" placeholder="Filter Spielername"></th>
+            <th style="text-align: center;"><input type="text" id="numberFilter" onkeyup="filterTable(2)" placeholder="Filter Nummer"></th>
+            <th style="text-align: center;"><input type="text" id="goalsFilter" onkeyup="filterTable(3)" placeholder="Filter Total Goals"></th>
+            <th style="text-align: center;"></th>
+            <th style="text-align: center;"></th>
+        </tr>
+    </thead>
+        <tbody>
+            {{#each players}}
+                <tr>
+                    <form action="/player/edit/{{_id}}" method="POST" class="edit-form">
+                        <td>
+                            <span class="display-value" style="text-align: left;">{{getTeamName team}}</span>
+                            <select class="form-control edit-input" name="team" required style="display: none;">
+                                {{#each ../teams}}
+                                    <option value="{{_id}}" {{#if (stringeq ../team _id)}}selected{{/if}}>{{name}}</option>
+                                {{/each}}
+                            </select>
+                        </td>
+                        <td style="text-align: left;">
+                            <span class="display-value">{{name}}</span>
+                            <input type="text" class="form-control edit-input" name="name" value="{{name}}" style="display: none;">
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="display-value">{{number}}</span>
+                            <input type="text" class="form-control edit-input" name="number" value="{{number}}" style="display: none;">
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="display-value">{{total_goals}}</span>
+                            <input type="text" class="form-control edit-input" name="total_goals" value="{{total_goals}}" required style="display: none;">
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="display-value">{{rank}}</span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-primary edit-button" onclick="enableEdit(this)">Bearbeiten</button>
+                            <button type="submit" class="btn btn-secondary save-button" style="display: none;">Speichern</button>
+                            <a href="/player/{{_id}}" class="btn btn-info">Tore anzeigen</a>
+                            <button type="button" class="btn btn-danger delete-button" onclick="deletePlayer('{{_id}}')">Löschen</button>
+                        </td>
+                    </form>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    <button type="button" class="btn btn-danger mt-3" onclick="resetTotalGoals()">Alle Total Goals zurücksetzen, Tore aus Spielern und Spieler aus Spieltoren löschen</button>
+</div>
+
+<script>
+let sortDirections = [true, true, true, true, true]; // Track sort directions for each column
+
+function validateForm() {
+    const name = document.getElementById('name').value.trim();
+    const number = document.getElementById('number').value.trim();
+    const teamId = document.getElementById('team').value;
+
+    console.log(name, number, teamId);
+
+    if (!name && !number) {
+        alert('Bitte geben Sie entweder einen Namen oder eine Nummer ein.');
+        return false;
+    }
+
+    const players = {{{json players}}}; // Assuming you have a players array in your context
+    const teamPlayers = players.filter(player => player.team === teamId);
+
+    if (teamPlayers.some(player => player.name.toLowerCase() === name.toLowerCase())) {
+        alert('Ein Spieler mit diesem Namen existiert bereits in diesem Team.');
+        return false;
+    }
+    
+    return true;
+}
+
+function sortTable(columnIndex) {
+    const table = document.getElementById("playerTable");
+    const rows = Array.from(table.rows).slice(2); // Skip header rows
+    const isNumericColumn = columnIndex === 2 || columnIndex === 3 || columnIndex === 4; // Check if the column is numeric
+    const direction = sortDirections[columnIndex] ? 1 : -1; // Determine sort direction
+    const sortedRows = rows.sort((a, b) => {
+        const cellA = getCellValue(a.cells[columnIndex], isNumericColumn);
+        const cellB = getCellValue(b.cells[columnIndex], isNumericColumn);
+        if (isNumericColumn) {
+            return direction * (parseFloat(cellA) - parseFloat(cellB));
+        } else {
+            if (cellA < cellB) return -1 * direction;
+            if (cellA > cellB) return 1 * direction;
+            return 0;
+        }
+    });
+    sortedRows.forEach(row => table.tBodies[0].appendChild(row));
+    sortDirections[columnIndex] = !sortDirections[columnIndex]; // Toggle sort direction
+}
+
+function filterTable(columnIndex) {
+    const input = document.getElementById(["teamFilter", "nameFilter", "numberFilter", "goalsFilter"][columnIndex]);
+    const filter = input.value.toLowerCase();
+    console.log("Search value:", filter);
+    const table = document.getElementById("playerTable");
+    const rows = table.tBodies[0].rows;
+    for (let i = 0; i < rows.length; i++) {
+        let cellText;
+        if (columnIndex === 0) { // Team name column
+            cellText = rows[i].cells[columnIndex].querySelector('span').innerText;
+            cellText = cellText.toLowerCase();
+            console.log("Team name:", cellText);
+        } else {
+            cellText = getCellValue(rows[i].cells[columnIndex]).toLowerCase();
+        }
+        rows[i].style.display = cellText.includes(filter) ? "" : "none";
+    }
+}
+
+function getCellValue(cell, isNumericColumn = false) {
+    const input = cell.querySelector('input, select');
+    if (input) {
+        return input.value || (isNumericColumn ? '0' : 'z');
+    } else {
+        const span = cell.querySelector('span');
+        return span ? span.innerText || (isNumericColumn ? '0' : 'z') : (isNumericColumn ? '0' : 'z');
+    }
+}
+
+function enableEdit(button) {
+    const row = button.closest('tr');
+    row.querySelectorAll('.display-value').forEach(span => span.style.display = 'none');
+    row.querySelectorAll('.edit-input').forEach(input => input.style.display = 'block');
+    row.querySelector('.edit-button').style.display = 'none';
+    row.querySelector('.save-button').style.display = 'block';
+
+    //remove btn-info button from the row if edit is enabled and add it back if edit is disabled
+    const infoButton = row.querySelector('.btn-info');
+    if (infoButton) {
+        infoButton.style.display = 'none';
+    }
+}
+
+function resetTotalGoals() {
+    if (confirm('Sind Sie sicher, dass Sie alle Tore der Spieler zurücksetzen möchten? (löscht Tore aus Spielern, und Spieler aus allen Toren in "Games" )')) {
+        fetch('/player/reset-total-goals', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Zurücksetzen der totalen Tore.');
+            }
+        });
+    }
+}
+
+function deletePlayer(playerId) {
+    if (confirm('Sind Sie sicher, dass Sie diesen Spieler löschen möchten?')) {
+        fetch(`/player/delete/${playerId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Fehler beim Löschen des Spielers.');
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const teamId = urlParams.get('teamId');
+    if (teamId) {
+        document.getElementById('team').value = teamId;
+    }
+});
+</script>

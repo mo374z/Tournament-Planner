@@ -14,8 +14,6 @@ catch(error) {
 }
 }
 
-
-
 const { MongoClient } = require('mongodb');
 
 async function listDbs() {
@@ -28,18 +26,14 @@ async function listDbs() {
 }
 
 
-
 connectToMongo();
 
 require('./Team');
 require('./Game');
 require('./MainSettings');
 require('./GeneralCounters');
-
+require('./Player');
 require('./User');
-
-
-
 
 
 async function createDb(dbName) {   // Create a new database for the tournament
@@ -104,8 +98,6 @@ async function insertDefaultValues(db) { // Insert default values into the new d
     });
 }
 
-
-
 async function switchDb(dbName) {
   await mongoose.disconnect();
   await mongoose.connect(`mongodb://0.0.0.0:27017/${dbName}`);
@@ -142,7 +134,6 @@ function backupDb() {
   const backupFile = `${backupPathArchive}/mongodump-${dbName}`;
   const backupURI = 'mongodb://0.0.0.0:27017/' + dbName;
 
-
   const command = `mongodump --uri=${backupURI} --db=${dbName} --archive="${backupFile}"`;
 
   exec(command, (error, stdout, stderr) => {
@@ -150,11 +141,8 @@ function backupDb() {
           console.error(`Fehler beim Erstellen des Backups: ${error}`);
           return;
       }
-
       console.log(`Backup erfolgreich erstellt unter: ${backupFile}`);
   });
-
-
 
   const commandJSON = `mongodump --uri=${backupURI} --out=${backupPathJSON}`;
 
@@ -163,7 +151,6 @@ function backupDb() {
           console.error(`Fehler beim Erstellen des Backups als JSON: ${error}`);
           return;
       }
-
       console.log(`BackupJSON erfolgreich erstellt unter: ${backupPathJSON}`);
   });
 }
@@ -182,7 +169,6 @@ function restoreDb(dbName) {
             console.error(`Fehler beim Wiederherstellen des Backups: ${error}`);
             return;
         }
-
         console.log(`Backup erfolgreich wiederhergestellt von: ${backupFile}`);
     });
 }
@@ -199,8 +185,6 @@ function restoreDb(dbName) {
 }
 
 
-
-
 module.exports = {
   connectToMongo,
   listDbs,
@@ -210,8 +194,5 @@ module.exports = {
   restoreDb,
   listBackups,
 };
-
-
-//module.exports = connectToMongo;
 
 

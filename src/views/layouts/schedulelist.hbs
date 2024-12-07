@@ -1,35 +1,33 @@
 <section style="text-align: center;">
 
 
-    <h1>Schedule List</h1>
-    
+    <h1 >Spielplan</h1>  
         <div class="row justify-content-center page-divider">
             <div class="col-auto">
-
-                <table class="table table-responsive table-bordered">
+                <table class="table table-responsive table-bordered table-striped table-hover" id="scheduleTable">
                 <thead>
                     <tr>
-                        <th>Number</th>
-                        <th>Time <small>({{timeBetweenGames}}min)</small></th>
-                        <th colspan="2">Team Opponents</th>
-                        <th>Goals</th>
-                        <th>Duration</th>
-                        <th colspan="2">Groups</th>
+                        <th>Nr.</th>
+                        <th>Zeit <small>({{timeBetweenGames}}min)</small></th>
+                        <th colspan="2">Teams</th>
+                        <th>Ergebnis</th>
+                        <th>Dauer</th>
+                        <th colspan="2">Gruppen</th>
                         <th>Status</th>
-                        <th>Game Phase</th>
-                        <th>Display Name</th>
-                        <th>Actions</th>
+                        <th>Phase</th>
+                        <th>Anzeige Name</th>
+                        <th>Aktionen</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{#each list}}
-                    <tr {{#streq this.gamePhase 'Group_Stage'}}  {{else}}class="bg-light"{{/streq}}>
+                    <tr {{#streq this.gamePhase 'Group_Stage'}}  {{else}}class="table-secondary"{{/streq}}>
                         <td>{{this.number}}</td>
                         <td>{{formatTime this.time}}</td>
                         <td>{{this.opponents.[0]}}</td>
                         <td>{{this.opponents.[1]}}</td>
                         <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
-                        <td>{{this.duration}} minutes</td>
+                        <td>{{this.duration}} min</td>
                         <td>{{this.group.[0]}}</td>
                         <td>{{this.group.[1]}}</td>
                         <td>{{this.status}}</td>
@@ -39,28 +37,44 @@
                         <td>
                             <div style="white-space: nowrap;">
                             {{#streq this.status 'active'}} {{!-- if the game is ended, the edit button is disabled --}}
-                                <a href="/schedule/{{this.id}}" class="btn btn-secondary disabled" >Edit Game</a>   
+                                <a href="/schedule/{{this.id}}" class="btn btn-secondary disabled" >Bearbeiten</a> 
                             {{else}}
-                                <a href="/schedule/{{this.id}}" class="btn btn-primary" >Edit Game</a>   
+                                <a href="/schedule/{{this.id}}" class="btn btn-primary" >Bearbeiten</a>  
                             {{/streq}}                
 
                             {{#if this.isGamePlayable}} {{!-- isGamePlayable is a helper function to check if the game is playable --}}	
-                                <a href="/game/{{this.id}}/play" class="btn btn-success">Open Game</a>
+                                <a href="/game/{{this.id}}/play" class="btn btn-success">Spiel starten</a>
                             {{else}}    
                                 {{#streq this.status 'Scheduled'}}                        
-                                    <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Open Game</a>
+                                    <a href="/game/{{this.id}}/play" class="btn btn-success disabled">Spiel starten</a>
                                 {{else}}
-                                    <a href="/game/{{this.id}}/play" class="btn btn-secondary disabled">Open Game</a>
+                                    <a href="/game/{{this.id}}/play" class="btn btn-secondary disabled">Spiel starten</a>
                                 {{/streq}}
                             {{/if}}
-
+                            {{#streq this.status 'active'}}
+                                <a href="/schedule/{{this.id}}/move/up" class="btn btn-info move-btn disabled" style="display: none;">▲</a>
+                                <a href="/schedule/{{this.id}}/move/down" class="btn btn-info move-btn disabled" style="display: none;">▼</a>
+                            {{else}}
+                                {{#streq this.status 'Ended'}}
+                                    <a href="/schedule/{{this.id}}/move/up" class="btn btn-info move-btn disabled" style="display: none;">▲</a>
+                                    <a href="/schedule/{{this.id}}/move/down" class="btn btn-info move-btn disabled" style="display: none;">▼</a>
+                                {{else}}
+                                    <a href="/schedule/{{this.id}}/move/up" class="btn btn-info move-btn" style="display: none;" onclick="return confirm('Bist du sicher, dass du dieses Spiel Nr. {{this.number}}: \n{{this.opponents.[0]}} vs. {{this.opponents.[1]}} - akt. um {{formatTime this.time}} \n nach OBEN verschieben möchtest?');">▲</a>
+                                    <a href="/schedule/{{this.id}}/move/down" class="btn btn-info move-btn" style="display: none;" onclick="return confirm('Bist du sicher, dass du dieses Spiel Nr. {{this.number}}: \n{{this.opponents.[0]}} vs. {{this.opponents.[1]}} - akt. um {{formatTime this.time}} \n nach UNTEN verschieben möchtest?');">▼</a>
+                                {{/streq}}
+                            {{/streq}}
+                            
                             </div>
                         </td>
                     </tr>
                     {{/each}}
                 </tbody>
             </table>
+
+            <button id="toggleEditMode" class="btn btn-warning">Spielplan Reihenfolge bearbeiten</button>
+            <input type="hidden" id="editModeState" value="{{editMode}}">
             </div>
+
         </div>
 
 {{!-- 
@@ -77,3 +91,29 @@
 </section>
 
 <script>console.log( this.isGamePlayable )</script>
+<script>
+document.getElementById('toggleEditMode').addEventListener('click', function() {
+    const moveButtons = document.querySelectorAll('.move-btn');
+    const editModeState = document.getElementById('editModeState');
+    moveButtons.forEach(button => {
+        button.style.display = button.style.display === 'none' ? 'inline-block' : 'none';
+    });
+    const isEditMode = editModeState.value === 'true';
+    editModeState.value = !isEditMode;
+    localStorage.setItem('editMode', !isEditMode);
+    this.textContent = isEditMode ? 'Spielplan Reihenfolge bearbeiten' : 'Bearbeiten deaktivieren';
+});
+
+window.addEventListener('load', function() {
+    const editModeState = localStorage.getItem('editMode') === 'true';
+    const moveButtons = document.querySelectorAll('.move-btn');
+    const toggleEditModeButton = document.getElementById('toggleEditMode');
+    if (editModeState) {
+        moveButtons.forEach(button => {
+            button.style.display = 'inline-block';
+        });
+        toggleEditModeButton.textContent = 'Bearbeiten Modus deaktivieren';
+        document.getElementById('editModeState').value = 'true';
+    }
+});
+</script>

@@ -1,15 +1,27 @@
-
 const jwt = require('jsonwebtoken');
-const jwtSecretkey =
-  "4715aed3c946f7b0a38e6b534a8583628d84e96d10fbc04700770d572af3dce43625dd";
+const yaml = require('js-yaml');
+const fs = require('fs');
 
+const keytokens = yaml.load(fs.readFileSync('../../keytokens.yaml', 'utf8'));
+const jwtSecretkey = keytokens.jwtSecretkey;
 
 function verifyToken(req, res, next) {
-    console.log('verifyToken');
+    //console.log('verifyToken');
     const token = req.cookies.jwt; // Extract token from the cookie
 
-    if (!token) {
-        return res.status(401).send('Access denied');
+    if (!token) {        
+        return res.status(401).send(`
+                    <html>
+                        <head>
+                            <title>Access Denied</title>
+                        </head>
+                        <body>
+                            <h1>Access Denied</h1>
+                            <p>You do not have permission to access this page.</p>
+                            <button onclick="window.location.href='/user/login'">Go to Login Page</button>
+                        </body>
+                    </html>
+                `);
     }
 
     jwt.verify(token, jwtSecretkey, (err, decoded) => {
@@ -22,11 +34,7 @@ function verifyToken(req, res, next) {
     });
 }
 
-
-
 function checkLoginStatus(req, res, next) {
-
-    console.log('checkLoginStatus');
     const token = req.cookies.jwt;
 
     if (!token) {
@@ -45,7 +53,6 @@ function checkLoginStatus(req, res, next) {
     });
 }
 
-
 // Middleware, um zu überprüfen, ob der Benutzer ein Admin ist
 function isAdmin(req, res, next) {
     if (req.userRole === 'admin') {
@@ -53,6 +60,6 @@ function isAdmin(req, res, next) {
     } else {
       res.status(403).send('Nur für Admins zugänglich');
     }
-  }
+}
 
-module.exports = { verifyToken, checkLoginStatus , isAdmin};
+module.exports = { verifyToken, checkLoginStatus, isAdmin };

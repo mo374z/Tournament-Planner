@@ -15,6 +15,16 @@
     <link rel='stylesheet' href='/css/yourStyles.css' />
     <title>Budeturnier</title>
 
+    <style>
+        {{#if (eqref userrole "beamer")}} 
+        .navbar {
+            display: none;
+        }
+        .container-fluid:hover .navbar {
+            display: flex;
+        }
+        {{/if}}
+    </style>
 
 </head>
 
@@ -39,15 +49,13 @@
                 <ul class="navbar-nav ms-auto">
                     {{#if username}}
 
-                    {{#unless (gl userrole "beamer")}}
+                    {{#unless (eqref userrole "beamer")}}
 
                         <li class="nav-item">
                             <a class="nav-link ms-5" href="/TV">TV Anzeige</a>
                         </li>                    
 
-                        {{#unless (gl userrole "TV")}}
-                            <!-- Your code here -->
-                        
+                        {{#unless (eqref userrole "TV")}}                        
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/team/list">Mannschaften</a>
                             </li>
@@ -60,6 +68,15 @@
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/game/live">Live Game</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/scorer">Torschützen</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/player">Spieler</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link ms-5" href="/certificate">Urkunden</a>
+                            </li>
 
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
@@ -69,7 +86,7 @@
                         {{/unless}}
 
                         
-                        {{#if (gl userrole "beamer")}}
+                        {{#if (eqref userrole "beamer")}}
                               <li class="nav-item">
                                 <a class="nav-link ms-5" href="/game/live">Live Game</a>
                             </li>
@@ -108,7 +125,7 @@
 <br>
 </br>	
 
-{{#unless (gl userrole "beamer")}}
+{{#unless (eqref userrole "beamer")}}
 <footer class="text-center text-lg-start bg-dark text-white py-5">
         <div class="container d-flex justify-content-center">
          

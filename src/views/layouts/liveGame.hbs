@@ -18,8 +18,16 @@
 
         {{#if noActiveGame}}
         <p class="mt-3" id="noActiveGameMessage">No active game</p>
+        {{else}}
+        <p class="mt-3 d-none" id="noActiveGameMessage">No active game</p>
         {{/if}}
-        <span id="timerStatus" class="ml-2"></span>
+
+        <div class="alert alert-info d-none mt-2" role="alert">
+            This is a info alert to show Sekt for a Team.
+        </div>
+
+        {{!-- Timer Status (ausgeblendet): --}}
+        <span id="timerStatus" class="ml-2 d-none"></span> 
     </div>
 
 <div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
@@ -58,6 +66,10 @@
     </button>
 </div>
 
+<div id="connectionIndicator" class="text-center mt-3">
+    <span id="connectionStatusText" class="text-danger">Verbinde...</span>
+</div>
+
     {{!-- <div class="text-center">
         <p><strong>Game Time:</strong> {{ formatTime game.time }}</p>
         <p><strong>Status:</strong> {{ game.status }}</p>
@@ -69,9 +81,18 @@
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
     socket.on('connect', () => {
-    console.log('Socket connected');
+        console.log('Socket connected');
+        document.getElementById('connectionStatusText').classList.remove('text-danger');
+        document.getElementById('connectionStatusText').classList.add('text-success');
+        document.getElementById('connectionStatusText').textContent = 'Verbunden';
     });
-    
+
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        document.getElementById('connectionStatusText').classList.remove('text-success');
+        document.getElementById('connectionStatusText').classList.add('text-danger');
+        document.getElementById('connectionStatusText').textContent = 'Getrennt';
+    });
 
     socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
         const minutes = Math.floor(timerValue / 60);
@@ -83,8 +104,8 @@
 
     socket.on('updateLiveGame', (updatedGame) => {
         updatePage(updatedGame);
+        console.log('Game updated');
     });
-    
 
     const audio = new Audio('/sounds/Horn.mp3');       // Create an audio element
 
@@ -92,18 +113,19 @@
         audio.play();
     });
 
-        let gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
-    
-    function updatePage(game) {
+    let gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
+
+    async function updatePage(game) {
         updateScore('team1Score', game.goals[0]);
-        updateScore('team2Score', game.goals[1]);
-        updateName('team1Name', game.opponents[0]);
-        updateName('team2Name', game.opponents[1]);
-        
+        updateScore('team2Score', game.goals[1]);  
+        const teamName1 = await updateName('team1Name', game.opponents[0]);
+        const teamName2 = await updateName('team2Name', game.opponents[1]); 
+
+        gameOppNames = [teamName1, teamName2];
+        console.log('gameOppNames: ' + gameOppNames);
+
         SetActiveGameMessage(game.status);
     }
-
-    
 
     function SetActiveGameMessage(status) {        
         if (status === 'active') {
@@ -125,7 +147,7 @@
     async function updateName(elementId, teamID) {
         // get name based on id
         const response = await fetch(`/team/getTeamName/${teamID}`, { method: 'GET'})
-        
+
         if (response.ok) {
             // get the team name which is returned as a string
             const teamName = await response.text();
@@ -133,33 +155,22 @@
             if (nameElement) {
                 nameElement.innerText = teamName;
             }
+            return teamName;
         } else {
             console.error('Failed to get team name');
+            return "Error fetching team name";
         }
     }
 
-
-
-
-
-
-    socket.on('Sekt', (teamNum) => {
-
-        console.log('Sekt for Team: ' + teamNum);
-        console.log('Sekt for Team: ' + gameOppNames[teamNum-1]);    // teamNum is 1 or 2, but array index is 0 or 1
-
-        // show  bootstrap info-alert for 60 seconds to indicate Sekt
+    socket.on('Sekt', (team) => {
+        console.log('Sekt for Team: ' + team.name);
         const alert = document.querySelector('.alert-info');
-        alert.textContent = 'Sekt für ' + gameOppNames[teamNum-1]; // Set the Sekt-alert message
+         alert.innerHTML = '<h4 class="alert-heading">Sekt für ' + team.name + ' !</h4>';
         alert.classList.remove('d-none');
         setTimeout(() => {
             alert.classList.add('d-none');
-        }, 20000); // 60 seconds
-        
+        }, 20000);
     });
-
-
-
 
     socket.emit('getData'); //Call for game data when page loads
 </script>

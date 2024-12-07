@@ -1,118 +1,138 @@
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
-  <div class="container text-center">
-        <h1>Game Play Page</h1>
-        <hr>
+<div class="container text-center">
+    <h1>Spiel Verwaltung <span id="connectionStatusDot" style="display: inline-block; width: 25px; height: 25px; border-radius: 50%; background-color: green;"></span></h1>
+    <hr>
 
-        <div class="row mb-3">
-            <div class="col">
-                <h2>Game Nr. {{ game.number }}</h2>
-                <div class="mb-2">
-                    <p><strong>Game Start Time:</strong> {{formatTime game.time }}</p>
-                    <p><strong>Game End Time:</strong> <span id="gameEndTime"></span></p>
-                    <p><strong>Current Time:</strong> <span id="currentTime"></span></p>
-                    <p><strong>Game Duration:</strong> {{ game.duration }}:00 min</p>
-                    <p><strong>Status:</strong> {{ game.status }}</p>
-
-                    {{#unless areOtherGamesActiveBool}}
-                         <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Set Game to active</button>
-                    {{/unless}}
-                       
-                    
-                    <div class="alert alert-success d-none mt-2" role="alert"> Game is now active and on Live Page.</div>
-                </div>
+    <div class="row mb-3">
+        <div class="col text-center">
+            <h2 class="text-decoration-underline">Spiel Nr. {{ game.number }}</h2>
+            <div class="mb-2 text-start text-justify d-inline-block">
+                <p><strong>Start Uhrzeit:</strong> {{formatTime game.time }}</p>
+                <p><strong>Endzeit:</strong> <span id="gameEndTime"></span></p>
+                <p><strong>Aktuelle Uhrzeit</strong> <span id="currentTime"></span></p>
+                <p><strong>Spieldauer:</strong> {{ game.duration }}:00 min</p>
+                <p><strong>Name:</strong> {{ game.gameDisplayName }}</p>
+                <p><strong>Status:</strong> {{ game.status }}</p>
+                <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Spiel aktiv setzen</button>
+                <div class="alert alert-success d-none mt-2" role="alert"> Game is now active and on Live Page.</div>
             </div>
-            <div class="col" id="timerContainer">
-                <h2>Timer</h2>
-                {{#streq game.status 'active'}}
+        </div>
+        <div class="col" id="timerContainer">
+            <h2 class="text-decoration-underline">Timer</h2>
+            <div id="activeGameControls">
                 <div>
                     <span id="countdownTimer" class="display-4">{{ game.duration }}:00 min</span>
                 </div>
                 <div class="mt-2">
-                    <button id="startButton" class="btn btn-primary me-2">Play/Pause Game</button>
+                    <button id="startButton" class="btn btn-primary me-2">Play/Pause</button>
                     <button id="resetButton" class="btn btn-secondary" onclick="return confirm('Are you sure you want to reset the timer?')">Reset Timer</button>
                     <br>
                     <span id="timerStatus" class="ms-2"></span>
                 </div>
                 <div class="mt-3">
-                    
                     <input type="number" id="playbackTime" name="playbackTime" min="-10" max="10" value="1" style="width: 50px;">
                     <label for="playbackTime">min</label><br>
-                    <button onclick="addPlaybackTime()" class="btn btn-dark btn-sm">Add Playback Time</button>
+                    <button onclick="addPlaybackTime()" class="btn btn-dark btn-sm">Nachspielzeit hinzufügen</button>
                 </div>
-                {{else}}    
-                   {{#if areOtherGamesActiveBool}}
-                        <div class="alert alert-danger mt-2" role="alert">
-                            There is another game active.<br> Please end the active Game with the "End Game Button".
-                        </div>
-                    {{else}}
-                        <div class="alert alert-warning mt-2" role="alert">
-                            This game is not active. <br>Please set the game to active.
-                        </div>
-                    {{/if}}
-                {{/streq}}                
+            </div>
+            <div id="inactiveGameWarning" class="alert alert-warning mt-2" role="alert">
+                This game is not active. <br>Please set the game to active.
+            </div>
+            <div id="otherGameActiveWarning" class="alert alert-danger mt-2" role="alert">
+                There is another game active.<br> Please end the active Game with the "End Game Button".
             </div>
         </div>
+    </div>
+    <div id="connectionStatus" class="alert alert-warning d-none" role="alert">
+        Verbindung zum Server verloren.
+    </div>
+    <hr>
 
-        <hr>
-
-        <div class="row mb-3">
-            <div class="col">
-                <h2>Teams</h2>
-                <div class="row">
-                    <div class="col">
-                        <h3>{{ game.opponents.[0] }}</h3>
-                        <p class="display-5"><strong><span id="team1Score">{{ game.goals.[0] }}</span></strong></p>
-                        {{#streq game.status 'active'}}
-                            <div>
-                                <button onclick="changeScore(1,1)" class="btn btn-success me-2">+</button>
-                                <button onclick="changeScore(1,-1)" class="btn btn-danger">-</button>
-                            </div>
-                        {{/streq}}
+    <div class="row mb-3">
+        <div class="col">
+            <h2 class="text-decoration-underline">Teams</h2>
+            <div class="row">
+                <div class="col">
+                    <h3>{{ game.opponents.[0] }}</h3>
+                    <p class="display-5"><strong><span id="team1Score">{{ game.goals.[0] }}</span></strong></p>
+                    <div id="team1Controls">
+                        <button onclick="changeScore(1,1)" class="btn btn-success me-2">+</button>
+                        <button onclick="changeScore(1,-1)" class="btn btn-danger">-</button>
                     </div>
-                    <div class="col">
-                        <h3>{{ game.opponents.[1] }}</h3>
-                        <p class="display-5"><strong><span id="team2Score">{{ game.goals.[1] }}</span></strong></p>
-                        {{#streq game.status 'active'}}
-                            <div>
-                                <button onclick="changeScore(2,1)" class="btn btn-success me-2">+</button>
-                                <button onclick="changeScore(2,-1)" class="btn btn-danger">-</button>
-                            </div>
-                        {{/streq}}
+                </div>
+                <div class="col">
+                    <h3>{{ game.opponents.[1] }}</h3>
+                    <p class="display-5"><strong><span id="team2Score">{{ game.goals.[1] }}</span></strong></p>
+                    <div id="team2Controls">
+                        <button onclick="changeScore(2,1)" class="btn btn-success me-2">+</button>
+                        <button onclick="changeScore(2,-1)" class="btn btn-danger">-</button>
                     </div>
                 </div>
             </div>
-            <div class="col">
-                <h2>Counters</h2>
-                <p class="mb-2"><strong>All Goals:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
-                <p class="mb-2"><strong>Games Played:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
-                <p class="mb-2"><strong>Sekt Counter:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
-
+        </div>
+        <div class="col text-center">
+            <h2 class="text-decoration-underline">Zähler</h2>
+            <div class="text-start text-justify d-inline-block">
+                <p class="mb-2"><strong>Tore im Tunier:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
+                <p class="mb-2"><strong>Gespielte Spiele:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
+                <p class="mb-2"><strong>Bisher gewonnene Sekt:</strong> <span id="wonSektBottlesCounter">{{ generalCounters.wonSektBottles }}</span></p>
+                <p class="mb-2"><strong>Tore bis zu Sekt:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
+                
 
                 <div class="alert alert-info d-none mt-2" role="alert">
-                        This is a info alert—check it out!
+                    This is a info alert to show Sekt for a Team.
                 </div>
             </div>
         </div>
-
-        <hr>
-
-        <a href="/schedule/list" class="btn btn-secondary me-2 mt-3">Back to List</a>
-
-        {{#streq game.status 'active'}}
-        <a href="/game/{{ game._id }}/endGame" class="btn btn-danger mt-3" onclick="return confirm('Willst du wirklich das Spiel ({{ game.opponents.[0] }} vs {{ game.opponents.[1] }}) beenden ?');">End Game</a>
-        {{/streq}}
     </div>
 
-<script>
+    <hr>
 
+    <a href="/schedule/list" class="btn btn-secondary me-2 mt-3">Zurück zum Spielplan</a>
+
+    <a href="/game/{{ game._id }}/endGame" id="endGameButton" class="btn btn-danger mt-3" onclick="return confirm('Willst du wirklich das Spiel ({{ game.opponents.[0] }} vs {{ game.opponents.[1] }}) beenden ?');">Spiel beenden</a>
+    <hr>
+    <table class="table">
+        <thead>
+            <tr>
+                <td></td>
+                <th>Startzeit</th>
+                <th>Gegner</th>
+                <th>Spieldauer</th>
+                <th>Spielname</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>Nächstes Spiel: </th>
+                <td id="nextGameTime"></td>
+                <td id="nextGameOpponents" style="font-weight: bold;"></td>
+                <td id="nextGameDuration"></td>
+                <td id="nextGameDisplayName"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="container mt-5">
+        <h3 class="text-decoration-underline">Info-Banner</h3>
+        <div class="input-group mb-3">
+            <input type="text" id="infoBannerMessage" class="form-control" placeholder="Aktuell keine Nachricht !" autocomplete="off" style="border-width: 2px">
+            <button class="btn btn-primary" id="infoBannerButton" onclick="updateInfoBanner()">Infobanner updaten</button>
+        </div>
+    </div>
+
+    <div id="connectionIndicator" class="text-center">
+        <span id="connectionStatusText" class="text-success">Verbinde...</span>
+    </div>
+</div>
+
+<script>
     console.log('Game status: {{ areOtherGamesActiveBool }}');
 
     // add playback time to the timer
     function addPlaybackTime() {
         socket.emit('addPlaybackTime', document.getElementById('playbackTime').value);
     }
-
-
 
     // update the date and time
     function updateDateTime() {
@@ -124,9 +144,7 @@
     // call the `updateDateTime` function every second
     setInterval(updateDateTime, 1000);
 
-
     //{{ game.duration }} is in minutes
-
     const durationInSeconds = {{ game.duration }} * 60; // Convert minutes to seconds
 
     function calculateEndTime(startTime, duration) {
@@ -140,7 +158,6 @@
 
         return `${hours}:${minutes}`;
     }
-
 
     // Function to update the game end time
     function updateGameEndTime(startTime, duration) {
@@ -186,11 +203,9 @@
         }
     }
 
-
     async function SetGameToActive() {      //Set game to active and update the live page
         try {
             const gameId = '{{ game._id }}';
-
 
             await fetch(`/game/start/${gameId}`, {
                 method: 'POST',
@@ -199,22 +214,11 @@
             const response = await fetch(`/game/${gameId}/updateLivePage`, {
                 method: 'POST',
             });
-            
-            //socket.emit('resetGame', durationInSeconds); // Reset the timer to the game duration // Timer reset is done from server side now
 
             const updateButton = document.getElementById('updateLivePageButton');
             updateButton.disabled = true;
 
-            // TODO: this is just a temporary solution - should be replaced with re-rendering of specific parts instead of reloading the page
             location.reload();
-
-            // show  bootstrap alert for one second to indicate success
-            //const alert = document.querySelector('.alert-success');
-            //alert.classList.remove('d-none');
-            //setTimeout(() => {
-            //    alert.classList.add('d-none');
-            //}, 2000);
-
         } catch (err) {
             console.error('Error updating data on Live page: ', err);
         }
@@ -228,11 +232,28 @@
 
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
-       socket.on('connect', () => {
-    console.log('Socket connected');
+    socket.on('connect', () => {
+        console.log('Socket connected');
+        document.getElementById('connectionStatusDot').style.backgroundColor = 'green';
+        document.getElementById('connectionStatus').classList.add('d-none');
+        document.getElementById('connectionStatusText').classList.remove('text-danger');
+        document.getElementById('connectionStatusText').classList.add('text-success');
+        document.getElementById('connectionStatusText').textContent = 'Verbunden mit Server !';
+        if ('{{ game.status }}' === 'active') {
+            socket.emit('getNextGame');
+        }
     });
 
-   socket.emit('getData'); //Call for game data when page loads
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        document.getElementById('connectionStatusDot').style.backgroundColor = 'red';
+        document.getElementById('connectionStatus').classList.remove('d-none');
+        document.getElementById('connectionStatusText').classList.remove('text-success');
+        document.getElementById('connectionStatusText').classList.add('text-danger');
+        document.getElementById('connectionStatusText').textContent = 'Getrennt';
+    });
+
+    socket.emit('getData'); //Call for game data when page loads
 
     socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
         const minutes = Math.floor(timerValue / 60);
@@ -247,25 +268,106 @@
     });
 
     document.getElementById('startButton').addEventListener('click', async () => {
-
         socket.emit('playPauseGame');
-
     });
 
     const gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
 
-    socket.on('Sekt', (teamNum) => {
-
-        console.log('Sekt for Team: ' + teamNum);
-        console.log('Sekt for Team: ' + gameOppNames[teamNum-1]);    // teamNum is 1 or 2, but array index is 0 or 1
-
-        // show  bootstrap info-alert for 60 seconds to indicate Sekt
+    socket.on('Sekt', (team) => {
+        console.log('Sekt for Team: ' + team.name);
         const alert = document.querySelector('.alert-info');
-        alert.textContent = 'Sekt für ' + gameOppNames[teamNum-1]; // Set the Sekt-alert message
+        alert.innerHTML = '<h5 class="alert-heading">Sekt für ' + team.name + ' !</h5><p class="mb-0">(' + team.sektWon + '. Sekt des Teams)</p>';
         alert.classList.remove('d-none');
         setTimeout(() => {
             alert.classList.add('d-none');
-        }, 60000); // 60 seconds
+        }, 60000);
+    });
+
+    socket.on('nextGameData', (nextGame) => {
+        document.getElementById('nextGameTime').textContent = nextGame.time + ' Uhr';
+        document.getElementById('nextGameOpponents').textContent = nextGame.opponents.join(' vs ');
+        document.getElementById('nextGameDuration').textContent = nextGame.duration + ' min';
+        document.getElementById('nextGameDisplayName').textContent = nextGame.gameDisplayName;
+    });
+
+    let infoBannerMessage = '{{ infoBannerMessage }}';
+
+    socket.on('updateInfoBanner', (message) => {
+        document.getElementById('infoBannerMessage').value = message;
+        infoBannerMessage = message;
+        //flash the textfield with a green border to indicate that the message has been updated
+        document.getElementById('infoBannerMessage').style.borderColor = 'green';
+        document.getElementById('infoBannerMessage').value = '';
+        if(infoBannerMessage === '' || infoBannerMessage === null) {
+            document.getElementById('infoBannerMessage').placeholder = 'Aktuell keine Nachricht !';
+            document.getElementById('infoBannerButton').textContent = 'Infobanner updaten';
+            document.getElementById('infoBannerButton').classList.remove('btn-danger');
+        } else {
+            document.getElementById('infoBannerMessage').placeholder = 'Aktuell: ' + message;
+            document.getElementById('infoBannerButton').textContent = 'Infobanner zurücksetzen';
+            document.getElementById('infoBannerButton').classList.add('btn-danger');
+        }
         
+
+        setTimeout(() => {
+            document.getElementById('infoBannerMessage').style.borderColor = '';
+        }, 1000);
+    });
+
+    document.getElementById('infoBannerMessage').addEventListener('input', () => {
+        const message = document.getElementById('infoBannerMessage').value;
+
+        if((message === '' || message === null) && infoBannerMessage !== '') {
+            document.getElementById('infoBannerButton').textContent = 'Infobanner zurücksetzen';
+            document.getElementById('infoBannerButton').classList.add('btn-danger');
+        } else {           
+            document.getElementById('infoBannerButton').textContent = 'Infobanner updaten';
+            document.getElementById('infoBannerButton').classList.remove('btn-danger');
+        }
+    });
+
+    function updateInfoBanner() {
+        const message = document.getElementById('infoBannerMessage').value;
+        socket.emit('updateInfoBanner', message);
+    }
+
+    // JavaScript to handle visibility of elements based on game status
+    document.addEventListener('DOMContentLoaded', () => {
+        const gameStatus = '{{ game.status }}';
+        const areOtherGamesActive = '{{ areOtherGamesActiveBool }}' === 'true';
+
+        const activeGameControls = document.getElementById('activeGameControls');
+        const inactiveGameWarning = document.getElementById('inactiveGameWarning');
+        const otherGameActiveWarning = document.getElementById('otherGameActiveWarning');
+        const endGameButton = document.getElementById('endGameButton');
+        const team1Controls = document.getElementById('team1Controls');
+        const team2Controls = document.getElementById('team2Controls');
+
+        if (gameStatus === 'active') {
+            activeGameControls.style.display = 'block';
+            endGameButton.classList.remove('d-none');
+            team1Controls.style.display = 'block';
+            team2Controls.style.display = 'block';
+            inactiveGameWarning.style.display = 'none';
+            otherGameActiveWarning.style.display = 'none';
+        } else {
+            activeGameControls.style.display = 'none';
+            endGameButton.classList.add('d-none');
+            team1Controls.style.display = 'none';
+            team2Controls.style.display = 'none';
+            if (areOtherGamesActive) {
+                otherGameActiveWarning.style.display = 'block';
+                inactiveGameWarning.style.display = 'none';
+            } else {
+                otherGameActiveWarning.style.display = 'none';
+                inactiveGameWarning.style.display = 'block';
+            }
+        }
+
+        if (infoBannerMessage) {
+            document.getElementById('infoBannerMessage').placeholder = 'Aktuelle Nachricht: ' + message;
+            document.getElementById('infoBannerButton').textContent = 'Infobanner zurücksetzen';
+            document.getElementById('infoBannerButton').classList.add('btn-danger');
+        }
     });
 </script>
