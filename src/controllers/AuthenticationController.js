@@ -14,7 +14,7 @@ router.use(cookieParser()); // Add cookie-parser middleware to parse cookies
 
 const  {verifyToken, checkLoginStatus , isAdmin} = require('../middleware/auth'); // Pfad zur auth.js-Datei
 
-const keytokens = yaml.load(fs.readFileSync('../../keytokens.yaml', 'utf8'));
+const keytokens = yaml.load(fs.readFileSync(__dirname + '/../../keytokens.yaml', 'utf8'));
 const jwtSecretkey = keytokens.jwtSecretkey;
 
 router.get('/register',verifyToken, isAdmin,  (req, res) => {

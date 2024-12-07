@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const yaml = require('js-yaml');
 const fs = require('fs');
 
-const keytokens = yaml.load(fs.readFileSync('../../keytokens.yaml', 'utf8'));
+const keytokens = yaml.load(fs.readFileSync(__dirname + '/../../keytokens.yaml', 'utf8'));
 const jwtSecretkey = keytokens.jwtSecretkey;
 
 function verifyToken(req, res, next) {
