@@ -57,3 +57,5 @@ node index.js [arguments]
 - `--https`: Enables HTTPS mode and uses budescharfeseck.de as hostname (default: HTTP with localhost)
 
 uses MonoDB with Database "TournamentDB" and collections "games" "teams" "mainsettings"
+
+Requires keytokens.js with jwtSecretkey in the same folder as index.js !

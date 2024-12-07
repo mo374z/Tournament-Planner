@@ -6,7 +6,7 @@ const Team = mongoose.model('Team');
 const Game = mongoose.model('Game');
 const router = express.Router();
 
-
+const { removeAllPlayerfromAllGameGoals } = require('./ScorerController');
 
 //Code part to enable the authentication for all the following routes
 const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
@@ -81,8 +81,10 @@ router.post('/edit/:id', async (req, res) => {
 router.post('/reset-total-goals', async (req, res) => {
     try {
         await Player.updateMany({}, { total_goals: 0 }).exec(); // Reset total goals for all players
-        //Remove goals from all players
+        // Remove goals from the players goal array
         await Player.updateMany({}, { $set: { goals: [] } }).exec();
+        // Remove all players from all game goals
+        await removeAllPlayerfromAllGameGoals(); // Remove all players from all game goals
 
         res.status(200).send('Total goals reset successfully');
     } catch (err) {

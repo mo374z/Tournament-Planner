@@ -81,7 +81,7 @@
             {{/each}}
         </tbody>
     </table>
-    <button type="button" class="btn btn-danger mt-3" onclick="resetTotalGoals()">Alle Total Goals zurücksetzen und Tore aus Spieler löschen</button>
+    <button type="button" class="btn btn-danger mt-3" onclick="resetTotalGoals()">Alle Total Goals zurücksetzen, Tore aus Spielern und Spieler aus Spieltoren löschen</button>
 </div>
 
 <script>
@@ -174,7 +174,7 @@ function enableEdit(button) {
 }
 
 function resetTotalGoals() {
-    if (confirm('Sind Sie sicher, dass Sie alle Tore der Spieler zurücksetzen möchten? (löscht nur Tore aus Spielern nicht aus "Game")')) {
+    if (confirm('Sind Sie sicher, dass Sie alle Tore der Spieler zurücksetzen möchten? (löscht Tore aus Spielern, und Spieler aus allen Toren in "Games" )')) {
         fetch('/player/reset-total-goals', {
             method: 'POST',
             headers: {

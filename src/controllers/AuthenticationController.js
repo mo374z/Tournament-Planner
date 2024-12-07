@@ -2,6 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const yaml = require('js-yaml');
+const fs = require('fs');
 
 const User = mongoose.model('User');
 
@@ -12,11 +14,8 @@ router.use(cookieParser()); // Add cookie-parser middleware to parse cookies
 
 const  {verifyToken, checkLoginStatus , isAdmin} = require('../middleware/auth'); // Pfad zur auth.js-Datei
 
-
-
-const jwtSecretkey =
-  "4715aed3c946f7b0a38e6b534a8583628d84e96d10fbc04700770d572af3dce43625dd";
-
+const keytokens = yaml.load(fs.readFileSync('../../keytokens.yaml', 'utf8'));
+const jwtSecretkey = keytokens.jwtSecretkey;
 
 router.get('/register',verifyToken, isAdmin,  (req, res) => {
     const username = req.username;
