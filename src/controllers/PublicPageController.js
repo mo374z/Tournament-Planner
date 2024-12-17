@@ -1,5 +1,7 @@
 const express = require('express');
 var router = express.Router();
+const fs = require('fs');
+const path = require('path');
 
 const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
@@ -49,11 +51,15 @@ async function renderPublicPage(req, res) {
             const teamsByGroup = await getTeamsByGroup();
             const infoBannerMessage = getInfoBannerMessage(); // Get the current info banner message
 
+            const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
+                .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
+
             res.render('home', {
                 gameslist: games,
                 teamsByGroup,
                 timeBetweenGames,
-                infoBannerMessage // Send the infoBannerMessage to the Public page
+                infoBannerMessage, // Send the infoBannerMessage to the Public page
+                carouselImages // Send the carousel images to the Public page
             });
 
         } catch (err) {

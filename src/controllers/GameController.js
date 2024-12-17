@@ -7,6 +7,8 @@ const MainSettings = mongoose.model('MainSettings');
 const genCounters = mongoose.model('generalCounters');
 const socketIo = require('socket.io');
 const app = express();
+const fs = require('fs');
+const path = require('path');
 
 const {updateSocketConfig} = require('../config/socketConfig');
 
@@ -416,7 +418,12 @@ router.get('/live', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
         
-        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage });
+        // Read images from the /images/carousel directory
+        const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
+                        .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
+
+        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage, carouselImages });
+
     } catch (err) {
         console.error('Error fetching live games: ', err);
         res.status(500).send('Internal Server Error');
