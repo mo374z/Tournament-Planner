@@ -7,21 +7,17 @@ const Game = mongoose.model('Game');
 const Player = mongoose.model('Player');
 const MainSettings = mongoose.model('MainSettings');
 
+const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const cookieParser = require('cookie-parser');
+router.use(cookieParser());
 
-//Code part to enable the authentication for all the following routes
-const  {verifyToken, checkLoginStatus , isAdmin}=  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+router.use(verifyToken);
+router.use(authorizeRoles('admin')); // Nur Admins haben Zugriff auf die Teamverwaltung
+router.use((req, res, next) => { 
     res.locals.username = req.username;
     res.locals.userrole = req.userRole;
     next();
-  });
-
-  router.use(isAdmin);                       // Alle nachfolgenden Routen sind nur für Admins zugänglich
-//--------------------------------------------------------------
+});
 
 const { getRank } = require('../models/Team');
 
@@ -220,7 +216,7 @@ function getTeamsByGroup() {
   
 
 
-router.get('/clearTeamCounters', isAdmin, async (req, res) => {   //Clear Team Counters only for Admins
+router.get('/clearTeamCounters', authorizeRoles('admin'), async (req, res) => {   //Clear Team Counters only for Admins
     try {
         const teams = await Team.find({}).exec();
         teams.forEach(async team => {
@@ -244,7 +240,7 @@ router.get('/clearTeamCounters', isAdmin, async (req, res) => {   //Clear Team C
 });
 
 
-router.get('/delete/:id' , isAdmin, async (req, res) => {   //Delete Team only for Admins
+router.get('/delete/:id' , authorizeRoles('admin'), async (req, res) => {   //Delete Team only for Admins
     try {
         const deletedTeam = await Team.findByIdAndDelete(req.params.id).exec();
         if (deletedTeam) {

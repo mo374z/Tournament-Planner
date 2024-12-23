@@ -36,10 +36,19 @@ if (useHttps) {
 const cors = require('cors');
 
 //Code part to enable the authentication for all the following routes
-const {verifyToken, checkLoginStatus, isAdmin} = require('../middleware/auth');
+const {verifyToken, authorizeRoles} = require('../middleware/auth');
 const cookieParser = require('cookie-parser');
 router.use(cookieParser());
 router.use(verifyToken);
+
+// Middleware für alle Routen außer /live weil dort auch der Beamer Zugriff haben soll
+router.use((req, res, next) => {
+    if (req.path !== '/live') {
+        authorizeRoles('admin')(req, res, next);
+    } else {
+        next();
+    }
+});
 router.use((req, res, next) => {
     res.locals.username = req.username;
     res.locals.userrole = req.userRole;
@@ -402,7 +411,7 @@ async function writeGameDataToTeams(game) {
 
 
 // render the live game view
-router.get('/live', async (req, res) => {
+router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
     try {
         const game = await Game.findOne({ status: 'active' }).exec();
 

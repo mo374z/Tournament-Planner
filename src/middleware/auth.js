@@ -62,4 +62,13 @@ function isAdmin(req, res, next) {
     }
 }
 
-module.exports = { verifyToken, checkLoginStatus, isAdmin };
+function authorizeRoles(...roles) {
+    return (req, res, next) => {
+        if (!roles.includes(req.userRole)) {
+            return res.status(403).send('Access denied  - Your role: ' + req.userRole + ' - Required roles: ' + roles);
+        }
+        next();
+    };
+}
+
+module.exports = { verifyToken, checkLoginStatus, isAdmin, authorizeRoles };

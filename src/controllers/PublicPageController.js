@@ -11,7 +11,7 @@ const MainSettings = mongoose.model('MainSettings');
 
 module.exports = router;
 
-const {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth');
+const {verifyToken, checkLoginStatus , authorizeRoles} =  require('../middleware/auth');
 const {updateSocketConfig} = require('../config/socketConfig');
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -38,7 +38,7 @@ router.get('/', (req, res) => {
 });
 
 
-router.get('/TV', checkLoginStatus, (req, res) => {
+router.get('/TV', authorizeRoles('admin', 'TV'), (req, res) => {
     renderTVPage(req, res);
 });
 

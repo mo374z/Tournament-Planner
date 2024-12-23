@@ -11,22 +11,17 @@ const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 const { getRank } = require('../models/Team');
 
+const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const cookieParser = require('cookie-parser');
+router.use(cookieParser());
 
-//Code part to enable the authentication for all the following routes
-const  {verifyToken, checkLoginStatus , isAdmin}=  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
+router.use(verifyToken);
+router.use(authorizeRoles('admin')); // Nur Admins haben Zugriff
+router.use((req, res, next) => {
     res.locals.username = req.username;
     res.locals.userrole = req.userRole;
     next();
-  });
-
-  router.use(isAdmin);                       // Alle nachfolgenden Routen sind nur für Admins zugänglich
-//--------------------------------------------------------------
-
+});
 
 //Generate the certificate and download it bzw. save it on the server in the folder public/certificates
 //uses https://www.npmjs.com/package/docxtemplater-image-module-free 
