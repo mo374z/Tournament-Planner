@@ -255,12 +255,18 @@
 
     socket.emit('getData'); //Call for game data when page loads
 
-    socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
+    socket.on('timerUpdate', (timerValue, isPaused, timerStatus, lastMin) => {
         const minutes = Math.floor(timerValue / 60);
         const seconds = timerValue % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        document.getElementById('countdownTimer').innerText = formattedTime;
+        const countdownTimer = document.getElementById('countdownTimer');
+        countdownTimer.innerText = formattedTime;
         document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
+        if (lastMin) {
+            countdownTimer.classList.add('text-danger');
+        } else {
+            countdownTimer.classList.remove('text-danger');
+        }
     });
 
     document.getElementById('resetButton').addEventListener('click', () => {

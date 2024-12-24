@@ -92,12 +92,18 @@
         document.getElementById('connectionStatusText').textContent = 'Getrennt';
     });
 
-    socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
+    socket.on('timerUpdate', (timerValue, isPaused, timerStatus, lastMin) => {
         const minutes = Math.floor(timerValue / 60);
         const seconds = timerValue % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        document.getElementById('liveCountdownTimer').innerText = formattedTime;
+        const liveCountdownTimer = document.getElementById('liveCountdownTimer');
+        liveCountdownTimer.innerText = formattedTime;
         document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
+        if (lastMin) {
+            liveCountdownTimer.classList.add('text-danger');
+        } else {
+            liveCountdownTimer.classList.remove('text-danger');
+        }
     });
 
     socket.on('updateLiveGame', (updatedGame) => {

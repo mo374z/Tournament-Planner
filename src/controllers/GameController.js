@@ -91,19 +91,20 @@ io.on('connection', (socket) => {
             timerInterval = setInterval(() => {             //Timer resuluion is 1 second !! (timer Variable is in seconds)
                 if (timer > 0 && !isPaused) {
                     timer--;
-                    io.emit('timerUpdate', timer, isPaused, 'Running');
+                    const lastMin = timer <= 60;
+                    io.emit('timerUpdate', timer, isPaused, 'Running', lastMin);
                 } else if (timer === 0) {
                     clearInterval(timerInterval);
 
                     io.emit('playSound');
 
-                    io.emit('timerUpdate', timer, isPaused, 'Ended');
+                    io.emit('timerUpdate', timer, isPaused, 'Ended', false);
                 }
             }, 1000);
         } else {
             clearInterval(timerInterval);
             isPaused = true;
-            io.emit('timerUpdate', timer, isPaused, 'Paused');
+            io.emit('timerUpdate', timer, isPaused, 'Paused', false);
         }
 });
 
@@ -174,10 +175,10 @@ function resetTimer(duration) {
     isPaused = true;
     
     if (duration === 0) {                                //if duration is 0, the game is ended
-        io.emit('timerUpdate', timer, isPaused, 'Ended');
+        io.emit('timerUpdate', timer, isPaused, 'Ended', false);
     }
     else {                                              //if duration is not 0, the game is ready to start and is paused                   
-        io.emit('timerUpdate', timer, isPaused, 'Paused');
+        io.emit('timerUpdate', timer, isPaused, 'Paused', false);
     }
 }
 

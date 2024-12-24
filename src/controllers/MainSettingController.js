@@ -220,6 +220,7 @@ router.get('/resetCounters', async (req, res) => {
             allGoals: 0,
             gamesPlayed: 0,
             goalSektCounter: mainSettings.goalsforSekt,
+            wonSektBottles: 0,
             // Add other fields and their reset values if needed
         }, { new: true });
 
