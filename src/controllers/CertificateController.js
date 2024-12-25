@@ -10,18 +10,9 @@ const sizeOf = require('image-size');
 const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 const { getRank } = require('../models/Team');
+const { commonMiddleware } = require('../middleware/auth');
 
-const { verifyToken, authorizeRoles } = require('../middleware/auth');
-const cookieParser = require('cookie-parser');
-router.use(cookieParser());
-
-router.use(verifyToken);
-router.use(authorizeRoles('admin')); // Nur Admins haben Zugriff
-router.use((req, res, next) => {
-    res.locals.username = req.username;
-    res.locals.userrole = req.userRole;
-    next();
-});
+commonMiddleware(router, ['admin']); // Only admins can access the certificate page
 
 //Generate the certificate and download it bzw. save it on the server in the folder public/certificates
 //uses https://www.npmjs.com/package/docxtemplater-image-module-free 

@@ -7,12 +7,17 @@ const fs = require('fs');
 
 const User = mongoose.model('User');
 
+const { verifyToken, isAdmin } = require('../middleware/auth');
+
 var router = express.Router();
 
 const cookieParser = require('cookie-parser');
-router.use(cookieParser()); // Add cookie-parser middleware to parse cookies
-
-const  {verifyToken, checkLoginStatus , isAdmin} = require('../middleware/auth'); // Pfad zur auth.js-Datei
+router.use(cookieParser());
+router.use((req, res, next) => {
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+});
 
 const keytokens = yaml.load(fs.readFileSync(__dirname + '/../../keytokens.yaml', 'utf8'));
 const jwtSecretkey = keytokens.jwtSecretkey;
@@ -150,7 +155,7 @@ router.get('/logout', (req, res) => {
 
 
 // POST route to delete admin user /mainSettings/deleteAdmin
-router.get('/deleteAdmin', async (req, res) => {
+router.get('/deleteAdmin', verifyToken, isAdmin, async (req, res) => {
     try {
         // Find and delete the admin user
         await User.deleteOne({ username: 'admin' });

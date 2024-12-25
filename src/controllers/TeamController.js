@@ -1,29 +1,17 @@
 const express = require('express');
 var router = express.Router();
-
 const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 const Game = mongoose.model('Game');
 const Player = mongoose.model('Player');
 const MainSettings = mongoose.model('MainSettings');
-
-const { verifyToken, authorizeRoles } = require('../middleware/auth');
-const cookieParser = require('cookie-parser');
-router.use(cookieParser());
-
-router.use(verifyToken);
-router.use(authorizeRoles('admin')); // Nur Admins haben Zugriff auf die Teamverwaltung
-router.use((req, res, next) => { 
-    res.locals.username = req.username;
-    res.locals.userrole = req.userRole;
-    next();
-});
-
+const { commonMiddleware, authorizeRoles} = require('../middleware/auth');
 const { getRank } = require('../models/Team');
-
-const multer = require('multer'); // For file upload
+const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+
+commonMiddleware(router, ['admin']); // Only admins have access to the team management page
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {

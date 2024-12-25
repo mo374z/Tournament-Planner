@@ -3,21 +3,11 @@ const mongoose = require('mongoose');
 const Player = mongoose.model('Player');
 const Team = mongoose.model('Team');
 const Game = mongoose.model('Game');
-const router = express.Router();
-
+const { commonMiddleware } = require('../middleware/auth');
 const { removeAllPlayerfromAllGameGoals } = require('./ScorerController');
+var router = express.Router();
 
-const { verifyToken, authorizeRoles } = require('../middleware/auth');
-const cookieParser = require('cookie-parser');
-router.use(cookieParser());
-
-router.use(verifyToken);
-router.use(authorizeRoles('admin')); // Nur Admins haben Zugriff
-router.use((req, res, next) => {
-    res.locals.username = req.username;
-    res.locals.userrole = req.userRole;
-    next();
-});
+commonMiddleware(router, ['admin']); // Only admins have access to the player management page
 
 // Route to display the player management page
 router.get('/', async (req, res) => {

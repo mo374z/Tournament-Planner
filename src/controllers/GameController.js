@@ -10,7 +10,11 @@ const app = express();
 const fs = require('fs');
 const path = require('path');
 
-const {updateSocketConfig} = require('../config/socketConfig');
+const { updateSocketConfig } = require('../config/socketConfig');
+const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const { updateQuarterFinalsSchedule } = require('./QuarterFinalsController');
+const { updateSemiFinalsSchedule } = require('./SemiFinalsController');
+const { removeLastGoalfromGameAndPlayer } = require('./ScorerController');
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -30,13 +34,8 @@ if (useHttps) {
     server = http.createServer(app);
 }
 
-
-
-
 const cors = require('cors');
 
-//Code part to enable the authentication for all the following routes
-const {verifyToken, authorizeRoles} = require('../middleware/auth');
 const cookieParser = require('cookie-parser');
 router.use(cookieParser());
 router.use(verifyToken);
@@ -54,10 +53,6 @@ router.use((req, res, next) => {
     res.locals.userrole = req.userRole;
     next();
 });
-
-const {updateQuarterFinalsSchedule} = require('./QuarterFinalsController');
-const {updateSemiFinalsSchedule} = require('./SemiFinalsController');
-const { removeLastGoalfromGameAndPlayer } = require('./ScorerController');
 
 // Start the Websocket server
 server.listen(socketPort, () => {
@@ -479,4 +474,4 @@ async function updateGenGoalsCounter(increment, teamId) {
     }
 }
 
-module.exports = {router, getInfoBannerMessage: () => infoBannerMessage};
+module.exports = { router, getInfoBannerMessage: () => infoBannerMessage };

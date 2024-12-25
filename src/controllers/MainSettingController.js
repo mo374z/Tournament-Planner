@@ -1,10 +1,11 @@
 const express = require('express');
 var router = express.Router();
-
 const mongoose = require('mongoose');
 const MainSettings = mongoose.model('MainSettings');
-
 const genCounters = mongoose.model('generalCounters');
+const { commonMiddleware } = require('../middleware/auth');
+
+commonMiddleware(router, ['admin']); // Only admins can access the main settings page
 
 const defaultStartTime = new Date('2024-01-20T08:00:00.000Z'); //in unserer Zeitzone: 20.01.2024 09:00 Uhr
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
@@ -14,22 +15,6 @@ const defaultGameDurationSemiFinals = 10 * 60 * 1000;
 const defaultGameDurationFinal = 10 * 60 * 1000;
 const defaultTimeBetweenGamePhases = 5 * 60 * 1000;
 const defaultgoalsforSekt = 10;
-
-
-//Code part to enable the authentication for all the following routes
-const  {verifyToken, authorizeRoles} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use(authorizeRoles('admin'));        // Nur Admins haben Zugriff
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
-    res.locals.username = req.username;
-    res.locals.userrole = req.userRole;
-    next();
-  });
-//--------------------------------------------------------------
-
 
 
 const { listDbs, listBackups } = require('../models/db'); // Import the listDbs function from the db.js file

@@ -14,21 +14,9 @@ module.exports = {
     fetchGamesData
 };
 
-//Code part to enable the authentication for all the following routes
-const  {verifyToken, authorizeRoles} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
+const { commonMiddleware } = require('../middleware/auth');
 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use(authorizeRoles('admin')); // Nur Admins haben Zugriff
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
-    res.locals.username = req.username;
-    res.locals.userrole = req.userRole;
-    next();
-  });
-//--------------------------------------------------------------
-
+commonMiddleware(router, ['admin']); // Only admins have access to the schedule management page
 
 router.get('/list', async (req, res) => {
     renderScheduleList(req, res);
