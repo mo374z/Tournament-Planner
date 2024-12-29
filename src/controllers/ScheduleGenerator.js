@@ -4,7 +4,7 @@ const Team = mongoose.model('Team');
 const yaml = require('js-yaml');
 const fs = require('fs');
 
-const { getAllGroupNames, getAllTeamsInGroup, rankTeams } = require('../models/Team');
+const { getAllGroupNames, getAllTeamsInGroup, rankTeams, getRank } = require('../models/Team');
 
 class ScheduleGenerator {
     constructor(config, settings) {
@@ -243,62 +243,166 @@ class ScheduleGenerator {
         }
     }
 
-    async updateSemiFinals() {
+    async updateGeneralKnockout(phase) {
         try {
-            const games = await Game.find({ gamePhase: { $regex: /^Semifinals/ } });
+            // Handle main games (semifinals, finals)
+            const games = await Game.find({ gamePhase: { $regex: `^${phase}` } });
             
             for (const game of games) {
                 if (game.status === 'Ended') continue;
 
-                const matchup = this.findMatchupForGame(game, 'semifinals');
-                if (matchup) {
-                    const [[phase1, num1], [phase2, num2]] = matchup;
-                    const sourceGame1 = await Game.findOne({ gamePhase: `${phase1} ${num1}` });
-                    const sourceGame2 = await Game.findOne({ gamePhase: `${phase2} ${num2}` });
-
-                    if (sourceGame1?.status === 'Ended' && sourceGame2?.status === 'Ended') {
-                        const winner1 = this.getWinner(sourceGame1);
-                        const winner2 = this.getWinner(sourceGame2);
-
-                        if (winner1 && winner2) {
-                            await Game.findByIdAndUpdate(game._id, {
-                                opponents: [winner1, winner2]
-                            });
-                        }
+                if (phase === 'Semifinals') {
+                    const matchup = this.findMatchupForGame(game, 'semifinals');
+                    await this.updateGameWithMatchup(game, matchup);
+                } else if (phase === 'Finals') {
+                    if (game.gamePhase === 'Finals 1') {
+                        // Main final
+                        await this.updateWithPreviousWinners(game, 'Semifinals', [1, 2]);
+                    } else if (game.gamePhase === 'Finals 2' && this.config.knockout_stage.finals.bronze_medal_match) {
+                        // Bronze medal match
+                        await this.updateWithPreviousLosers(game, 'Semifinals', [1, 2]);
+                    } else if (parseInt(game.gamePhase.split(' ')[1]) > 2) {
+                        // Placement matches
+                        await this.updatePlacementMatch(game);
                     }
                 }
             }
         } catch (error) {
-            console.error('Error updating semi finals:', error);
+            console.error(`Error updating ${phase.toLowerCase()}:`, error);
         }
     }
 
-    async updateFinals() {
-        try {
-            const finalGame = await Game.findOne({ gamePhase: 'Finals 1' });
-            const bronzeGame = await Game.findOne({ gamePhase: 'Finals 2' });
-            const semiFinals = await Game.find({ gamePhase: { $regex: /^Semifinals/ } });
+    async updateGameWithMatchup(game, matchup) {
+        if (!matchup) return;
 
-            if (finalGame && !finalGame.opponents[0].isDummy && semiFinals[0]?.status === 'Ended' && semiFinals[1]?.status === 'Ended') {
-                const winner1 = this.getWinner(semiFinals[0]);
-                const winner2 = this.getWinner(semiFinals[1]);
-                
-                await Game.findByIdAndUpdate(finalGame._id, {
-                    opponents: [winner1, winner2]
-                });
-            }
+        const [[phase1, num1], [phase2, num2]] = matchup;
+        const sourceGame1 = await Game.findOne({ gamePhase: `${phase1} ${num1}` });
+        const sourceGame2 = await Game.findOne({ gamePhase: `${phase2} ${num2}` });
 
-            if (bronzeGame && !bronzeGame.opponents[0].isDummy && semiFinals[0]?.status === 'Ended' && semiFinals[1]?.status === 'Ended') {
-                const loser1 = this.getLoser(semiFinals[0]);
-                const loser2 = this.getLoser(semiFinals[1]);
-
-                await Game.findByIdAndUpdate(bronzeGame._id, {
-                    opponents: [loser1, loser2]
-                });
-            }
-        } catch (error) {
-            console.error('Error updating finals:', error);
+        const updates = {};
+        if (sourceGame1?.status === 'Ended') {
+            updates['opponents.0'] = this.getWinner(sourceGame1);
         }
+        if (sourceGame2?.status === 'Ended') {
+            updates['opponents.1'] = this.getWinner(sourceGame2);
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await Game.findByIdAndUpdate(game._id, { $set: updates });
+        }
+    }
+
+    async updateWithPreviousWinners(game, previousPhase, gameNumbers) {
+        const previousGames = await Promise.all(
+            gameNumbers.map(num => 
+                Game.findOne({ gamePhase: `${previousPhase} ${num}` })
+            )
+        );
+
+        if (previousGames.every(g => g?.status === 'Ended')) {
+            const winners = previousGames.map(g => this.getWinner(g));
+            await Game.findByIdAndUpdate(game._id, {
+                opponents: winners
+            });
+        }
+    }
+
+    async updateWithPreviousLosers(game, previousPhase, gameNumbers) {
+        const previousGames = await Promise.all(
+            gameNumbers.map(num => 
+                Game.findOne({ gamePhase: `${previousPhase} ${num}` })
+            )
+        );
+
+        if (previousGames.every(g => g?.status === 'Ended')) {
+            const losers = previousGames.map(g => this.getLoser(g));
+            await Game.findByIdAndUpdate(game._id, {
+                opponents: losers
+            });
+        }
+    }
+
+    async updatePlacementMatch(game) {
+        if (!this.config.knockout_stage.finals.placement_matches.enabled) return;
+
+        const gameNumber = parseInt(game.gamePhase.split(' ')[1]);
+        const positions = this.config.knockout_stage.finals.placement_matches.positions;
+        const positionIndex = gameNumber - 3; // First placement match starts at Finals 3
+        const position = positions[positionIndex];
+        
+        if (position === undefined) return;
+
+        // Get all teams that didn't advance to quarterfinals
+        const allTeams = await Team.find({ group: { $in: ['A', 'B', 'C', 'D'] } }).exec();
+        const teamsWithRanks = await Promise.all(
+            allTeams.map(async team => ({
+                team,
+                groupRank: await getRank(team, true) // Get group rank for each team
+            }))
+        );
+
+        // Filter teams that didn't advance to quarterfinals (rank 3 and 4 in each group)
+        const nonAdvancingTeams = teamsWithRanks
+            .filter(({ groupRank }) => groupRank > 2)
+            .sort((a, b) => a.groupRank - b.groupRank);
+
+        // For position 5-6, we need losers from quarterfinals
+        if (position === 5) {
+            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
+            const quarterFinalLosers = quarterFinalGames
+                .filter(g => g.status === 'Ended')
+                .map(g => this.getLoser(g));
+
+            if (quarterFinalLosers.length === 4) {
+                // Sort losers by their performance in quarterfinals and group stage
+                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
+                await Game.findByIdAndUpdate(game._id, {
+                    opponents: [sortedLosers[0], sortedLosers[1]] // Best two losers play for 5th place
+                });
+            }
+        }
+        // For position 7-8, we use the remaining quarterfinal losers
+        else if (position === 7) {
+            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
+            const quarterFinalLosers = quarterFinalGames
+                .filter(g => g.status === 'Ended')
+                .map(g => this.getLoser(g));
+
+            if (quarterFinalLosers.length === 4) {
+                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
+                await Game.findByIdAndUpdate(game._id, {
+                    opponents: [sortedLosers[2], sortedLosers[3]] // Lower ranked losers play for 7th place
+                });
+            }
+        }
+        // For positions 9 and below, we use teams that didn't advance from group stage
+        else {
+            const index = Math.floor((position - 9) / 2) * 2;
+            if (index >= 0 && index + 1 < nonAdvancingTeams.length) {
+                await Game.findByIdAndUpdate(game._id, {
+                    opponents: [
+                        nonAdvancingTeams[index].team._id,
+                        nonAdvancingTeams[index + 1].team._id
+                    ]
+                });
+            }
+        }
+    }
+
+    async sortTeamsByPerformance(teams) {
+        // Sort teams based on their group stage performance
+        const teamsWithStats = await Promise.all(teams.map(async team => {
+            const groupRank = await getRank(team, true);
+            return {
+                team,
+                groupRank,
+                // Add more criteria if needed (points, goal difference, etc.)
+            };
+        }));
+
+        return teamsWithStats
+            .sort((a, b) => a.groupRank - b.groupRank)
+            .map(t => t.team);
     }
 
     findMatchupForGame(game, phase) {

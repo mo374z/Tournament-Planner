@@ -31,8 +31,8 @@ knockout_stage:
     enabled: true
     format: "single_elimination"
     matchups:
-      - [["QF", 1], ["QF", 3]]
-      - [["QF", 2], ["QF", 4]]
+      - [["Quarterfinals", 1], ["Quarterfinals", 3]]
+      - [["Quarterfinals", 2], ["Quarterfinals", 4]]
   
   finals:
     enabled: true

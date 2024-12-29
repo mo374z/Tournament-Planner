@@ -140,10 +140,16 @@ io.on("connection", socket => {
           number: currentGame.number + 1,
         }).exec();
         if (nextGame) {
-          const team1 = await Team.findById(nextGame.opponents[0]).exec();
-          const team2 = await Team.findById(nextGame.opponents[1]).exec();
-          nextGame.opponents[0] = team1 ? team1.name : "Team not found";
-          nextGame.opponents[1] = team2 ? team2.name : "Team not found";
+            try {
+                const team1 = await Team.findById(nextGame.opponents[0]).exec();
+                const team2 = await Team.findById(nextGame.opponents[1]).exec();
+                nextGame.opponents[0] = team1.name;
+                nextGame.opponents[1] = team2.name;
+            } catch (err) {
+                console.error("Error fetching team names for next game using dummies");
+                nextGame.opponents[0] = nextGame.opponents[0].name;
+                nextGame.opponents[1] = nextGame.opponents[1].name;
+            }
           socket.emit("nextGameData", {
             time: nextGame.time.toLocaleTimeString([], {
               hour: "2-digit",
@@ -169,7 +175,6 @@ io.on("connection", socket => {
 
 function resetTimer(duration) {
   clearInterval(timerInterval);
-  console.log("Resetting timer to: ", duration);
   timer = duration;
   isPaused = true;
 
@@ -188,12 +193,10 @@ router.get("/:id/play", async (req, res) => {
     const gameId = req.params.id;
     const game = await Game.findById(gameId).exec();
 
-    // Fetch team names using the team IDs from the game object
     const team1 = await Team.findById(game.opponents[0]).exec();
     const team2 = await Team.findById(game.opponents[1]).exec();
-
-    game.opponents[0] = team1 ? team1.name : "Team not found";
-    game.opponents[1] = team2 ? team2.name : "Team not found";
+    game.opponents[0] = team1.name;
+    game.opponents[1] = team2.name;
 
     const durationInMillis = game.duration * 60 * 1000; // Convert minutes to milliseconds
 
@@ -202,8 +205,7 @@ router.get("/:id/play", async (req, res) => {
       status: "active",
       _id: { $ne: gameId },
     }); // Check if there are other active games but not the current one
-    const areOtherGamesActiveBool = Boolean(areOthergamesActive); // Convert to boolean
-    console.log("areOtherGamesActive: ", areOtherGamesActiveBool);
+    const areOtherGamesActiveBool = Boolean(areOthergamesActive);
 
     // Fetch and pass counters data
     const counters = await genCounters.findOne({}); // Assuming you have a single document for counters
@@ -370,8 +372,8 @@ router.get("/:id/endGame", async (req, res) => {
           await scheduleGenerator.updateQuarterFinals();
         }
       } else {
-        await scheduleGenerator.updateSemiFinals();
-        await scheduleGenerator.updateFinals();
+        await scheduleGenerator.updateGeneralKnockout("Semifinals");
+        await scheduleGenerator.updateGeneralKnockout("Finals");
       }
 
       resetTimer(0); // Reset the timer to the value 0 in seconds
