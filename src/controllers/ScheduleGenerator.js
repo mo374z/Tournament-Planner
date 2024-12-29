@@ -11,7 +11,7 @@ class ScheduleGenerator {
         this.config = config;
         this.settings = settings;
         this.gameNumber = 1;
-        this.currentTime = new Date(settings.TornamentStartTime);
+        this.currentTime = new Date(settings.TornamentStartTime - 60 * 60 * 1000);
     }
 
     async generateFullSchedule() {
@@ -167,11 +167,11 @@ class ScheduleGenerator {
         const gameStartTime = new Date(this.currentTime);
         
         if (this.gameNumber > 1) {
+            // Add time between games to the current time
             gameStartTime.setMinutes(
                 gameStartTime.getMinutes() + 
                 (this.settings.timeBetweenGames / (1000 * 60))
             );
-            this.currentTime = gameStartTime;
         }
 
         const newGame = new Game({
@@ -186,6 +186,9 @@ class ScheduleGenerator {
         });
 
         await newGame.save();
+        
+        // Update current time to be the end of this game
+        this.currentTime = new Date(gameStartTime.getTime() + (duration * 60 * 1000));
         this.gameNumber++;
         
         return newGame;
@@ -367,7 +370,6 @@ class ScheduleGenerator {
             const quarterFinalLosers = quarterFinalGames
                 .filter(g => g.status === 'Ended')
                 .map(g => this.getLoser(g));
-
             if (quarterFinalLosers.length === 4) {
                 const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
                 await Game.findByIdAndUpdate(game._id, {
