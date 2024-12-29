@@ -125,10 +125,16 @@ function getAllGroupNames(teams){
     return groupNames;
 }
 
+
+function getAllTeamsInGroup(teams, group){
+    return teams.filter(team => team.group === group); 
+}
+
 module.exports =  {
     getRank,
     getTeamRank,
     getTeamGroupRank,
     rankTeams,
-    getAllGroupNames
+    getAllGroupNames,
+    getAllTeamsInGroup,
 }
