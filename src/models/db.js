@@ -14,6 +14,16 @@ catch(error) {
 }
 }
 
+mongoose.connection.on('connected', () => {
+  console.log('Mongoose connected to', mongoURI);
+});
+mongoose.connection.on('error', (err) => {
+  console.error('Mongoose connection error:', err);
+});
+mongoose.connection.on('disconnected', () => {
+  console.log('Mongoose disconnected');
+});
+
 const { MongoClient } = require('mongodb');
 
 async function listDbs() {

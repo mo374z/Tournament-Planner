@@ -262,4 +262,36 @@ router.post('/deleteGroup', async (req, res) => {
     }
 });
 
-module.exports = router;
+
+async function checkForMainSettings() {
+    try {
+        let mainSettings = await MainSettings.findOne({});
+        if (!mainSettings) {
+            const newMainSettings = new MainSettings({
+                TornamentStartTime: defaultStartTime,
+                timeBetweenGames: defaultTimeBetweenGames,
+                gameDurationGroupStage: defaultGameDurationGroupStage,
+                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                gameDurationSemifinals: defaultGameDurationSemiFinals,
+                gameDurationFinal: defaultGameDurationFinal,
+                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
+                goalsforSekt: defaultgoalsforSekt,
+                // Add other default values if needed
+            });
+            await newMainSettings.save();
+            console.log('\x1b[32m%s\x1b[0m', 'MainSettings created !');
+        }
+        else {
+            console.log('MainSettings exist !');
+        }
+    }
+    catch (err) {
+        console.error('Error checking for MainSettings:', err);
+    }
+}
+
+//exort the router and the createMainSettings function
+module.exports = {
+    router,
+    checkForMainSettings 
+};
