@@ -1,175 +1,242 @@
-<div style="text-align: center;" style="width: 100px; margin: 0 auto;">
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <div class="row" style="display: flex; gap: 20px;">
+        <!-- Left Column -->
+        <div class="col" style="flex: 1;">
+            <!-- Tournament Settings -->
+            <div class="page-divider"
+                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Tournament Settings</h3>
+                <form action="/mainSettings" method="POST" autocomplete="off" style="width: 100%;">
+                    <label for="scheduleTemplate">Schedule Template:</label><br>
+                    <select id="scheduleTemplate" name="scheduleTemplate" required
+                        style="width: 100%; padding: 5px; margin-bottom: 10px;">
+                        <option value="4groups_4teams.yaml" {{#if (eqref
+                            mainSettings.scheduleTemplate "4groups_4teams.yaml" )}}selected{{/if}}>4 vs 4</option>
+                    </select><br>
+                    <label for="TornamentStartTime">Tournament Start Time:</label><br>
+                    <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime"
+                        value="{{#if mainSettings.TornamentStartTime}}{{ formatDateTime mainSettings.TornamentStartTime }}{{/if}}"
+                        required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-    <div class="page-divider">
-        <h4>Spielplan</h4>
-            <a href="/schedule/generate" class="btn btn-danger" role="button"
-            onclick="return confirm('Bist du sicher, dass du einen neuen Spielplan generieren möchtest? (Davor am besten alle Zähler löschen !)');">Neuen Spielplan generieren</a>
-    </div>
+                    <label for="timeBetweenGames">Time Between Games (minutes):</label><br>
+                    <input type="number" id="timeBetweenGames" name="timeBetweenGamesInMin"
+                        value="{{ milliToMin mainSettings.timeBetweenGames }}" required
+                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-    <div class="page-divider">
-        <h4>Tournament Settings</h4>
-        <form action="/mainSettings" method="POST" autocomplete="off" style="width: 300px; margin: 0 auto;">
-            <label for="scheduleTemplate">Schedule Template:</label><br>
-            <select id="scheduleTemplate" name="scheduleTemplate" required style="width: 100%; padding: 5px; margin-bottom: 10px;">
-                <option value="4groups_4teams.yaml" {{#if (eqref mainSettings.scheduleTemplate "4groups_4teams.yaml")}}selected{{/if}}>4 vs 4</option>
-            </select><br>
-            <label for="TornamentStartTime">Tournament Start Time:</label><br>
-            <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime"
-                value="{{#if mainSettings.TornamentStartTime}}{{ formatDateTime mainSettings.TornamentStartTime }}{{/if}}"
-                required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+                    <label for="gameDurationGroupStage">Game Duration - Group Stage (minutes):</label><br>
+                    <input type="number" id="gameDurationGroupStage" name="gameDurationGroupStageInMin"
+                        value="{{ milliToMin mainSettings.gameDurationGroupStage }}" required
+                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-            <label for="timeBetweenGames">Time Between Games (minutes):</label><br>
-            <input type="number" id="timeBetweenGames" name="timeBetweenGamesInMin"
-                value="{{ milliToMin mainSettings.timeBetweenGames }}" required
-                style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+                    <label for="gameDurationQuarterfinals">Game Duration - Quarterfinals (minutes):</label><br>
+                    <input type="number" id="gameDurationQuarterfinals" name="gameDurationQuarterfinalsInMin"
+                        value="{{ milliToMin mainSettings.gameDurationQuarterfinals }}" required
+                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-            <label for="gameDurationGroupStage">Game Duration - Group Stage (minutes):</label><br>
-            <input type="number" id="gameDurationGroupStage" name="gameDurationGroupStageInMin"
-                value="{{ milliToMin mainSettings.gameDurationGroupStage }}" required
-                style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+                    <label for="gameDurationSemifinals">Game Duration - Semifinals (minutes):</label><br>
+                    <input type="number" id="gameDurationSemifinals" name="gameDurationSemifinalsInMin"
+                        value="{{ milliToMin mainSettings.gameDurationSemifinals }}" required
+                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-            <label for="gameDurationQuarterfinals">Game Duration - Quarterfinals (minutes):</label><br>
-            <input type="number" id="gameDurationQuarterfinals" name="gameDurationQuarterfinalsInMin"
-                value="{{ milliToMin mainSettings.gameDurationQuarterfinals }}" required
-                style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+                    <label for="gameDurationFinal">Game Duration - Final (minutes):</label><br>
+                    <input type="number" id="gameDurationFinal" name="gameDurationFinalInMin"
+                        value="{{ milliToMin mainSettings.gameDurationFinal }}" required
+                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-            <label for="gameDurationSemifinals">Game Duration - Semifinals (minutes):</label><br>
-            <input type="number" id="gameDurationSemifinals" name="gameDurationSemifinalsInMin"
-                value="{{ milliToMin mainSettings.gameDurationSemifinals }}" required
-                style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+                    <label for="timeBetweenGamePhases">Time Between Game Phases (minutes):</label><br>
+                    <input type="number" id="timeBetweenGamePhases" name="timeBetweenGamePhasesInMin"
+                        value="{{ milliToMin mainSettings.timeBetweenGamePhases }}" required
+                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-            <label for="gameDurationFinal">Game Duration - Final (minutes):</label><br>
-            <input type="number" id="gameDurationFinal" name="gameDurationFinalInMin"
-                value="{{ milliToMin mainSettings.gameDurationFinal }}" required
-                style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+                    <label for="goalsforSekt">Nr. Goals for Flasche Sekt:</label><br>
+                    <input type="number" id="goalsforSekt" name="goalsforSekt" value="{{ mainSettings.goalsforSekt }}"
+                        required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
 
-            <label for="timeBetweenGamePhases">Time Between Game Phases (minutes):</label><br>
-            <input type="number" id="timeBetweenGamePhases" name="timeBetweenGamePhasesInMin"
-                value="{{ milliToMin mainSettings.timeBetweenGamePhases }}" required
-                style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-            <label for="goalsforSekt">Nr. Goals for Flasche Sekt:</label><br>
-            <input type="number" id="goalsforSekt" name="goalsforSekt" value="{{ mainSettings.goalsforSekt }}" required
-                style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-            <div>
-                <button id="saveSettings" type="submit" class="btn btn-primary">Save Tournament Settings</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="page-divider">
-        <h2>Gruppen verwalten</h2>
-        <form action="/mainSettings/addGroup" method="POST" style="width: 300px; margin: 0 auto;">
-            <div class="form-group">
-                <label for="groupName">Neue Gruppe hinzufügen:</label>
-                <input type="text" class="form-control" id="groupName" name="groupName" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Gruppe hinzufügen</button>
-        </form>
-        <br>
-        <h4>Bestehende Gruppen:</h4>
-        <div style="text-align: center;">
-            {{#each mainSettings.groups}}
-            <div>
-                <strong>{{this}}</strong>
-                <form action="/mainSettings/deleteGroup" method="POST" style="display:inline;"
-                    onsubmit="return confirm('Achtung ! Gruppe nur löschen wenn keine Manschaften bzw. atueller Spielplan mit der Gruppe generiert ist ! Willst du wirklich löschen?');">
-                    <input type="hidden" name="groupName" value="{{this}}">
-                    <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
+                    <div>
+                        <button id="saveSettings" type="submit" class="btn btn-primary">Save Tournament
+                            Settings</button>
+                    </div>
                 </form>
             </div>
-            {{/each}}
+
+            <!-- Database Settings -->
+            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <h3>Database Settings</h3>
+
+                <!-- Current Database -->
+                <div
+                    style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 6px; border-left: 4px solid red;">
+                    <h4 style="margin: 0;">Current Database</h4>
+                    <p style="font-size: 1.2em; margin: 10px 0 0 0;"><strong>{{dbName}}</strong></p>
+                </div>
+
+                <!-- Database Operations -->
+                <div class="database-actions" style="display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Create New Database -->
+                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
+                        <h4>Create New Database</h4>
+                        <form action="/mainSettings/createDb" method="post">
+                            <div style="margin-bottom: 15px;">
+                                <label for="dbName"><strong>Database Name:</strong></label>
+                                <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required
+                                    autocomplete="off" maxlength="20" class="form-control" style="margin-top: 5px;">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 200px;"
+                                onclick="return confirm('Are you sure you want to create a new database?\nEin Benutzer wird angelegt admin, admin')">
+                                Create Database
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Switch Database -->
+                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
+                        <h4>Switch Database</h4>
+                        <form action="/mainSettings/switchDb" method="post">
+                            <div style="margin-bottom: 15px;">
+                                <select id="dbName" name="dbName" required class="form-control"
+                                    style="margin-top: 5px;">
+                                    {{#each dbs}}
+                                    <option value="{{this.name}}">{{this.name}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 200px;"
+                                onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+                                Switch Database
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Backup Operations -->
+                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
+                        <h4>Backup & Restore</h4>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <!-- Backup Button -->
+                            <div>
+                                <a href="/mainSettings/backupDB" class="btn btn-primary" style="width: 200px;">
+                                    Create Backup
+                                </a>
+                            </div>
+
+                            <!-- Restore Form -->
+                            <form action="/mainSettings/restoreDB" method="post">
+                                <div style="margin-bottom: 15px;">
+                                    <label for="dbRestoreName"><strong>Select Backup:</strong></label>
+                                    <select id="dbRestoreName" name="dbRestoreName" required class="form-control"
+                                        style="margin-top: 5px;">
+                                        {{#each backupDbs}}
+                                        <option value="{{this}}">{{this}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 200px;"
+                                    onclick="return confirm('Are you sure you want to restore the database?')">
+                                    Restore Backup
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Available Databases Table -->
+                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
+                        <h4>Available Databases</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" style="margin: 0;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 80px;">Index</th>
+                                        <th>Database Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#each dbs}}
+                                    <tr>
+                                        <td>{{@index}}</td>
+                                        <td>{{this.name}}</td>
+                                    </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="page-divider">
-        <h4>General Counters</h4>
-        <p>All Goals: {{ generalCounters.allGoals }}</p>
-        <p>Games Played: {{ generalCounters.gamesPlayed }}</p>
-        <p>Goal Sekt Counter: {{ generalCounters.goalSektCounter }}</p>
-        <p>Gewonnene Sektflaschen: {{ generalCounters.wonSektBottles }}</p>
+        <!-- Right Column -->
+        <div class="col" style="flex: 1;">
+            <!-- Schedule Generation -->
+            <div class="page-divider"
+                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Schedule Generation</h3>
+                <a href="/schedule/generate" class="btn btn-primary" role="button" style="width: 200px;"
+                    onclick="return confirm('Bist du sicher, dass du einen neuen Spielplan generieren möchtest? (Davor am besten alle Zähler löschen !)');">
+                    Generate New Schedule
+                </a>
+            </div>
 
-        <!-- Add the button to reset counters -->
-        <a href="mainSettings/resetCounters" class="btn btn-danger"
-            onclick="return confirm('Willst du wirklich alle Zähler löschen ?');" style="margin-bottom: 1em">Clear
-            General Counters</a>
-        <br>
-        <a href="/team/clearTeamCounters" onclick="return confirm('Are you sure you want to clear all team counters?');"
-            class="btn btn-danger" role="button" style="margin-bottom: 1em">Clear Counters in all Teams </a>
-        <br>
-        <a href="#" onclick="resetPlayers()" class="btn btn-danger" role="button" style="margin-bottom: 1em">Clear
-            Counters and Goals from all Players</a>
-    </div>
+            <!-- Group Management -->
+            <div class="page-divider"
+                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Group Management</h3>
+                <form action="/mainSettings/addGroup" method="POST" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="groupName">Add New Group:</label>
+                        <input type="text" class="form-control" id="groupName" name="groupName" required
+                            style="margin-bottom: 10px;">
+                        <button type="submit" class="btn btn-primary" style="width: 200px;">Add Group</button>
+                    </div>
+                </form>
 
-    <div class="page-divider">
-        <h4>Users</h4>
-        <a href="user/register" class="btn btn-secondary" style="margin-bottom: 1em;">Register New User</a> <br>
-        <a href="user/list" class="btn btn-secondary" style="margin-bottom: 1em;">List Users</a> <br>
-        <a href="user/deleteAdmin" class="btn btn-secondary" style="margin-bottom: 1em;">Admin (admin) user löschen</a>
-        <br>
-    </div>
+                <h4>Existing Groups:</h4>
+                <div class="groups-list">
+                    {{#each mainSettings.groups}}
+                    <div class="group-item" style="margin-bottom: 10px;">
+                        <strong>{{this}}</strong>
+                        <form action="/mainSettings/deleteGroup" method="POST" style="display:inline;">
+                            <input type="hidden" name="groupName" value="{{this}}">
+                            <button type="submit" class="btn btn-danger"
+                                style="width: 100px; margin-left: 10px;">Delete</button>
+                        </form>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
 
-    <div class="page-divider">
-        <h4>Database Settings</h4>
-        <p><strong><span style="color: red;">Current DB: "{{dbName}}"</span></strong></p>
+            <!-- Counters -->
+            <div class="page-divider"
+                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>General Counters</h3>
+                <div style="margin-bottom: 20px;">
+                    <p>All Goals: {{ generalCounters.allGoals }}</p>
+                    <p>Games Played: {{ generalCounters.gamesPlayed }}</p>
+                    <p>Goal Sekt Counter: {{ generalCounters.goalSektCounter }}</p>
+                    <p>Gewonnene Sektflaschen: {{ generalCounters.wonSektBottles }}</p>
+                </div>
 
-        <h5>Available Databases:</h5>
-        <table class="mx-auto" style="margin-left: auto; margin-right: auto;">
-            <thead>
-                <tr>
-                    <th>Index</th>
-                    <th>Database Name</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#each dbs}}
-                <tr>
-                    <td>{{@index}}</td>
-                    <td>{{this.name}}</td>
-                </tr>
-                {{/each}}
-            </tbody>
-        </table>
-        <br></br>
+                <div class="d-flex flex-column" style="gap: 10px;">
+                    <a href="mainSettings/resetCounters" class="btn btn-danger" style="width: 200px;"
+                        onclick="return confirm('Willst du wirklich alle Zähler löschen ?');">Clear General Counters</a>
 
-        <form action="/mainSettings/createDb" method="post">
-            <label for="dbName"><strong>Name for the new database:</strong></label><br>
-            <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required autocomplete="off" maxlength="20"
-                style="margin-bottom: 10px;"><br> <!-- pattern="^[^\s]+$" - no spaces allowed-->
-            <input type="submit" class="btn btn-primary" value="Create new database" style="margin-bottom: 20px;"
-                onclick="return confirm('Are you sure you want to create a new database? \n Ein Benutzer wird angelegt admin, admin')">
-        </form>
+                    <a href="/team/clearTeamCounters" class="btn btn-danger" style="width: 200px;"
+                        onclick="return confirm('Are you sure you want to clear all team counters?');">Clear Team
+                        Counters</a>
 
-        <form action="/mainSettings/switchDb" method="post">
-            <label for="dbName"><strong>Switch database:</strong></label><br>
-            <select id="dbName" name="dbName" required style="margin-bottom: 10px;">
-                {{#each dbs}}
-                <option value="{{this.name}}">{{this.name}}</option>
-                {{/each}}
-            </select>
-            <br>
-            <input type="submit" value="Switch database" class="btn btn-primary" style="margin-bottom: 20px;"
-                onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
-        </form>
+                    <a href="#" onclick="resetPlayers()" class="btn btn-danger" style="width: 200px;">Clear Player
+                        Stats</a>
+                </div>
+            </div>
 
-        <h5>Backup/Restore Database:</h5>
-
-        <a href="/mainSettings/backupDB" class="btn btn-dark">Erstelle Backup der aktuellen DB</a>
-
-        <form action="/mainSettings/restoreDB" method="post">
-            <label for="dbRestoreName"><strong>Backups wiederherstellen:</strong></label><br>
-            <select id="dbRestoreName" name="dbRestoreName" required style="margin-bottom: 10px;">
-                {{#each backupDbs}}
-                <option value="{{this}}">{{this}}</option>
-                {{/each}}
-            </select>
-            <br>
-            <input type="submit" value="Restore database" class="btn btn-primary" style="margin-bottom: 20px;"
-                onclick="return confirm('Are you sure you want to restore the database?')">
-        </form>
-
-
+            <!-- User Management -->
+            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <h3>User Management</h3>
+                <div class="d-flex flex-column" style="gap: 10px;">
+                    <a href="user/register" class="btn btn-secondary" style="width: 200px;">Register New User</a>
+                    <a href="user/list" class="btn btn-secondary" style="width: 200px;">List Users</a>
+                    <a href="user/deleteAdmin" class="btn btn-secondary" style="width: 200px;">Delete Admin User</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
