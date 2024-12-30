@@ -355,14 +355,11 @@ router.get("/:id/endGame", async (req, res) => {
 
       const mainSettings = await MainSettings.findOne();
       const tournamentConfig = yaml.load(
-        fs.readFileSync("src/config/schedule_4v4.yaml", "utf8")
+          fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
       );
-
-      const scheduleGenerator = new ScheduleGenerator(
-        tournamentConfig,
-        mainSettings
-      );
-
+      
+      const scheduleGenerator = new ScheduleGenerator(tournamentConfig, mainSettings);
+      
       const gamePhase = game.gamePhase;
       if (gamePhase === "Group_Stage") {
         const subsequentGame = await Game.findOne({

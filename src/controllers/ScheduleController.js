@@ -34,13 +34,18 @@ router.get("/list", async (req, res) => {
 const { ScheduleGenerator } = require("./ScheduleGenerator");
 
 router.get("/generate", isAdmin, async (req, res) => {
-  const scheduleGenerator = await getScheduleGenerator();
-  scheduleGenerator.generateFullSchedule();
+  try {
+      const scheduleGenerator = await getScheduleGenerator();
+      await scheduleGenerator.generateFullSchedule();
 
-  // Delay the redirect by 1 seconds to allow time for the schedule generation
-  setTimeout(() => {
-    res.redirect("/schedule/list");
-  }, 1000);
+      // Delay the redirect by 1 second to allow time for the schedule generation
+      setTimeout(() => {
+          res.redirect("/schedule/list");
+      }, 1000);
+  } catch (err) {
+      console.error("Error generating schedule:", err);
+      res.status(500).send("Error generating schedule");
+  }
 });
 
 //router to create custom games
@@ -586,15 +591,15 @@ async function fetchMainSettings() {
 
 async function getScheduleGenerator() {
   try {
-    const mainSettings = await MainSettings.findOne();
-    const tournamentConfig = yaml.load(
-      fs.readFileSync("src/config/schedule_4v4.yaml", "utf8")
-    );
+      const mainSettings = await fetchMainSettings();
+      const tournamentConfig = yaml.load(
+          fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
+      );
 
-    return new ScheduleGenerator(tournamentConfig, mainSettings);
+      return new ScheduleGenerator(tournamentConfig, mainSettings);
   } catch (err) {
-    console.log("Error fetching Schedule Generator: " + err);
-    throw err;
+      console.log("Error fetching Schedule Generator: " + err);
+      throw err;
   }
 }
 

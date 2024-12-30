@@ -40,6 +40,10 @@ var MainSettingsSchema = new mongoose.Schema({
     groups: {
         type: [String],
         default: []
+    },
+    scheduleTemplate: {
+        type: String,
+        default: '4groups_4teams.yaml'
     }
 });
 
