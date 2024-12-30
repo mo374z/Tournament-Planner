@@ -11,6 +11,8 @@ const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 const { getRank } = require('../models/Team');
 const { commonMiddleware } = require('../middleware/auth');
+const Automizer = require('pptx-automizer').default;
+const { modify } = require('pptx-automizer');
 
 commonMiddleware(router, ['admin']); // Only admins can access the certificate page
 
@@ -72,10 +74,13 @@ router.post('/generate', async (req, res) => {
             return fs.readFileSync(tagValue);
         },
         getSize: function(img, tagValue, tagName) {
-            //Image in a 4/3 aspect ratio
-            //Image size (width, height) in twips
-            const width = 580;
-            return [width, width * 3 / 4];
+            //Get the size of the image
+            const dimensions = sizeOf(img);
+            // console.log('Image dimensions:', dimensions);
+            // Calculate the aspect ratio of the image
+            const aspectRatio = dimensions.width / dimensions.height;
+            const maxHeight = 450; // Maximum height of the image
+            return [maxHeight * aspectRatio, maxHeight]; // Return the width and height
         }
     });
     const doc = new Docxtemplater(zip, {
@@ -105,6 +110,85 @@ router.post('/generate', async (req, res) => {
     fs.writeFileSync(outputPath, buffer);
 
     res.download(outputPath);
+});
+
+router.post('/generatePresentation', async (req, res) => {
+    try {
+        console.log('Start generating presentation...');
+        const teams = await Team.find().exec();
+        for (let i = 0; i < teams.length; i++) {
+            teams[i].rank = await getRank(teams[i]);
+        }
+        teams.sort((a, b) => a.rank - b.rank);
+
+        const templatePath = path.join(__dirname, '../../public/templates/template.pptx');
+        const outputDir = path.join(__dirname, '../../public/presentations');
+        const fileName = 'teams_presentation_' + new Date().toISOString().replace(/:/g, '-') + '.pptx';
+        const outputPath = path.join(outputDir, fileName);
+
+        if (!fs.existsSync(templatePath)) {
+            throw new Error('Template not found: template.pptx');
+        }
+
+
+        console.log('Templates found:', templatePath);
+
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        const automizer = new Automizer({
+            templateDir: path.join(__dirname, '../../public/templates'),
+            outputDir: outputDir,
+            mediaDir: path.join(__dirname, '../../public/teampictures'),
+            removeExistingSlides: false,
+            autoImportSlideMasters: true,
+            autoImportLayouts: true,
+        });
+
+        let pres = automizer.loadRoot('template.pptx', 'presentation')
+                            //.load('templateSlide.pptx', 'slide');
+                            .load('template.pptx', 'slide');
+
+        const teamTemplateSlideNr = 4; // Slide number in the template presentation that will be used to create the new slides
+
+        for (const team of teams) {
+            //const team = teams[0]; //for testing purposes
+            console.log(`Adding slide for team: ${team.name}`);
+            pres = pres.addSlide('slide', teamTemplateSlideNr, async (slide) => {
+                slide.useSlideLayout(); // Use the original layout from the source template
+                
+                // Replace placeholders with actual data
+                slide.modifyElement('{team}', [modify.setText(team.name)]);
+                slide.modifyElement('{rank}', [modify.setText(team.rank + ".")]);
+
+                const imagePath = path.join(__dirname, '../../public/', team.imagePath || '/teampictures/default.jpg');
+                // Prüfen, ob die Datei existiert
+                if (!fs.existsSync(imagePath)) {
+                    throw new Error(`Image not found: ${imagePath}`);
+                }
+                else
+                {
+                    //console.log('Team Image found:', imagePath);
+                    pres.loadMedia(path.basename(imagePath)); // Load the image to the presentation
+                }
+                // Setzen des Bilds auf den Platzhalter
+                slide.modifyElement('{image}', [
+                    modify.setRelationTarget(path.basename(imagePath)) // Nur den Dateinamen verwenden
+                ]);
+
+            });
+        }
+
+        console.log('Writing presentation to file...');
+        await pres.write(fileName); // Write the presentation to a file (path is outputDir)
+        console.log('Presentation written to file:', outputPath);
+
+        res.download(outputPath);
+    } catch (error) {
+        console.error('Fehler beim Generieren der Präsentation:', error);
+        res.status(500).send('Fehler beim Generieren der Präsentation: ' + error);
+    }
 });
 
 module.exports = router;
