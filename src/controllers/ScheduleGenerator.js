@@ -54,28 +54,51 @@ class ScheduleGenerator {
 
     async generateGroupStage() {
         const groups = this.config.group_stage.groups;
-        const scheduling = this.config.group_stage.scheduling;
-
-        for (let i = 0; i < groups[0][1]; i++) {
-            for (let j = i + 1; j < groups[0][1]; j++) {
+        const n = groups[0][1];
+        
+        const rounds = n - 1;
+        const matchesPerRound = Math.floor(n / 2);
+        const schedule = [];
+        
+        for (let round = 0; round < rounds; round++) {
+            const roundMatches = [];
+            for (let match = 0; match < matchesPerRound; match++) {
+                const home = (round + match) % (n - 1);
+                const away = (n - 1 - match + round) % (n - 1);
+                
+                if (match === 0) {
+                    roundMatches.push([n - 1, away]);
+                } else {
+                    roundMatches.push([home, away]);
+                }
+            }
+            schedule.push(roundMatches);
+        }
+    
+        const groupTeams = {};
+        for (const [groupName, _] of groups) {
+            groupTeams[groupName] = await Team.find({ group: groupName }).exec();
+        }
+    
+        for (let round = 0; round < schedule.length; round++) {
+            for (const [home, away] of schedule[round]) {
                 for (const [groupName, _] of groups) {
-                    const teamsInGroup = await Team.find({ group: groupName }).exec();
-                    const team1 = teamsInGroup[i];
-                    const team2 = teamsInGroup[j];
-
                     await this.createGame({
-                        opponents: [team1._id, team2._id],
+                        opponents: [
+                            groupTeams[groupName][home]._id,
+                            groupTeams[groupName][away]._id
+                        ],
                         gamePhase: 'Group_Stage',
                         displayName: this.config.display.game_phase_names.group_stage,
-                        duration: this.settings.gameDurationGroupStage / (1000 * 60)
+                        duration: this.settings.gameDurationGroupStage / (1000 * 60),
+                        round: round + 1
                     });
                 }
             }
         }
-
+    
         return this.getCurrentEndTime();
     }
-
     async generateQuarterFinals() {
         const matchups = this.config.knockout_stage.quarterfinals.matchups;
         let quarterFinalNumber = 1;
@@ -297,16 +320,20 @@ class ScheduleGenerator {
 
     async updateWithPreviousWinners(game, previousPhase, gameNumbers) {
         const previousGames = await Promise.all(
-            gameNumbers.map(num => 
+            gameNumbers.map(num =>
                 Game.findOne({ gamePhase: `${previousPhase} ${num}` })
             )
         );
-
-        if (previousGames.every(g => g?.status === 'Ended')) {
-            const winners = previousGames.map(g => this.getWinner(g));
-            await Game.findByIdAndUpdate(game._id, {
-                opponents: winners
-            });
+        
+        const updates = {};
+        previousGames.forEach((g, index) => {
+            if (g?.status === 'Ended') {
+                updates[`opponents.${index}`] = this.getWinner(g);
+            }
+        });
+    
+        if (Object.keys(updates).length > 0) {
+            await Game.findByIdAndUpdate(game._id, { $set: updates });
         }
     }
 
