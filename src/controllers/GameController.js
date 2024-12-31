@@ -1,6 +1,7 @@
 const express = require("express");
 const yaml = require("js-yaml");
 const fs = require("fs");
+const path = require("path"); // Hinzufügen des fehlenden path-Moduls
 
 var router = express.Router();
 const mongoose = require("mongoose");
@@ -516,5 +517,56 @@ async function updateGenGoalsCounter(increment, teamId) {
     return { addRemoveSekt: 0, allGoals: -1 }; // Returning an object with named properties
   }
 }
+
+
+
+// Auto-play games for testing purposes
+router.post("/autoPlayGames/:limit", async (req, res) => {
+  try {
+    const limit = parseInt(req.params.limit);
+    const games = await Game.find({ status: { $ne: "Ended" }, number: { $lte: limit } }).exec();
+
+    for (const game of games) {
+        console.log("Auto-playing game: ", game.number);
+      // Generate random goals ensuring the game does not end 0:0
+      let goalsTeam1 = Math.floor(Math.random() * 5);
+      let goalsTeam2 = Math.floor(Math.random() * 5);
+      if (goalsTeam1 === 0 && goalsTeam2 === 0) {
+        goalsTeam1 = 1; // Ensure at least one goal is scored
+      }
+      game.goals = [goalsTeam1, goalsTeam2];
+
+      // Generate random goal timestamps
+      game.goalsLog = [];
+      for (let i = 0; i < goalsTeam1 + goalsTeam2; i++) {
+        const teamIndex = i < goalsTeam1 ? 0 : 1;
+
+        game.goalsLog.push({
+          timestamp: new Date(),
+          gameTimestamp: Math.floor(Math.random() * game.duration * 60),
+          teamIndex: teamIndex,
+          newScore: teamIndex === 0 ? [i + 1, goalsTeam2] : [goalsTeam1, i + 1],
+          goalIndex: i + 1,
+          sekt_won: false,
+          goalIndexTournament: 0
+        });
+      }
+      // Update game status to "Ended"
+      game.status = "Ended";
+      await game.save();
+
+      // Update team and general counters
+      await writeGameDataToTeams(game);
+      await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
+    }
+
+    res.status(200).send("Spiele erfolgreich automatisch gespielt.");
+  } catch (err) {
+    console.error("Fehler beim automatischen Spielen der Spiele: ", err);
+    res.status(500).send("Interner Serverfehler.");
+  }
+});
+
+
 
 module.exports = { router, getInfoBannerMessage: () => infoBannerMessage };

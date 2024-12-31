@@ -83,6 +83,17 @@
     <a href="/schedule/createCustomGame" class="btn btn-success">Eigenes Game erstellen/hinzufügen</a>
 
     <br><br>
+
+    <div class="row justify-content-center">
+        <div class="col-auto">
+            <input type="number" id="autoPlayLimit" class="form-control" placeholder="Spielnummer eingeben">
+        </div>
+        <div class="col-auto">
+            <button id="autoPlayButton" class="btn btn-primary">Spiele automatisch spielen</button>
+        </div>
+    </div>
+
+    <br><br>
 </section>
 
 <script>console.log( this.isGamePlayable )</script>
@@ -97,6 +108,24 @@ document.getElementById('toggleEditMode').addEventListener('click', function() {
     editModeState.value = !isEditMode;
     localStorage.setItem('editMode', !isEditMode);
     this.textContent = isEditMode ? 'Spielplan Reihenfolge bearbeiten' : 'Bearbeiten deaktivieren';
+});
+
+document.getElementById('autoPlayButton').addEventListener('click', function() {
+    const limit = document.getElementById('autoPlayLimit').value;
+    if (limit) {
+        fetch(`/game/autoPlayGames/${limit}`, {
+            method: 'POST'
+        }).then(response => {
+            if (response.ok) {
+                alert('Spiele wurden automatisch gespielt.');
+                location.reload();
+            } else {
+                alert('Fehler beim automatischen Spielen der Spiele.');
+            }
+        });
+    } else {
+        alert('Bitte geben Sie eine gültige Spielnummer ein.');
+    }
 });
 
 window.addEventListener('load', function() {
