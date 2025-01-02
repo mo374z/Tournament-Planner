@@ -11,7 +11,7 @@
                     <select id="scheduleTemplate" name="scheduleTemplate" required
                         style="width: 100%; padding: 5px; margin-bottom: 10px;">
                         <option value="4groups_4teams.yaml" {{#if (eqref
-                            mainSettings.scheduleTemplate "4groups_4teams.yaml" )}}selected{{/if}}>4 vs 4</option>
+                            mainSettings.scheduleTemplate "4groups_4teams.yaml" )}}selected{{/if}}>4groups_4teams</option>
                     </select><br>
                     <label for="TornamentStartTime">Tournament Start Time:</label><br>
                     <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime"
@@ -179,12 +179,12 @@
             <div class="page-divider"
                 style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3>Group Management</h3>
-                <form action="/mainSettings/addGroup" method="POST" style="margin-bottom: 20px;">
+                <form action="/mainSettings/addGroups" method="POST" style="margin-bottom: 20px;">
                     <div class="form-group">
-                        <label for="groupName">Add New Group:</label>
-                        <input type="text" class="form-control" id="groupName" name="groupName" required
+                        <label for="nGroups">How many groups compete?</label>
+                        <input type="text" class="form-control" id="nGroups" name="nGroups" required
                             style="margin-bottom: 10px;">
-                        <button type="submit" class="btn btn-primary" style="width: 200px;">Add Group</button>
+                        <button type="submit" class="btn btn-primary" style="width: 200px;">Add Groups</button>
                     </div>
                 </form>
 
