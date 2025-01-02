@@ -1,7 +1,7 @@
 const express = require("express");
 const yaml = require("js-yaml");
 const fs = require("fs");
-const path = require("path"); // Hinzufügen des fehlenden path-Moduls
+const path = require("path");
 
 var router = express.Router();
 const mongoose = require("mongoose");

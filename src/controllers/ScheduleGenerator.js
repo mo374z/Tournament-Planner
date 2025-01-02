@@ -139,8 +139,27 @@ class ScheduleGenerator {
         return this.getCurrentEndTime();
     }
 
-    async generateFinals() {
-        // Generate bronze medal match
+    async generateFinals() {    
+        // Generate placement matches if enabled (13-14, 11-12, 9-10, 7-8, 5-6)
+        if (this.config.knockout_stage.finals.placement_matches.enabled) {
+            const positions = this.config.knockout_stage.finals.placement_matches.positions;
+            let matchNumber = positions.length + 2; // Start after bronze medal match
+    
+            for (const position of positions) {
+                await this.createGame({
+                    opponents: [
+                        await this.createDummyTeam(`${position}. Gesamtwertung`, "-"),
+                        await this.createDummyTeam(`${position + 1}. Gesamtwertung`, "-")
+                    ],
+                    gamePhase: `Finals ${matchNumber}`,
+                    displayName: `${this.config.display.game_phase_names.placement} ${position}-${position + 1}`,
+                    duration: this.settings.gameDurationFinal / (1000 * 60)
+                });
+                matchNumber--;
+            }
+        }
+    
+        // Generate bronze medal match (3rd-4th place)
         if (this.config.knockout_stage.finals.bronze_medal_match) {
             await this.createGame({
                 opponents: [
@@ -152,8 +171,21 @@ class ScheduleGenerator {
                 duration: this.settings.gameDurationFinal / (1000 * 60)
             });
         }
+        
+        // Generate last position match first (15th-16th place)
+        if (this.config.knockout_stage.finals.last_position_match) {
+            await this.createGame({
+                opponents: [
+                    await this.createDummyTeam("15. Gesamtwertung", "-"),
+                    await this.createDummyTeam("16. Gesamtwertung", "-")
+                ],
+                gamePhase: "Finals Last",
+                displayName: this.config.display.game_phase_names.last_position_match,
+                duration: this.settings.gameDurationFinal / (1000 * 60)
+            });
+        }
 
-        // Generate final match
+        // Generate final match (1st-2nd place)
         await this.createGame({
             opponents: [
                 await this.createDummyTeam("Sieger Halbfinale 1", "-"),
@@ -163,26 +195,7 @@ class ScheduleGenerator {
             displayName: this.config.display.game_phase_names.finals,
             duration: this.settings.gameDurationFinal / (1000 * 60)
         });
-
-        // Generate placement matches if enabled
-        if (this.config.knockout_stage.finals.placement_matches.enabled) {
-            const positions = this.config.knockout_stage.finals.placement_matches.positions;
-            let matchNumber = 3;
-
-            for (const position of positions) {
-                await this.createGame({
-                    opponents: [
-                        await this.createDummyTeam(`${position}. Gesamtwertung`, "-"),
-                        await this.createDummyTeam(`${position + 1}. Gesamtwertung`, "-")
-                    ],
-                    gamePhase: `Finals ${matchNumber}`,
-                    displayName: `${this.config.display.game_phase_names.placement} ${position}-${position + 1}`,
-                    duration: this.settings.gameDurationFinal / (1000 * 60)
-                });
-                matchNumber++;
-            }
-        }
-
+    
         return this.getCurrentEndTime();
     }
 
@@ -287,7 +300,7 @@ class ScheduleGenerator {
                     } else if (game.gamePhase === 'Finals 2' && this.config.knockout_stage.finals.bronze_medal_match) {
                         // Bronze medal match
                         await this.updateWithPreviousLosers(game, 'Semifinals', [1, 2]);
-                    } else if (parseInt(game.gamePhase.split(' ')[1]) > 2) {
+                    } else {
                         // Placement matches
                         await this.updatePlacementMatch(game);
                     }
@@ -354,64 +367,90 @@ class ScheduleGenerator {
 
     async updatePlacementMatch(game) {
         if (!this.config.knockout_stage.finals.placement_matches.enabled) return;
+    
+        // Handle last position match (15th-16th place)
+        if (game.gamePhase === 'Finals Last') {
+            const allTeams = await Team.find({ group: { $in: ['A', 'B', 'C', 'D'] } }).exec();
+            const teamsWithRanks = await Promise.all(
+                allTeams.map(async team => ({
+                    team,
+                    overallRank: await getRank(team, false) // Use overall ranking instead of group ranking
+                }))
+            );
 
-        const gameNumber = parseInt(game.gamePhase.split(' ')[1]);
-        const positions = this.config.knockout_stage.finals.placement_matches.positions;
-        const positionIndex = gameNumber - 3; // First placement match starts at Finals 3
-        const position = positions[positionIndex];
-        
-        if (position === undefined) return;
-
-        // Get all teams that didn't advance to quarterfinals
-        const allTeams = await Team.find({ group: { $in: ['A', 'B', 'C', 'D'] } }).exec();
-        const teamsWithRanks = await Promise.all(
-            allTeams.map(async team => ({
-                team,
-                groupRank: await getRank(team, true) // Get group rank for each team
-            }))
-        );
-
-        // Filter teams that didn't advance to quarterfinals (rank 3 and 4 in each group)
-        const nonAdvancingTeams = teamsWithRanks
-            .filter(({ groupRank }) => groupRank > 2)
-            .sort((a, b) => a.groupRank - b.groupRank);
-
-        // For position 5-6, we need losers from quarterfinals
-        if (position === 5) {
-            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
-            const quarterFinalLosers = quarterFinalGames
-                .filter(g => g.status === 'Ended')
-                .map(g => this.getLoser(g));
-
-            if (quarterFinalLosers.length === 4) {
-                // Sort losers by their performance in quarterfinals and group stage
-                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
-                await Game.findByIdAndUpdate(game._id, {
-                    opponents: [sortedLosers[0], sortedLosers[1]] // Best two losers play for 5th place
-                });
-            }
-        }
-        // For position 7-8, we use the remaining quarterfinal losers
-        else if (position === 7) {
-            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
-            const quarterFinalLosers = quarterFinalGames
-                .filter(g => g.status === 'Ended')
-                .map(g => this.getLoser(g));
-            if (quarterFinalLosers.length === 4) {
-                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
-                await Game.findByIdAndUpdate(game._id, {
-                    opponents: [sortedLosers[2], sortedLosers[3]] // Lower ranked losers play for 7th place
-                });
-            }
-        }
-        // For positions 9 and below, we use teams that didn't advance from group stage
-        else {
-            const index = Math.floor((position - 9) / 2) * 2;
-            if (index >= 0 && index + 1 < nonAdvancingTeams.length) {
+            console.log(teamsWithRanks);
+    
+            // Sort by overall rank (descending) to get the two worst teams
+            const sortedTeams = teamsWithRanks
+                .sort((a, b) => b.overallRank - a.overallRank); // Higher rank number means worse position
+    
+            if (sortedTeams.length >= 2) {
                 await Game.findByIdAndUpdate(game._id, {
                     opponents: [
-                        nonAdvancingTeams[index].team._id,
-                        nonAdvancingTeams[index + 1].team._id
+                        sortedTeams[0].team._id, // Worst team
+                        sortedTeams[1].team._id  // Second worst team
+                    ]
+                });
+            }
+            return;
+        }
+    
+        // Handle regular placement matches
+        const gameNumber = parseInt(game.gamePhase.split(' ')[1]);
+        const positions = this.config.knockout_stage.finals.placement_matches.positions;
+        const position = positions[positions.length - (gameNumber - 2)];
+    
+        if (position === undefined) return;
+    
+        // Get teams based on their position
+        if (position === 5) {
+            // 5-6th place: Best two quarterfinal losers
+            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
+            const quarterFinalLosers = quarterFinalGames
+                .filter(g => g.status === 'Ended')
+                .map(g => this.getLoser(g));
+    
+            if (quarterFinalLosers.length === 4) {
+                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
+                await Game.findByIdAndUpdate(game._id, {
+                    opponents: [sortedLosers[0], sortedLosers[1]]
+                });
+            }
+        } else if (position === 7) {
+            // 7-8th place: Remaining quarterfinal losers
+            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
+            const quarterFinalLosers = quarterFinalGames
+                .filter(g => g.status === 'Ended')
+                .map(g => this.getLoser(g));
+    
+            if (quarterFinalLosers.length === 4) {
+                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
+                await Game.findByIdAndUpdate(game._id, {
+                    opponents: [sortedLosers[2], sortedLosers[3]]
+                });
+            }
+        } else {
+            // 9th place and below: Use overall ranking
+            const allTeams = await Team.find({ group: { $in: ['A', 'B', 'C', 'D'] } }).exec();
+            const teamsWithRanks = await Promise.all(
+                allTeams.map(async team => ({
+                    team,
+                    overallRank: await getRank(team, false) // Use overall ranking
+                }))
+            );
+    
+            // Sort by overall rank to get teams in correct order
+            const sortedTeams = teamsWithRanks
+                .sort((a, b) => a.overallRank - b.overallRank) // Lower rank number is better
+                .slice(8); // Get teams from 9th place onwards
+    
+            // Find the two teams that should play for this position
+            const index = Math.floor((position - 9) / 2) * 2;
+            if (index >= 0 && index + 1 < sortedTeams.length) {
+                await Game.findByIdAndUpdate(game._id, {
+                    opponents: [
+                        sortedTeams[index].team._id,
+                        sortedTeams[index + 1].team._id
                     ]
                 });
             }

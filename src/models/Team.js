@@ -51,68 +51,117 @@ var TeamSchema = new mongoose.Schema({
 
 const Team = mongoose.model('Team', TeamSchema);
 
-async function getRank(team, groupRank = false){
-    const allTeamsInGroup = await Team.find({group: team.group}).exec();
-
-    // Sort teams based on points, goal difference, and goals scored
-    const sortedTeams = rankTeams(allTeamsInGroup, groupRank);
-
-    // Find the index of the current team in the sorted array to determine its rank
-    const teamIndex = sortedTeams.findIndex(t => t._id.equals(team._id));
-    return teamIndex + 1;
-}
-
-// returns the overall rank of a team in the tournament
-async function getTeamRank(rank){
-    const allTeams = await Team.find({}).exec();
-    const sortedTeams = rankTeams(allTeams);
-
-    // return the team at the given rank
-    return sortedTeams[rank];
-}
-
-// returns the rank of a team in a group
-async function getTeamGroupRank(rank, group){
-    const allTeamsInGroup = await Team.find({group: group}).exec();
-    const sortedTeams = rankTeams(allTeamsInGroup, true);
-
-    // return the team at the given rank
-    return sortedTeams[rank];
-}
-
-function rankTeams(teams, groupRank = false){
-    // Sort teams based on points, goal difference, and goals scored
-    const sortedTeams = teams.sort((a, b) => {
-        if (groupRank) {
+function rankTeams(teams, groupRank = false) {
+    if (groupRank) {
+        // For group ranking, use the existing logic
+        return teams.sort((a, b) => {
             if (a.points_Group_Stage !== b.points_Group_Stage) {
                 return b.points_Group_Stage - a.points_Group_Stage;
             } else {
                 const goalDifferenceA = a.goalsGroupStage[0] - a.goalsGroupStage[1];
                 const goalDifferenceB = b.goalsGroupStage[0] - b.goalsGroupStage[1];
-
                 if (goalDifferenceA !== goalDifferenceB) {
                     return goalDifferenceB - goalDifferenceA;
                 } else {
                     return b.goalsGroupStage[0] - a.goalsGroupStage[0];
                 }
             }
-        } else {
-            if (a.points_Group_Stage !== b.points_Group_Stage) {
-                return b.points_Group_Stage - a.points_Group_Stage;
+        });
+    } else {
+        // For overall ranking, first get qualified teams (top 2 from each group)
+        const groupedTeams = {};
+        const qualifiedTeams = [];
+        const nonQualifiedTeams = [];
+
+        // Group teams by their group
+        teams.forEach(team => {
+            if (!groupedTeams[team.group]) {
+                groupedTeams[team.group] = [];
+            }
+            groupedTeams[team.group].push(team);
+        });
+
+        // For each group, get top 2 teams
+        Object.values(groupedTeams).forEach(groupTeams => {
+            // Sort teams within group
+            const sortedGroupTeams = groupTeams.sort((a, b) => {
+                if (a.points_Group_Stage !== b.points_Group_Stage) {
+                    return b.points_Group_Stage - a.points_Group_Stage;
+                } else {
+                    const goalDifferenceA = a.goalsGroupStage[0] - a.goalsGroupStage[1];
+                    const goalDifferenceB = b.goalsGroupStage[0] - b.goalsGroupStage[1];
+                    if (goalDifferenceA !== goalDifferenceB) {
+                        return goalDifferenceB - goalDifferenceA;
+                    } else {
+                        return b.goalsGroupStage[0] - a.goalsGroupStage[0];
+                    }
+                }
+            });
+
+            // Add top 2 to qualified teams
+            qualifiedTeams.push(...sortedGroupTeams.slice(0, 2));
+            // Add rest to non-qualified teams
+            nonQualifiedTeams.push(...sortedGroupTeams.slice(2));
+        });
+
+        // Sort qualified teams based on overall performance
+        const sortedQualifiedTeams = qualifiedTeams.sort((a, b) => {
+            if (a.points_General !== b.points_General) {
+                return b.points_General - a.points_General;
             } else {
                 const goalDifferenceA = a.goals[0] - a.goals[1];
                 const goalDifferenceB = b.goals[0] - b.goals[1];
-
                 if (goalDifferenceA !== goalDifferenceB) {
                     return goalDifferenceB - goalDifferenceA;
                 } else {
                     return b.goals[0] - a.goals[0];
                 }
             }
-        }
-    });
+        });
 
-    return sortedTeams;
+        // Sort non-qualified teams based on overall performance
+        const sortedNonQualifiedTeams = nonQualifiedTeams.sort((a, b) => {
+            if (a.points_General !== b.points_General) {
+                return b.points_General - a.points_General;
+            } else {
+                const goalDifferenceA = a.goals[0] - a.goals[1];
+                const goalDifferenceB = b.goals[0] - b.goals[1];
+                if (goalDifferenceA !== goalDifferenceB) {
+                    return goalDifferenceB - goalDifferenceA;
+                } else {
+                    return b.goals[0] - a.goals[0];
+                }
+            }
+        });
+
+        // Combine the sorted lists - qualified teams will always be ranked 1-8
+        return [...sortedQualifiedTeams, ...sortedNonQualifiedTeams];
+    }
+}
+
+async function getRank(team, groupRank = false) {
+    if (groupRank) {
+        allTeams = await Team.find({group: team.group}).exec();
+    } else {
+        allTeams = await Team.find({}).exec();
+    }
+    const sortedTeams = rankTeams(allTeams, groupRank);
+    const teamIndex = sortedTeams.findIndex(t => t._id.equals(team._id));
+    return teamIndex + 1;
+}
+
+// Updated to work with the new ranking system
+async function getTeamRank(rank) {
+    const allTeams = await Team.find({}).exec();
+    const sortedTeams = rankTeams(allTeams, false);
+    return sortedTeams[rank];
+}
+
+// Get a team at a specific rank within a group
+async function getTeamGroupRank(rank, group) {
+    const allTeamsInGroup = await Team.find({group: group}).exec();
+    const sortedTeams = rankTeams(allTeamsInGroup, true);
+    return sortedTeams[rank];
 }
 
 function getAllGroupNames(teams){
