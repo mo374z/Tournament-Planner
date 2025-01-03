@@ -128,6 +128,80 @@ router.post("/add", async (req, res) => {
   }
 });
 
+router.post("/createMultiple", async (req, res) => {
+  try {
+    const mainSettings = await MainSettings.findOne({});
+    const groups = mainSettings ? mainSettings.groups : [];
+
+    if (groups.length === 0) {
+      return res.status(400).send("Keine Gruppen in den MainSettings gefunden. Bitte fügen Sie Gruppen hinzu und versuchen Sie es erneut.");
+    }
+
+    const teams = [];
+    const teamCount = 16;
+
+    for (let i = 1; i <= teamCount; i++) {
+      const groupIndex = Math.floor((i - 1) / 4) % groups.length;
+      teams.push({
+        name: `Team ${i}`,
+        group: groups[groupIndex] || 'default',
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0,
+        gamesDraw: 0,
+        goals: [0, 0],
+        goalsGroupStage: [0, 0],
+        sektWon: 0,
+        points_Group_Stage: 0,
+        points_General: 0,
+        gamesPlayed_Group_Stage: 0,
+      });
+    }
+    await Team.insertMany(teams);
+    res.redirect("/team/list");
+  } catch (err) {
+    console.log("Error during multiple team creation: " + err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.get("/createMultiple", async (req, res) => {
+  try {
+    const mainSettings = await MainSettings.findOne({});
+    const groups = mainSettings ? mainSettings.groups : [];
+
+    if (groups.length === 0) {
+      return res.status(400).send("Keine Gruppen in den MainSettings gefunden. Bitte fügen Sie Gruppen hinzu und versuchen Sie es erneut.");
+    }
+
+    const teams = [];
+    const teamCount = 16;
+
+    for (let i = 1; i <= teamCount; i++) {
+      const groupIndex = Math.floor((i - 1) / 4) % groups.length;
+      teams.push({
+        name: `Team ${i}`,
+        group: groups[groupIndex] || 'default',
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0,
+        gamesDraw: 0,
+        goals: [0, 0],
+        goalsGroupStage: [0, 0],
+        sektWon: 0,
+        points_Group_Stage: 0,
+        points_General: 0,
+        gamesPlayed_Group_Stage: 0,
+      });
+    }
+    await Team.insertMany(teams);
+    res.redirect("/team/list");
+  } catch (err) {
+    console.log("Error during multiple team creation: " + err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 router.get("/grouplist", async (req, res) => {
   try {
     const teamsByGroup = await getTeamsByGroup();
@@ -258,6 +332,20 @@ router.get('/delete/:id' , authorizeRoles('admin'), async (req, res) => {   //De
         console.log('Error in deletion: ' + err);
         res.status(500).send('Internal Server Error');
     }
+});
+
+router.get("/deleteAll", authorizeRoles('admin'), async (req, res) => {
+  try {
+    const teams = await Team.find({});
+    for (const team of teams) {
+      await deleteImage(team);
+    }
+    await Team.deleteMany({});
+    res.redirect("/team/list");
+  } catch (err) {
+    console.log("Error during deleting all teams: " + err);
+    res.status(500).send("Internal Server Error");
+  }
 });
 
 // return the team ID based on the id
