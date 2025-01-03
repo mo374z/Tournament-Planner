@@ -13,27 +13,17 @@ module.exports = {
   fetchGamesData,
 };
 
-//Code part to enable the authentication for all the following routes
-const { verifyToken, isAdmin } = require("../middleware/auth"); // Pfad zur auth.js-Datei
-const cookieParser = require("cookie-parser");
+const { commonMiddleware } = require('../middleware/auth');
 
-router.use(cookieParser()); // Add cookie-parser middleware to parse cookies
+commonMiddleware(router, ['admin']); // Only admins have access to the schedule management page
 
-router.use(verifyToken); // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {
-  res.locals.username = req.username;
-  res.locals.userrole = req.userRole;
-  next();
-});
-//--------------------------------------------------------------
-
-router.get("/list", async (req, res) => {
-  renderScheduleList(req, res);
+router.get('/list', async (req, res) => {
+    renderScheduleList(req, res);
 });
 
 const { ScheduleGenerator } = require("./ScheduleGenerator");
 
-router.get("/generate", isAdmin, async (req, res) => {
+router.get("/generate", async (req, res) => {
   try {
       const scheduleGenerator = await getScheduleGenerator();
       await scheduleGenerator.generateFullSchedule();
@@ -49,9 +39,9 @@ router.get("/generate", isAdmin, async (req, res) => {
 });
 
 //router to create custom games
-router.get("/createCustomGame", isAdmin, async (req, res) => {
-  try {
-    const teams = await Team.find({});
+router.get('/createCustomGame', async (req, res) => {
+    try {
+        const teams = await Team.find({});
 
     //use fetchGamesData function to get the games and timeBetweenGames
     const { games, timeBetweenGames } = await fetchGamesData();
@@ -84,7 +74,7 @@ router.get("/createCustomGame", isAdmin, async (req, res) => {
 });
 
 // Handle the saving of a custom game
-router.post("/saveCustomGame", isAdmin, async (req, res) => {
+router.post("/saveCustomGame", async (req, res) => {
   try {
     const {
       time,
@@ -199,11 +189,11 @@ router.post("/saveCustomGame", isAdmin, async (req, res) => {
 });
 
 // render the page to edit the game
-router.get("/:id", isAdmin, async (req, res) => {
-  try {
-    const gameId = req.params.id;
-    const game = await Game.findById(gameId).exec();
-    const teams = await Team.find({});
+router.get('/:id', async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId).exec();
+        const teams = await Team.find({});
 
     res.render("layouts/editGame", {
       game: game,
@@ -426,26 +416,27 @@ function getPoints(game) {
   }
 }
 
-router.post("/:id/edit", isAdmin, async (req, res) => {
-  try {
-    const gameId = req.params.id;
-    let {
-      time,
-      duration,
-      team1,
-      team2,
-      goals1,
-      goals2,
-      gameDisplayName,
-    } = req.body;
+router.post('/:id/edit', async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        let {
+            time,
+            duration,
+            team1,
+            team2,
+            goals1,
+            goals2,
+            gameDisplayName
+        } = req.body;
 
-    // check wether goals are undefined, if not set goals1 and goals2 to 0
-    if (goals1 === undefined) {
-      goals1 = 0;
-    }
-    if (goals2 === undefined) {
-      goals2 = 0;
-    }
+        
+        // check wether goals are undefined, if not set goals1 and goals2 to 0
+        if (goals1 === undefined) {
+            goals1 = 0;
+        }
+        if (goals2 === undefined) {
+            goals2 = 0;
+        }
 
     // Fetch existing game details to obtain the old game time
     const existingGame = await Game.findById(gameId);
@@ -624,50 +615,48 @@ async function getTeamDataById(teamId) {
   }
 }
 
-router.get("/:id/move/up", isAdmin, async (req, res) => {
-  try {
-    const gameId = req.params.id;
-    const game = await Game.findById(gameId);
-    if (game.number > 1 && game.status === "Scheduled") {
-      const previousGame = await Game.findOne({ number: game.number - 1 });
-      if (previousGame.status === "Scheduled") {
-        [game.number, previousGame.number] = [previousGame.number, game.number];
-        [game.time, previousGame.time] = [previousGame.time, game.time];
-        await game.save();
-        await previousGame.save();
-        await updateSubsequentGamesTime(game._id, 0);
-        res.redirect("/schedule/list");
-      } else {
-        console.log("Previous game is not scheduled");
-      }
+router.get('/:id/move/up', async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId);
+        if (game.number > 1 && game.status === 'Scheduled') {
+            const previousGame = await Game.findOne({ number: game.number - 1 });
+            if (previousGame.status === 'Scheduled') {
+                [game.number, previousGame.number] = [previousGame.number, game.number];
+                [game.time, previousGame.time] = [previousGame.time, game.time];
+                await game.save();
+                await previousGame.save();
+                await updateSubsequentGamesTime(game._id, 0);
+                res.redirect('/schedule/list');
+            }
+            else {
+                console.log('Previous game is not scheduled');
+            }
+        }
+    } catch (err) {
+        console.error('Error moving game up: ', err);
+        res.status(500).send('Internal Server Error');
     }
-  } catch (err) {
-    console.error("Error moving game up: ", err);
-    res.status(500).send("Internal Server Error");
-  }
 });
 
-router.get("/:id/move/down", isAdmin, async (req, res) => {
-  try {
-    const gameId = req.params.id;
-    const game = await Game.findById(gameId);
-    const nextGame = await Game.findOne({ number: game.number + 1 });
-    if (
-      nextGame &&
-      game.status === "Scheduled" &&
-      nextGame.status === "Scheduled"
-    ) {
-      [game.number, nextGame.number] = [nextGame.number, game.number];
-      [game.time, nextGame.time] = [nextGame.time, game.time];
-      await game.save();
-      await nextGame.save();
-      await updateSubsequentGamesTime(game._id, 0);
-      res.redirect("/schedule/list");
-    } else {
-      console.log("Next game is not scheduled");
+router.get('/:id/move/down', async (req, res) => {
+    try {
+        const gameId = req.params.id;
+        const game = await Game.findById(gameId);
+        const nextGame = await Game.findOne({ number: game.number + 1 });
+        if (nextGame && game.status === 'Scheduled' && nextGame.status === 'Scheduled') {
+            [game.number, nextGame.number] = [nextGame.number, game.number];
+            [game.time, nextGame.time] = [nextGame.time, game.time];
+            await game.save();
+            await nextGame.save();
+            await updateSubsequentGamesTime(game._id, 0);
+            res.redirect('/schedule/list');
+        }
+        else {
+            console.log('Next game is not scheduled');
+        }        
+    } catch (err) {
+        console.error('Error moving game down: ', err);
+        res.status(500).send('Internal Server Error');
     }
-  } catch (err) {
-    console.error("Error moving game down: ", err);
-    res.status(500).send("Internal Server Error");
-  }
 });

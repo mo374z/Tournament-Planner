@@ -1,37 +1,17 @@
 const express = require("express");
 var router = express.Router();
+const mongoose = require('mongoose');
+const Team = mongoose.model('Team');
+const Game = mongoose.model('Game');
+const Player = mongoose.model('Player');
+const MainSettings = mongoose.model('MainSettings');
+const { commonMiddleware, authorizeRoles} = require('../middleware/auth');
+const { getRank } = require('../models/Team');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-const mongoose = require("mongoose");
-const Team = mongoose.model("Team");
-const Game = mongoose.model("Game");
-const Player = mongoose.model("Player");
-const MainSettings = mongoose.model("MainSettings");
-
-//Code part to enable the authentication for all the following routes
-const {
-  verifyToken,
-  checkLoginStatus,
-  isAdmin,
-} = require("../middleware/auth"); // Pfad zur auth.js-Datei
-const cookieParser = require("cookie-parser");
-router.use(cookieParser()); // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken); // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {
-  // Middleware, um Benutzerinformationen an res.locals anzuhängen
-  res.locals.username = req.username;
-  res.locals.userrole = req.userRole;
-  next();
-});
-
-router.use(isAdmin); // Alle nachfolgenden Routen sind nur für Admins zugänglich
-//--------------------------------------------------------------
-
-const { getRank } = require("../models/Team");
-
-const multer = require("multer"); // For file upload
-const path = require("path");
-const fs = require("fs");
+commonMiddleware(router, ['admin']); // Only admins have access to the team management page
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -62,31 +42,40 @@ router.post("/uploadImage", upload.single("teamImage"), async (req, res) => {
   }
 });
 
-router.post("/deleteImage", async (req, res) => {
-  try {
-    console.log("Deleting image for team ID:", req.body._id);
-    const team = await Team.findById(req.body._id).exec();
+async function deleteImage(team) {
     if (team && team.imagePath) {
-      const imagePath = path.join(__dirname, "../../public", team.imagePath);
-      fs.unlink(imagePath, async err => {
-        if (err) {
-          console.log("Error deleting image:", err);
-          res.status(500).send("Internal Server Error");
-        } else {
-          team.imagePath = null;
-          await team.save();
-          console.log("Image deleted successfully");
-          res.redirect("/team/details/" + req.body._id);
-        }
-      });
-    } else {
-      console.log("Team or image not found for ID:", req.body._id);
-      res.status(404).send("Team or image not found");
+        const imagePath = path.join(__dirname, '../../public', team.imagePath);
+        return new Promise((resolve, reject) => {
+            fs.unlink(imagePath, async (err) => {
+                if (err) {
+                    console.log('Error deleting image:', err);
+                    reject(err);
+                } else {
+                    team.imagePath = null;
+                    await team.save();
+                    console.log('Image deleted successfully');
+                    resolve();
+                }
+            });
+        });
     }
-  } catch (err) {
-    console.log("Error during image deletion:", err);
-    res.status(500).send("Internal Server Error");
-  }
+}
+
+router.post('/deleteImage', async (req, res) => {
+    try {
+        console.log('Deleting image for team ID:', req.body._id);
+        const team = await Team.findById(req.body._id).exec();
+        if (team) {
+            await deleteImage(team);
+            res.redirect('/team/details/' + req.body._id);
+        } else {
+            console.log('Team or image not found for ID:', req.body._id);
+            res.status(404).send('Team or image not found');
+        }
+    } catch (err) {
+        console.log('Error during image deletion:', err);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 router.get("/list", async (req, res) => {
@@ -226,43 +215,49 @@ function getTeamsByGroup() {
   });
 }
 
-router.get("/clearTeamCounters", isAdmin, async (req, res) => {
-  //Clear Team Counters only for Admins
-  try {
-    const teams = await Team.find({}).exec();
-    teams.forEach(async team => {
-      team.gamesPlayed = 0;
-      team.gamesWon = 0;
-      team.gamesLost = 0;
-      team.gamesDraw = 0;
-      team.goals = [0, 0];
-      team.goalsGroupStage = [0, 0];
-      team.sektWon = 0;
-      team.points_Group_Stage = 0;
-      team.points_General = 0;
-      team.gamesPlayed_Group_Stage = 0;
-      await team.save();
-    });
-    res.redirect("/team/list");
-  } catch (err) {
-    console.log("Error in deletion: " + err);
-    res.status(500).send("Internal Server Error");
-  }
+
+
+  
+
+
+router.get('/clearTeamCounters', authorizeRoles('admin'), async (req, res) => {   //Clear Team Counters only for Admins
+    try {
+        const teams = await Team.find({}).exec();
+        teams.forEach(async team => {
+            team.gamesPlayed = 0;
+            team.gamesWon = 0;
+            team.gamesLost = 0;
+            team.gamesDraw = 0;
+            team.goals = [0,0];  
+            team.goalsGroupStage = [0,0];   
+            team.sektWon = 0;
+            team.points_Group_Stage = 0;
+            team.points_General = 0;
+            team.gamesPlayed_Group_Stage = 0;
+            await team.save();
+        });
+        res.redirect('/team/list');
+    } catch (err) {
+        console.log('Error in deletion: ' + err);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
-router.get("/delete/:id", isAdmin, async (req, res) => {
-  //Delete Team only for Admins
-  try {
-    const deletedTeam = await Team.findByIdAndDelete(req.params.id).exec();
-    if (deletedTeam) {
-      res.redirect("/team/list");
-    } else {
-      res.status(404).send("Student not found");
+
+router.get('/delete/:id' , authorizeRoles('admin'), async (req, res) => {   //Delete Team only for Admins
+    try {
+        const team = await Team.findById(req.params.id).exec();
+        if (team) {
+            await deleteImage(team); // Delete image before deleting team
+            await Team.findByIdAndDelete(req.params.id).exec();
+            res.redirect('/team/list');
+        } else {
+            res.status(404).send('Team not found');
+        }
+    } catch (err) {
+        console.log('Error in deletion: ' + err);
+        res.status(500).send('Internal Server Error');
     }
-  } catch (err) {
-    console.log("Error in deletion: " + err);
-    res.status(500).send("Internal Server Error");
-  }
 });
 
 // return the team ID based on the id

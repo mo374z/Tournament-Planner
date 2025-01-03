@@ -30,51 +30,49 @@
         <span id="timerStatus" class="ml-2 d-none"></span> 
     </div>
 
-<div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
-    <div class="carousel-inner d-flex align-items-center page-divider" style="height: 400px; overflow: hidden;">
-        <div class="carousel-item active" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/knoll_edit.jpg" alt="Rolladenbau Knoll">
+    <!-- Carousel Section -->
+    <div id="carouselSlidesOnly" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner d-flex align-items-center page-divider" style="height: 400px; overflow: hidden;" id="carouselImages">
+            {{#each carouselImages}}
+                <div class="carousel-item {{#if @first}}active{{/if}}" data-bs-interval="5000">
+                    <img class="d-block w-100 h-100 object-fit-contain carousel-image" src="/images/carousel/{{this}}" alt="{{this}}">
+                </div>
+            {{/each}}
         </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/scheffold_edit.jpg" alt="Scheffold Holzbau">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/schlager_edit.jpg" alt="Schlager Stuckateurbetrieb">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/stoeferle_automotive_edit.jpg" alt="Schlager Stuckateurbetrieb">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/stoeferle_edit.jpg" alt="Schlager Stuckateurbetrieb">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/henle_edit.jpg" alt="Hofladen Henle">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block mx-auto max-height-100" src="/images/gretzinger_edit.jpg" alt="Getzinger">
-        </div>
+        <!-- Navigation buttons -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselSlidesOnly" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselSlidesOnly" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
     </div>
-    
-    <!-- Navigation buttons -->
-    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-    </button>
-</div>
 
-<div id="connectionIndicator" class="text-center mt-3">
-    <span id="connectionStatusText" class="text-danger">Verbinde...</span>
-</div>
+    <div id="connectionIndicator" class="text-center mt-3">
+        <span id="connectionStatusText" class="text-danger">Verbinde...</span>
+    </div>
 
     {{!-- <div class="text-center">
         <p><strong>Game Time:</strong> {{ formatTime game.time }}</p>
         <p><strong>Status:</strong> {{ game.status }}</p>
     </div> --}}
 </div>
+
+    <style>
+        .carousel-image {
+            object-fit: contain;
+            width: 100%;
+            height: 98%;
+        }
+
+        .carousel-item {
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+    </style>
 
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <script>
@@ -94,12 +92,18 @@
         document.getElementById('connectionStatusText').textContent = 'Getrennt';
     });
 
-    socket.on('timerUpdate', (timerValue, isPaused, timerStatus) => {
+    socket.on('timerUpdate', (timerValue, isPaused, timerStatus, lastMin) => {
         const minutes = Math.floor(timerValue / 60);
         const seconds = timerValue % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        document.getElementById('liveCountdownTimer').innerText = formattedTime;
+        const liveCountdownTimer = document.getElementById('liveCountdownTimer');
+        liveCountdownTimer.innerText = formattedTime;
         document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
+        if (lastMin) {
+            liveCountdownTimer.classList.add('text-danger');
+        } else {
+            liveCountdownTimer.classList.remove('text-danger');
+        }
     });
 
     socket.on('updateLiveGame', (updatedGame) => {

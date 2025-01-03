@@ -90,27 +90,23 @@ let sortDirections = [true, true, true, true, true, true, true, true, true, true
 function validateForm() {
     const name = document.getElementById('name').value.trim();
     const group = document.getElementById('group').value;
-    const newGroup = document.getElementById('newGroup').value.trim();
-
     if (!name) {
         alert('Bitte geben Sie einen Namen ein.');
         return false;
     }
-
-    if (group === 'Neu' && !newGroup) {
-        alert('Bitte geben Sie eine neue Gruppe ein.');
-        return false;
-    }
-
     return true;
 }
 
 document.getElementById('group').addEventListener('change', function() {
-    const newGroupInput = document.getElementById('newGroup');
-    if (this.value === 'Neu') {
-        newGroupInput.style.display = 'block';
-    } else {
-        newGroupInput.style.display = 'none';
+    localStorage.setItem('selectedGroup', this.value); // Save selected group to localStorage
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const savedGroup = localStorage.getItem('selectedGroup');
+    if (savedGroup) {
+        document.getElementById('group').value = savedGroup;
+        const event = new Event('change');
+        document.getElementById('group').dispatchEvent(event); // Trigger change event to handle new group input display
     }
 });
 
