@@ -37,7 +37,8 @@
                 <th colspan="3" style="text-align: center;">Spiele in der Gruppenphase</th>
                 <th style="text-align: center;"  rowspan="2" onclick="sortTable(10)">Sekt gewonnen</th>
                 <th colspan="3" style="text-align: center;">Spiele im Tunier</th>
-                <th style="text-align: center;" rowspan="2" onclick="sortTable(14)">Foto</th>
+                <th	style="text-align: center;" rowspan="2" onclick="sortTable(14)">Tunier Rang</th></th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(15)">Foto</th>
                 <th style="text-align: center;" rowspan="2">Aktionen</th>
             </tr>
             <tr style="background-color: #f2f2f2;">
@@ -70,6 +71,7 @@
                 <td><strong>{{this.goals.[0]}}</strong>:{{this.goals.[1]}}</td>
                 <td>{{this.goalsDifference}}</td>
                 <td>{{this.points_General}}</td>
+                <td>{{this.rank}}</td>
                 <td>{{#if this.imagePath}}Ja{{else}}Nein{{/if}}</td>
                 <td>
                     <a href="/team/details/{{this.id}}" class="btn btn-primary" role="button">Details</a>
@@ -83,7 +85,7 @@
 </div>
 
 <script>
-let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
+let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
 
 function validateForm() {
     const name = document.getElementById('name').value.trim();
@@ -111,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function sortTable(columnIndex) {
     const table = document.getElementById("teamTable");
     const rows = Array.from(table.rows).slice(2); // Skip header rows
-    const isNumericColumn = columnIndex === 0 || (columnIndex >= 3 && columnIndex <= 13); // Check if the column is numeric
+    const isNumericColumn = columnIndex === 0 || (columnIndex >= 3 && columnIndex <= 14); // Check if the column is numeric
     const direction = sortDirections[columnIndex] ? 1 : -1; // Determine sort direction 
     const sortedRows = rows.sort((a, b) => {
         const cellA = isNumericColumn ? parseFloat(a.cells[columnIndex].innerText) : a.cells[columnIndex].innerText.toLowerCase();

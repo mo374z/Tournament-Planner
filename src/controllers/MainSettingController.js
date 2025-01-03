@@ -36,6 +36,7 @@ router.get('/', async (req, res) => {
                 gameDurationFinal: defaultGameDurationFinal,
                 timeBetweenGamePhases: defaultTimeBetweenGamePhases,
                 goalsforSekt: defaultgoalsforSekt,
+                groups: [],
                 // Add other default values if needed
             });
 
@@ -218,9 +219,9 @@ router.get('/resetCounters', async (req, res) => {
 });
 
 // Route to add a new group
-router.post('/addGroup', async (req, res) => {
+router.post('/addGroups', async (req, res) => {
     try {
-        const { groupName } = req.body;
+        const { nGroups } = req.body;
         let mainSettings = await MainSettings.findOne({});
         if (!mainSettings) {
             mainSettings = new MainSettings({
@@ -235,10 +236,9 @@ router.post('/addGroup', async (req, res) => {
                 groups: []
             });
         }
-        if (!mainSettings.groups.includes(groupName)) {
-            mainSettings.groups.push(groupName);
-            await mainSettings.save();
-        }
+        // store nGroups in the main settings named as capital letters
+        mainSettings.groups = [...mainSettings.groups, ...Array.from({ length: nGroups }, (_, i) => String.fromCharCode(65 + i))];
+        await mainSettings.save();
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error adding group:', err);
