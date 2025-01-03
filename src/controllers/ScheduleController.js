@@ -14,20 +14,9 @@ module.exports = {
     fetchGamesData
 };
 
-//Code part to enable the authentication for all the following routes
-const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
+const { commonMiddleware } = require('../middleware/auth');
 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
-    res.locals.username = req.username;
-    res.locals.userrole = req.userRole;
-    next();
-  });
-//--------------------------------------------------------------
-
+commonMiddleware(router, ['admin']); // Only admins have access to the schedule management page
 
 router.get('/list', async (req, res) => {
     renderScheduleList(req, res);
@@ -39,7 +28,7 @@ const { generateSemiFinalsSchedule, updateSemiFinalsSchedule } = require('./Semi
 const { generateQuarterFinalsSchedule, updateQuarterFinalsSchedule } = require('./QuarterFinalsController');
 
 
-router.get('/generate', isAdmin, async (req, res) => {
+router.get('/generate', async (req, res) => {
 
     // Call the function to generate and save the group stage schedule
 
@@ -80,7 +69,7 @@ router.get('/generate', isAdmin, async (req, res) => {
 
 });
 
-router.get('/updateQuarterFinals', isAdmin, async (req, res) => {
+router.get('/updateQuarterFinals', async (req, res) => {
 
     // Call the function to update the Quarterfinals schedule
     console.log("Updating Quarterfinals schedule...");
@@ -93,7 +82,7 @@ router.get('/updateQuarterFinals', isAdmin, async (req, res) => {
 
 });
 
-router.get('/updateSemiFinals', isAdmin, async (req, res) => {
+router.get('/updateSemiFinals', async (req, res) => {
 
     // Call the function to update the Semifinals schedule
     console.log("Updating Semifinals schedule...");
@@ -111,7 +100,7 @@ router.get('/updateSemiFinals', isAdmin, async (req, res) => {
 
 
 //router to create custom games
-router.get('/createCustomGame', isAdmin, async (req, res) => {
+router.get('/createCustomGame', async (req, res) => {
     try {
         const teams = await Team.find({});
 
@@ -147,7 +136,7 @@ router.get('/createCustomGame', isAdmin, async (req, res) => {
 
 
 // Handle the saving of a custom game
-router.post('/saveCustomGame', isAdmin, async (req, res) => {
+router.post('/saveCustomGame', async (req, res) => {
     try {
         const {
             time,
@@ -260,7 +249,7 @@ router.post('/saveCustomGame', isAdmin, async (req, res) => {
 
 
 // render the page to edit the game
-router.get('/:id', isAdmin, async (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId).exec();
@@ -442,7 +431,7 @@ function getPoints(game) {
     }
 }
 
-router.post('/:id/edit', isAdmin, async (req, res) => {
+router.post('/:id/edit', async (req, res) => {
     try {
         const gameId = req.params.id;
         let {
@@ -695,7 +684,7 @@ async function clearGamesCollection() {
     }
 }
 
-router.get('/:id/move/up', isAdmin, async (req, res) => {
+router.get('/:id/move/up', async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId);
@@ -719,7 +708,7 @@ router.get('/:id/move/up', isAdmin, async (req, res) => {
     }
 });
 
-router.get('/:id/move/down', isAdmin, async (req, res) => {
+router.get('/:id/move/down', async (req, res) => {
     try {
         const gameId = req.params.id;
         const game = await Game.findById(gameId);

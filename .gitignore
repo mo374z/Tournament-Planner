@@ -3,6 +3,7 @@
 *.pem
 *OneDrive
 /public/teampictures/*
+/public/presentations/*
 !/public/teampictures/default.jpg
 /public/certificates/*
 /keytokens.yaml

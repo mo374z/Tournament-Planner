@@ -5,14 +5,16 @@
         </div>
     </div>
 
+    <section class="text-center mt-2 mb-2">
     <div class="row">
         <div class="col-12 col-md-6 mb-3">
-            <img src="/images/Werbung1.jpg" class="img-fluid" alt="Werbung1">
+            <img src="/images/Werbung1.jpg" class="img-fluid " alt="Werbung1">
         </div>
         <div class="col-12 col-md-6 mb-3">
-            <img src="/images/Werbung2.jpg" class="img-fluid" alt="Werbung2">
+            <img src="/images/Werbung2.jpg" class="img-fluid h-100" alt="Werbung2" style="object-fit: cover;">
         </div>
     </div>
+    
 
     <!-- Groups Section -->
     <div class="page-divider">
@@ -100,35 +102,54 @@
         </div>
     </div>
 
-    {{!-- <div id="carouselExampleSlidesOnly" class="carousel slide page-divider" data-bs-ride="carousel">
-    <div class="carousel-inner" style="height: 400px; overflow: hidden;">
-        <div class="carousel-item active" data-bs-interval="5000">
-            <img class="d-block w-100 h-100 object-fit-cover" src="/images/knoll.jpg" alt="Rolladenbau Knoll">
+    <!-- Carousel Section -->
+    <div id="carouselSlidesOnly" class="carousel slide page-divider" data-bs-ride="carousel">
+        <div class="carousel-inner carousel-dynamic-height" id="carouselImages">
+            {{#each carouselImages}}
+                <div class="carousel-item {{#if @first}}active{{/if}}" data-bs-interval="5000">
+                    <img class="d-block w-100 h-100 object-fit-contain carousel-image" src="/images/carousel/{{this}}" alt="{{this}}">
+                </div>
+            {{/each}}
         </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block w-80 h-80" src="/images/scheffold.jpg" alt="Scheffold Holzbau">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block w-100 h-100 object-fit-cover" src="/images/schlager.png" alt="Schlager Stuckateurbetrieb">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block w-100 h-100 object-fit-cover" src="/images/stoeferle_automotive.jpg" alt="Schlager Stuckateurbetrieb">
-        </div>
-        <div class="carousel-item" data-bs-interval="5000">
-            <img class="d-block w-100 h-100 object-fit-cover" src="/images/stoeferle.jpg" alt="Schlager Stuckateurbetrieb">
-        </div>
+        <!-- Navigation buttons -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselSlidesOnly" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselSlidesOnly" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
     </div>
-    
-    <!-- Navigation buttons -->
-    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-    </button>
-</div> --}}
 
-</div>
+    <style>
+        .carousel-image {
+            object-fit: contain;
+            width: 100%;
+            height: 98%;
+        }
+        .carousel-item {
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+        .carousel-dynamic-height {
+            height: auto;
+        }
+        @media (min-width: 992px) { /* Large devices (desktops, 992px and up) */
+            .carousel-dynamic-height {
+                height: 300px;
+            }
+        }
+        @media (min-width: 768px) { /* Medium devices (tablets, 768px and up) */
+            .carousel-dynamic-height {
+                height: 400px;
+            }
+        }
+        @media (max-width: 767px) { /* Small devices (landscape phones, 576px and up) */
+            .carousel-dynamic-height {
+                height: 200px;
+            }
+        }
+    </style>
 </body>

@@ -7,8 +7,14 @@ const MainSettings = mongoose.model('MainSettings');
 const genCounters = mongoose.model('generalCounters');
 const socketIo = require('socket.io');
 const app = express();
+const fs = require('fs');
+const path = require('path');
 
-const {updateSocketConfig} = require('../config/socketConfig');
+const { updateSocketConfig } = require('../config/socketConfig');
+const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const { updateQuarterFinalsSchedule } = require('./QuarterFinalsController');
+const { updateSemiFinalsSchedule } = require('./SemiFinalsController');
+const { removeLastGoalfromGameAndPlayer } = require('./ScorerController');
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -28,25 +34,25 @@ if (useHttps) {
     server = http.createServer(app);
 }
 
-
-
-
 const cors = require('cors');
 
-//Code part to enable the authentication for all the following routes
-const {verifyToken, checkLoginStatus, isAdmin} = require('../middleware/auth');
 const cookieParser = require('cookie-parser');
 router.use(cookieParser());
 router.use(verifyToken);
+
+// Middleware für alle Routen außer /live weil dort auch der Beamer Zugriff haben soll
+router.use((req, res, next) => {
+    if (req.path !== '/live') {
+        authorizeRoles('admin')(req, res, next);
+    } else {
+        next();
+    }
+});
 router.use((req, res, next) => {
     res.locals.username = req.username;
     res.locals.userrole = req.userRole;
     next();
 });
-
-const {updateQuarterFinalsSchedule} = require('./QuarterFinalsController');
-const {updateSemiFinalsSchedule} = require('./SemiFinalsController');
-const { removeLastGoalfromGameAndPlayer } = require('./ScorerController');
 
 // Start the Websocket server
 server.listen(socketPort, () => {
@@ -80,19 +86,20 @@ io.on('connection', (socket) => {
             timerInterval = setInterval(() => {             //Timer resuluion is 1 second !! (timer Variable is in seconds)
                 if (timer > 0 && !isPaused) {
                     timer--;
-                    io.emit('timerUpdate', timer, isPaused, 'Running');
+                    const lastMin = timer <= 60;
+                    io.emit('timerUpdate', timer, isPaused, 'Running', lastMin);
                 } else if (timer === 0) {
                     clearInterval(timerInterval);
 
                     io.emit('playSound');
 
-                    io.emit('timerUpdate', timer, isPaused, 'Ended');
+                    io.emit('timerUpdate', timer, isPaused, 'Ended', false);
                 }
             }, 1000);
         } else {
             clearInterval(timerInterval);
             isPaused = true;
-            io.emit('timerUpdate', timer, isPaused, 'Paused');
+            io.emit('timerUpdate', timer, isPaused, 'Paused', false);
         }
 });
 
@@ -163,10 +170,10 @@ function resetTimer(duration) {
     isPaused = true;
     
     if (duration === 0) {                                //if duration is 0, the game is ended
-        io.emit('timerUpdate', timer, isPaused, 'Ended');
+        io.emit('timerUpdate', timer, isPaused, 'Ended', false);
     }
     else {                                              //if duration is not 0, the game is ready to start and is paused                   
-        io.emit('timerUpdate', timer, isPaused, 'Paused');
+        io.emit('timerUpdate', timer, isPaused, 'Paused', false);
     }
 }
 
@@ -400,7 +407,7 @@ async function writeGameDataToTeams(game) {
 
 
 // render the live game view
-router.get('/live', async (req, res) => {
+router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
     try {
         const game = await Game.findOne({ status: 'active' }).exec();
 
@@ -416,7 +423,12 @@ router.get('/live', async (req, res) => {
         game.opponents[0] = team1 ? team1.name : 'Team not found';
         game.opponents[1] = team2 ? team2.name : 'Team not found';
         
-        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage });
+        // Read images from the /images/carousel directory
+        const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
+                        .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
+
+        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage, carouselImages });
+
     } catch (err) {
         console.error('Error fetching live games: ', err);
         res.status(500).send('Internal Server Error');
@@ -462,4 +474,4 @@ async function updateGenGoalsCounter(increment, teamId) {
     }
 }
 
-module.exports = {router, getInfoBannerMessage: () => infoBannerMessage};
+module.exports = { router, getInfoBannerMessage: () => infoBannerMessage };
