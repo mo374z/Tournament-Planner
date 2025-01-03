@@ -1,10 +1,11 @@
 const express = require('express');
 var router = express.Router();
-
 const mongoose = require('mongoose');
 const MainSettings = mongoose.model('MainSettings');
-
 const genCounters = mongoose.model('generalCounters');
+const { commonMiddleware } = require('../middleware/auth');
+
+commonMiddleware(router, ['admin']); // Only admins can access the main settings page
 
 const defaultStartTime = new Date('2024-01-20T08:00:00.000Z'); //in unserer Zeitzone: 20.01.2024 09:00 Uhr
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
@@ -14,23 +15,6 @@ const defaultGameDurationSemiFinals = 10 * 60 * 1000;
 const defaultGameDurationFinal = 10 * 60 * 1000;
 const defaultTimeBetweenGamePhases = 5 * 60 * 1000;
 const defaultgoalsforSekt = 10;
-
-
-//Code part to enable the authentication for all the following routes
-const  {verifyToken, checkLoginStatus , isAdmin} =  require('../middleware/auth'); // Pfad zur auth.js-Datei
-const cookieParser = require('cookie-parser'); 
-router.use(cookieParser());                 // Add cookie-parser middleware to parse cookies
-
-router.use(verifyToken);                    // Alle nachfolgenden Routen sind nur für angemeldete Benutzer zugänglich
-router.use((req, res, next) => {            // Middleware, um Benutzerinformationen an res.locals anzuhängen
-    res.locals.username = req.username;
-    res.locals.userrole = req.userRole;
-    next();
-  });
-
-  router.use(isAdmin);                       // Alle nachfolgenden Routen sind nur für Admins zugänglich
-//--------------------------------------------------------------
-
 
 
 const { listDbs, listBackups } = require('../models/db'); // Import the listDbs function from the db.js file
@@ -52,6 +36,7 @@ router.get('/', async (req, res) => {
                 gameDurationFinal: defaultGameDurationFinal,
                 timeBetweenGamePhases: defaultTimeBetweenGamePhases,
                 goalsforSekt: defaultgoalsforSekt,
+                groups: [],
                 // Add other default values if needed
             });
 
@@ -221,6 +206,7 @@ router.get('/resetCounters', async (req, res) => {
             allGoals: 0,
             gamesPlayed: 0,
             goalSektCounter: mainSettings.goalsforSekt,
+            wonSektBottles: 0,
             // Add other fields and their reset values if needed
         }, { new: true });
 
@@ -233,9 +219,9 @@ router.get('/resetCounters', async (req, res) => {
 });
 
 // Route to add a new group
-router.post('/addGroup', async (req, res) => {
+router.post('/addGroups', async (req, res) => {
     try {
-        const { groupName } = req.body;
+        const { nGroups } = req.body;
         let mainSettings = await MainSettings.findOne({});
         if (!mainSettings) {
             mainSettings = new MainSettings({
@@ -250,10 +236,9 @@ router.post('/addGroup', async (req, res) => {
                 groups: []
             });
         }
-        if (!mainSettings.groups.includes(groupName)) {
-            mainSettings.groups.push(groupName);
-            await mainSettings.save();
-        }
+        // store nGroups in the main settings named as capital letters
+        mainSettings.groups = [...mainSettings.groups, ...Array.from({ length: nGroups }, (_, i) => String.fromCharCode(65 + i))];
+        await mainSettings.save();
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error adding group:', err);
@@ -277,4 +262,36 @@ router.post('/deleteGroup', async (req, res) => {
     }
 });
 
-module.exports = router;
+
+async function checkForMainSettings() {
+    try {
+        let mainSettings = await MainSettings.findOne({});
+        if (!mainSettings) {
+            const newMainSettings = new MainSettings({
+                TornamentStartTime: defaultStartTime,
+                timeBetweenGames: defaultTimeBetweenGames,
+                gameDurationGroupStage: defaultGameDurationGroupStage,
+                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+                gameDurationSemifinals: defaultGameDurationSemiFinals,
+                gameDurationFinal: defaultGameDurationFinal,
+                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
+                goalsforSekt: defaultgoalsforSekt,
+                // Add other default values if needed
+            });
+            await newMainSettings.save();
+            console.log('\x1b[32m%s\x1b[0m', 'MainSettings created !');
+        }
+        else {
+            console.log('MainSettings exist !');
+        }
+    }
+    catch (err) {
+        console.error('Error checking for MainSettings:', err);
+    }
+}
+
+//exort the router and the createMainSettings function
+module.exports = {
+    router,
+    checkForMainSettings 
+};

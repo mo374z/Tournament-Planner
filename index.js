@@ -14,9 +14,9 @@ require('./src/models/db');
 const {updateSocketConfig} = require('./src/config/socketConfig');
 const {TeamController} = require("./src/controllers/TeamController");
 const {ScheduleController} = require("./src/controllers/ScheduleController");
-const MainSettingController = require("./src/controllers/MainSettingController");
+const MainSettingController = require("./src/controllers/MainSettingController").router
 const GameController = require("./src/controllers/GameController").router;
-const AuthenticationController = require("./src/controllers/AuthenticationController");
+const AuthenticationController = require("./src/controllers/AuthenticationController").router;
 const PublicPageController = require("./src/controllers/PublicPageController");
 const ScorerController = require("./src/controllers/ScorerController").router;
 const PlayerController = require("./src/controllers/PlayerController");
@@ -127,3 +127,13 @@ if (useHttps) {
     console.log(`HTTP server started at localhost port ${port}`);
   });
 }
+
+
+// Check for main settings and users on startup to ensure that the application can run
+const checkForMainSettings = require("./src/controllers/MainSettingController").checkForMainSettings;
+const checkForUsers = require('./src/controllers/AuthenticationController').checkForUsers;
+
+checkForMainSettings();
+checkForUsers();
+
+

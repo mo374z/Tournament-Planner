@@ -7,12 +7,17 @@ const fs = require('fs');
 
 const User = mongoose.model('User');
 
+const { verifyToken, isAdmin } = require('../middleware/auth');
+
 var router = express.Router();
 
 const cookieParser = require('cookie-parser');
-router.use(cookieParser()); // Add cookie-parser middleware to parse cookies
-
-const  {verifyToken, checkLoginStatus , isAdmin} = require('../middleware/auth'); // Pfad zur auth.js-Datei
+router.use(cookieParser());
+router.use((req, res, next) => {
+    res.locals.username = req.username;
+    res.locals.userrole = req.userRole;
+    next();
+});
 
 const keytokens = yaml.load(fs.readFileSync(__dirname + '/../../keytokens.yaml', 'utf8'));
 const jwtSecretkey = keytokens.jwtSecretkey;
@@ -33,33 +38,60 @@ router.get('/list', verifyToken, isAdmin, async (req, res) => {
 
 // router.get('/createDevUser', async (req, res) => {      // Create a Development User - only for testing adress: /user/createDevUser
 //     try {
-//         let password = "admin";
-//         const username = "admin";
-//         const role = "admin";
-
-//         const existingUser = await User.findOne({ username });
-
-//         if (existingUser) {
-//             return res.status(400).send('User already exists');
-//         }
-
-//         const hashedPassword = await bcrypt.hash(password, 10);
-
-//         password = hashedPassword;
-        
-//         // Create a new user
-//         const newUser = new User({ username, password, role });
-//         await newUser.save();
-
-//         // You might also generate a JWT token here for immediate login after registration
-
+//         createDevUser();
 //         res.status(201).send('Dev User Registration successful - Username: admin, Password: admin');
-//         //res.redirect('/user/login');
 //     } catch (error) {
-//         console.error('Error during registration:', error);
+//         console.error('Error creating dev user:', error);
 //         res.status(500).send('Internal Server Error');
 //     }
 // });
+
+//funktion to check if there are users in the database
+async function checkForUsers() {
+    try {
+        const users = await User.find({}); // Fetch all users from the database
+        if (users.length === 0) {
+            createDevUser();
+            console.log('No users found. Created dev user');
+        }
+        else {
+            console.log(users.length + ' users found');
+        }
+    } catch (error) {
+        console.error('Error checking for users:', error);
+    }
+}
+
+
+//function to create a the dev user
+async function createDevUser() {
+    try {
+            let password = "admin";
+            const username = "admin";
+            const role = "admin";
+
+            const existingUser = await User.findOne({ username });
+
+            if (existingUser) {
+                return res.status(400).send('User already exists');
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            password = hashedPassword;
+            
+            // Create a new user
+            const newUser = new User({ username, password, role });
+            await newUser.save();
+
+            console.log('\x1b[31m%s\x1b[0m', 'Dev User Created - Username: admin, Password: admin - Delete this user after testing');
+
+            //res.redirect('/user/login');
+        } catch (error) {
+            console.error('Error creating dev user:', error);
+        }
+}
+            
 
 
 // User registration endpoint
@@ -150,7 +182,7 @@ router.get('/logout', (req, res) => {
 
 
 // POST route to delete admin user /mainSettings/deleteAdmin
-router.get('/deleteAdmin', async (req, res) => {
+router.get('/deleteAdmin', verifyToken, isAdmin, async (req, res) => {
     try {
         // Find and delete the admin user
         await User.deleteOne({ username: 'admin' });
@@ -189,5 +221,5 @@ router.post('/user/delete', verifyToken, isAdmin, async (req, res) => {
 
 
 
-
-module.exports = router;
+//export the router and the checkForUsers function
+module.exports = { router, checkForUsers };

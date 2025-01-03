@@ -37,7 +37,8 @@
                 <th colspan="3" style="text-align: center;">Spiele in der Gruppenphase</th>
                 <th style="text-align: center;"  rowspan="2" onclick="sortTable(10)">Sekt gewonnen</th>
                 <th colspan="3" style="text-align: center;">Spiele im Tunier</th>
-                <th style="text-align: center;" rowspan="2" onclick="sortTable(14)">Foto</th>
+                <th	style="text-align: center;" rowspan="2" onclick="sortTable(14)">Tunier Rang</th></th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(15)">Foto</th>
                 <th style="text-align: center;" rowspan="2">Aktionen</th>
             </tr>
             <tr style="background-color: #f2f2f2;">
@@ -70,6 +71,7 @@
                 <td><strong>{{this.goals.[0]}}</strong>:{{this.goals.[1]}}</td>
                 <td>{{this.goalsDifference}}</td>
                 <td>{{this.points_General}}</td>
+                <td>{{this.rank}}</td>
                 <td>{{#if this.imagePath}}Ja{{else}}Nein{{/if}}</td>
                 <td>
                     <a href="/team/details/{{this.id}}" class="btn btn-primary" role="button">Details</a>
@@ -83,39 +85,35 @@
 </div>
 
 <script>
-let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
+let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
 
 function validateForm() {
     const name = document.getElementById('name').value.trim();
     const group = document.getElementById('group').value;
-    const newGroup = document.getElementById('newGroup').value.trim();
-
     if (!name) {
         alert('Bitte geben Sie einen Namen ein.');
         return false;
     }
-
-    if (group === 'Neu' && !newGroup) {
-        alert('Bitte geben Sie eine neue Gruppe ein.');
-        return false;
-    }
-
     return true;
 }
 
 document.getElementById('group').addEventListener('change', function() {
-    const newGroupInput = document.getElementById('newGroup');
-    if (this.value === 'Neu') {
-        newGroupInput.style.display = 'block';
-    } else {
-        newGroupInput.style.display = 'none';
+    localStorage.setItem('selectedGroup', this.value); // Save selected group to localStorage
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const savedGroup = localStorage.getItem('selectedGroup');
+    if (savedGroup) {
+        document.getElementById('group').value = savedGroup;
+        const event = new Event('change');
+        document.getElementById('group').dispatchEvent(event); // Trigger change event to handle new group input display
     }
 });
 
 function sortTable(columnIndex) {
     const table = document.getElementById("teamTable");
     const rows = Array.from(table.rows).slice(2); // Skip header rows
-    const isNumericColumn = columnIndex === 0 || (columnIndex >= 3 && columnIndex <= 13); // Check if the column is numeric
+    const isNumericColumn = columnIndex === 0 || (columnIndex >= 3 && columnIndex <= 14); // Check if the column is numeric
     const direction = sortDirections[columnIndex] ? 1 : -1; // Determine sort direction 
     const sortedRows = rows.sort((a, b) => {
         const cellA = isNumericColumn ? parseFloat(a.cells[columnIndex].innerText) : a.cells[columnIndex].innerText.toLowerCase();
