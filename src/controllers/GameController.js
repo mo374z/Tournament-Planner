@@ -11,8 +11,6 @@ const MainSettings = mongoose.model("MainSettings");
 const genCounters = mongoose.model("generalCounters");
 const socketIo = require("socket.io");
 const app = express();
-const fs = require('fs');
-const path = require('path');
 
 const { updateSocketConfig } = require("../config/socketConfig");
 
@@ -42,8 +40,7 @@ const cors = require("cors");
 //Code part to enable the authentication for all the following routes
 const {
   verifyToken,
-  checkLoginStatus,
-  isAdmin,
+  authorizeRoles,
 } = require("../middleware/auth");
 const cookieParser = require("cookie-parser");
 router.use(cookieParser());

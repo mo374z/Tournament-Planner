@@ -36,6 +36,7 @@ router.get('/', async (req, res) => {
                 gameDurationFinal: defaultGameDurationFinal,
                 timeBetweenGamePhases: defaultTimeBetweenGamePhases,
                 goalsforSekt: defaultgoalsforSekt,
+                groups: [],
                 // Add other default values if needed
             });
 
