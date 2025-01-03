@@ -95,13 +95,12 @@ router.get("/list", async (req, res) => {
     const mainSettings = await MainSettings.findOne({});
     const groups = mainSettings ? mainSettings.groups : [];
 
-    Teams.forEach(async team => {
+    await Promise.all(Teams.map(async team => {
       team.index = Teams.indexOf(team) + 1;
       team.goalsDifference = team.goals[0] - team.goals[1];
-      team.goalsDifferenceGroupStage =
-        team.goalsGroupStage[0] - team.goalsGroupStage[1];
+      team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
       team.rank = await getRank(team);
-    });
+    }));
 
     res.render("layouts/teamlist", {
       list: Teams,
@@ -143,6 +142,11 @@ router.post("/add", async (req, res) => {
 router.get("/grouplist", async (req, res) => {
   try {
     const teamsByGroup = await getTeamsByGroup();
+
+    // Sort groups by alphabetical order
+    teamsByGroup.sort((a, b) => {
+        return a.groupName.localeCompare(b.groupName);
+    });
 
     res.render("layouts/grouplist", {
       teamsByGroup,
@@ -196,7 +200,7 @@ function getTeamsByGroup() {
         },
         {
           $sort: {
-            groupName: 1, // Sort by group name
+            groupName: 1, // Sort the groups by name
           },
         },
       ]);
@@ -210,7 +214,11 @@ function getTeamsByGroup() {
         }
         return 0;
       });
-
+      
+      //Sort the Groups by Group Name
+      teamsByGroup.sort((a, b) => {
+         return a.groupName.localeCompare(b.groupName);
+      });
       resolve(teamsByGroup);
     } catch (err) {
       reject(err);
@@ -460,7 +468,7 @@ async function getGoalsForTeam(teamId) {
 async function updateRanks(teamsByGroup) {
   for (const group of teamsByGroup) {
     for (const team of group.teams) {
-      team.rank = await getRank(team);
+      team.rank = await getRank(team, true); // Get rank within the group
     }
 
     // Sort teams within the group based on rank

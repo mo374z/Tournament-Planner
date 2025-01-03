@@ -528,27 +528,27 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
 
     for (const game of games) {
         console.log("Auto-playing game: ", game.number);
-      // Generate random goals ensuring the game does not end 0:0
-      let goalsTeam1 = Math.floor(Math.random() * 5);
-      let goalsTeam2 = Math.floor(Math.random() * 5);
-      if (goalsTeam1 === 0 && goalsTeam2 === 0) {
-        goalsTeam1 = 1; // Ensure at least one goal is scored
-      }
-      game.goals = [goalsTeam1, goalsTeam2];
+        // Generate random goals ensuring the game does not end 0:0
+        let goalsTeam1 = Math.floor(Math.random() * 11); // Random number between 0 and 10
+        let goalsTeam2 = Math.floor(Math.random() * 11);
+        if (goalsTeam1 === 0 && goalsTeam2 === 0) {
+            goalsTeam1 = 1; // Ensure at least one goal is scored
+        }
+        game.goals = [goalsTeam1, goalsTeam2];
 
-      // Generate random goal timestamps
-      game.goalsLog = [];
-      for (let i = 0; i < goalsTeam1 + goalsTeam2; i++) {
-        const teamIndex = i < goalsTeam1 ? 0 : 1;
+        // Generate random goal timestamps
+        game.goalsLog = [];
+        for (let i = 0; i < goalsTeam1 + goalsTeam2; i++) {
+            const teamIndex = i < goalsTeam1 ? 0 : 1;
 
-        game.goalsLog.push({
-          timestamp: new Date(),
-          gameTimestamp: Math.floor(Math.random() * game.duration * 60),
-          teamIndex: teamIndex,
-          newScore: teamIndex === 0 ? [i + 1, goalsTeam2] : [goalsTeam1, i + 1],
-          goalIndex: i + 1,
-          sekt_won: false,
-          goalIndexTournament: 0
+            game.goalsLog.push({
+            timestamp: new Date(),
+            gameTimestamp: Math.floor(Math.random() * game.duration * 60),
+            teamIndex: teamIndex,
+            newScore: teamIndex === 0 ? [i + 1, goalsTeam2] : [goalsTeam1, i + 1],
+            goalIndex: i + 1,
+            sekt_won: false,
+            goalIndexTournament: 0
         });
       }
       // Update game status to "Ended"
