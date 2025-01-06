@@ -29,7 +29,11 @@ function createDefaultMainSettings() {
         gameDurationFinal: defaultGameDurationFinal,
         timeBetweenGamePhases: defaultTimeBetweenGamePhases,
         goalsforSekt: defaultgoalsforSekt,
-        groups: []
+        groups: [],
+        publicPageOptions: {
+            showAdvertisingPosters: true,
+            showRankingTable: false,
+        }
     });
 }
 
@@ -185,7 +189,34 @@ router.post('/', async (req, res) => {
     }
 });
 
+// POST route to handle form submission and update Public Page Settings
+router.post('/publicPageSettings', async (req, res) => {
+    try {
+        const { showAdvertisingPosters, showRankingTable } = req.body;
 
+        // Find the MainSettings document and update its values
+        const mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        mainSettings.publicPageOptions = {
+            showAdvertisingPosters: showAdvertisingPosters === 'on',
+            showRankingTable: showRankingTable === 'on'
+        };
+
+        // Save the updated MainSettings
+        await mainSettings.save();
+
+        // Redirect to the main settings page after resetting counters
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating Public Page Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 // POST route to reset general counters /mainSettings/resetCounters
 router.get('/resetCounters', async (req, res) => {
@@ -252,12 +283,26 @@ async function checkForMainSettings() {
             const newMainSettings = createDefaultMainSettings();
             await newMainSettings.save();
             console.log('\x1b[32m%s\x1b[0m', 'MainSettings created !');
+        } else {
+            // Check for missing fields and add them if necessary
+            const defaultSettings = createDefaultMainSettings().toObject();
+            let updated = false;
+
+            for (const key in defaultSettings) {
+                if (defaultSettings.hasOwnProperty(key) && !mainSettings[key]) {
+                    mainSettings[key] = defaultSettings[key];
+                    updated = true;
+                }
+            }
+
+            if (updated) {
+                await mainSettings.save();
+                console.log('\x1b[32m%s\x1b[0m', 'MainSettings updated with missing fields!');
+            } else {
+                console.log('MainSettings exist and are up to date!');
+            }
         }
-        else {
-            console.log('MainSettings exist !');
-        }
-    }
-    catch (err) {
+    } catch (err) {
         console.error('Error checking for MainSettings:', err);
     }
 }

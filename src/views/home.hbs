@@ -5,7 +5,7 @@
         </div>
     </div>
 
-    <section class="text-center mt-2 mb-2">
+    <section class="text-center mt-2 mb-2" {{#unless publicPageOptions.showAdvertisingPosters}}style="display: none;"{{/unless}}>
     <div class="row">
         <div class="col-12 col-md-6 mb-3">
             <img src="/images/Werbung1.jpg" class="img-fluid " alt="Werbung1">
@@ -14,6 +14,43 @@
             <img src="/images/Werbung2.jpg" class="img-fluid h-100" alt="Werbung2" style="object-fit: cover;">
         </div>
     </div>
+    </section>
+
+ 
+        <!-- Ranking Table Section -->
+    {{#if publicPageOptions.showRankingTable}}
+    <div class="page-divider">
+        <section class="text-center mt-2 mb-2">
+            <h1 class="mb-2">Rangliste</h1>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col">Platz</th>
+                            <th scope="col">Team</th>
+                            <th scope="col">T</th>
+                            <th scope="col">TD</th>
+                            <th scope="col">Pkt</th>
+                            <th scope="col">Sekt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each rankedTeams}}
+                        <tr>
+                            <td>{{index}}</td>
+                            <td>{{this.name}}</td>
+                            <td><strong>{{this.goals.[0]}}</strong>:{{this.goals.[1]}}</td>
+                            <td>{{this.goalDifference}}</td>
+                            <td>{{this.points_General}}</td>
+                            <td>{{this.sektWon}}</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+    {{/if}}
     
 
     <!-- Groups Section -->
@@ -53,6 +90,8 @@
         <p class="small">Disclaimer: Das Ranking basiert auf den folgenden Kriterien: 1) Punkte; 2) Tordifferenz; 3) Tore</p>
     </section>
     </div>
+
+
 
     <!-- Schedule List Section -->
     <div class="page-divider">

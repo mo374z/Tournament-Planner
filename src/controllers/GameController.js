@@ -450,31 +450,32 @@ async function writeGameDataToTeams(game) {
 
 // render the live game view
 router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
-    try {
-        const game = await Game.findOne({ status: 'active' }).exec();
+  try {
+      const game = await Game.findOne({ status: 'active' }).exec();
 
-    if (!game) {
-      return res.render("layouts/liveGame", {
-        socketConfig: socketConfig,
-        game: null,
-        noActiveGame: true,
-        infoBannerMessage,
-      });
-    }
+      // Read images from the /images/carousel directory
+      const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
+      .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
 
-    // Fetch team names using the team IDs from the game object
-    const team1 = await Team.findById(game.opponents[0]).exec();
-    const team2 = await Team.findById(game.opponents[1]).exec();
+      if (!game) {
+        return res.render("layouts/liveGame", {
+          socketConfig: socketConfig,
+          game: null,
+          noActiveGame: true,
+          infoBannerMessage,
+          carouselImages,
+        });
+      }
 
-        // set them instead of the id - ATTENTION: dont change the db data
-        game.opponents[0] = team1 ? team1.name : 'Team not found';
-        game.opponents[1] = team2 ? team2.name : 'Team not found';
-        
-        // Read images from the /images/carousel directory
-        const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
-                        .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
+      // Fetch team names using the team IDs from the game object
+      const team1 = await Team.findById(game.opponents[0]).exec();
+      const team2 = await Team.findById(game.opponents[1]).exec();
 
-        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage, carouselImages });
+      // set them instead of the id - ATTENTION: dont change the db data
+      game.opponents[0] = team1 ? team1.name : 'Team not found';
+      game.opponents[1] = team2 ? team2.name : 'Team not found';
+      
+      res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage, carouselImages });
 
     } catch (err) {
         console.error('Error fetching live games: ', err);
@@ -527,8 +528,6 @@ async function updateGenGoalsCounter(increment, teamId) {
   }
 }
 
-
-
 // Auto-play games for testing purposes
 router.post("/autoPlayGames/:limit", async (req, res) => {
   try {
@@ -567,6 +566,27 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
       // Update team and general counters
       await writeGameDataToTeams(game);
       await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
+
+      // Update placeholder games if necessary
+      const mainSettings = await MainSettings.findOne();
+      const tournamentConfig = yaml.load(
+          fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
+      );
+      
+      const scheduleGenerator = new ScheduleGenerator(tournamentConfig, mainSettings);
+      
+      const gamePhase = game.gamePhase;
+      if (gamePhase === "Group_Stage") {
+        const subsequentGame = await Game.findOne({
+          number: game.number + 1,
+        }).exec();
+        if (subsequentGame.gamePhase != "Group_Stage") {
+          await scheduleGenerator.updateQuarterFinals();
+        }
+      } else {
+        await scheduleGenerator.updateGeneralKnockout("Semifinals");
+        await scheduleGenerator.updateGeneralKnockout("Finals");
+      }
     }
 
     res.status(200).send("Spiele erfolgreich automatisch gespielt.");
@@ -575,7 +595,5 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
     res.status(500).send("Interner Serverfehler.");
   }
 });
-
-
 
 module.exports = { router, getInfoBannerMessage: () => infoBannerMessage };

@@ -44,6 +44,16 @@ var MainSettingsSchema = new mongoose.Schema({
     scheduleTemplate: {
         type: String,
         default: '4groups_4teams.yaml'
+    },
+    publicPageOptions: {
+        showAdvertisingPosters: {
+            type: Boolean,
+            default: true
+        },
+        showRankingTable: {
+            type: Boolean,
+            default: false
+        }
     }
 });
 
