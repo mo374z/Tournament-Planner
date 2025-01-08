@@ -1,7 +1,13 @@
 <body>
     <div class="container-fluid">
-        <div class="container mt-5 mb-5 text-center">
-            <h1>Budeturnier 2025</h1>
+        <div class="container mt-5 mb-3 text-center" style="font-size: 2.8rem; font-weight: bold;">
+            Budeturnier 2025
+        </div>
+
+    </div>
+    <div class="container-fluid mt-2 mb-2">
+                <div class="alert alert-warning text-center mb-3 {{#unless infoBannerMessage}}d-none{{/unless}} info-banner">
+            <marquee behavior="scroll" direction="left" scrollamount="4" scrolldelay="10">{{infoBannerMessage}}</marquee>
         </div>
     </div>
 
@@ -24,7 +30,7 @@
             <h1 class="mb-2">Rangliste</h1>
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
-                    <thead class="thead-light">
+                    <thead class="thead-light bg-dark text-light">
                         <tr>
                             <th scope="col">Platz</th>
                             <th scope="col">Team</th>
@@ -59,10 +65,10 @@
         <h1 class="mb-2">Tabelle</h1>
 
         {{#each teamsByGroup}}
-            <h2 class="h4 mb-3">Gruppe {{groupName}}</h2>
-            <div class="table-responsive">
+            <h2 class="h4 mb-1 mt-4 fw-bold">Gruppe {{groupName}}</h2>
+            <div class="table-responsive" style="max-width: 800px; margin: auto;">
                 <table class="table table-bordered table-striped">
-                    <thead class="thead-light">
+                    <thead class="thead-light bg-dark text-light">
                          <tr>
                                 <th scope="col">Platz</th>
                                 <th scope="col">Team</th>
@@ -99,8 +105,8 @@
 
         <h1>Spielplan</h1>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead>
+            <table class="table table-bordered table-hover table-striped">
+                <thead class="bg-dark text-light">
                         <tr>
                             <th>Nr.</th>
                             <th>Beginn</th>
@@ -111,7 +117,7 @@
                 </thead>
                 <tbody>
                     {{#each gameslist}}
-                        <tr class={{#streq this.status 'active'}} "bg-info"{{/streq}}    {{#streq this.gamePhase 'Group_Stage'}}  {{else}}"bg-light"{{/streq}} >
+                        <tr class={{#streq this.status 'active'}} "border border-4 border-warning glow"{{/streq}} {{#streq this.gamePhase 'Group_Stage'}} {{else}}"bg-light"{{/streq}} >
                             <td>{{this.number}}</td>
                             <td>{{formatTime this.time}}</td>
                             {{#streq this.group.[0] this.group.[1]}}
@@ -132,10 +138,6 @@
     </div>
 
     <div class="container-fluid">
-        <div class="alert alert-danger text-center mt-3 {{#unless infoBannerMessage}}d-none{{/unless}}">
-            <marquee behavior="scroll" direction="left" style="font-size: 20px;">{{infoBannerMessage}}</marquee>
-        </div>
-
         <div id="connectionIndicator" class="text-center mt-3">
             <span id="connectionStatusText" class="text-success">Verbunden</span>
         </div>
@@ -189,6 +191,16 @@
             .carousel-dynamic-height {
                 height: 200px;
             }
+        }
+        .glow {
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.8);
+        }
+        .info-banner {
+            font-size: 1.5rem;
+            background-color: #ffc107;
+            color: black;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
         }
     </style>
 </body>

@@ -285,8 +285,8 @@ router.post("/:id/change-score/:teamId/:i", async (req, res) => {
           gameTimestamp: game.duration * 60 - timer,
           teamIndex: req.params.teamId - 1,
           newScore: game.goals,
-          goalIndex: game.goalsLog.length + 1,
           sekt_won: addRemoveSekt === 1 ? true : false,
+          goalIndex: game.goalsLog.length + 1,
           goalIndexTournament: allGoals,
         });
       }
@@ -546,47 +546,67 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
 
         // Generate random goal timestamps
         game.goalsLog = [];
+        let goalIndexTournament = await genCounters.findOne({}).exec().then(counters => counters.allGoals);
+        let goalSektCounter = await genCounters.findOne({}).exec().then(counters => counters.goalSektCounter);
+        const mainSettings = await MainSettings.findOne({}); // Fetch main settings
+        const goalsforSekt = mainSettings.goalsforSekt;
+
         for (let i = 0; i < goalsTeam1 + goalsTeam2; i++) {
             const teamIndex = i < goalsTeam1 ? 0 : 1;
+            goalIndexTournament++;
+            goalSektCounter--;
+
+            let sekt_won = false;
+            if (goalSektCounter <= 0) {
+                sekt_won = true;
+                goalSektCounter = goalsforSekt;
+
+                const team = await Team.findById(game.opponents[teamIndex]).exec();
+                team.sektWon += 1;
+                await team.save();
+                await genCounters.findOneAndUpdate({}, { $inc: { wonSektBottles: 1 } });
+            }
 
             game.goalsLog.push({
-            timestamp: new Date(),
-            gameTimestamp: Math.floor(Math.random() * game.duration * 60),
-            teamIndex: teamIndex,
-            newScore: teamIndex === 0 ? [i + 1, goalsTeam2] : [goalsTeam1, i + 1],
-            goalIndex: i + 1,
-            sekt_won: false,
-            goalIndexTournament: 0
-        });
-      }
-      // Update game status to "Ended"
-      game.status = "Ended";
-      await game.save();
-
-      // Update team and general counters
-      await writeGameDataToTeams(game);
-      await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
-
-      // Update placeholder games if necessary
-      const mainSettings = await MainSettings.findOne();
-      const tournamentConfig = yaml.load(
-          fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
-      );
-      
-      const scheduleGenerator = new ScheduleGenerator(tournamentConfig, mainSettings);
-      
-      const gamePhase = game.gamePhase;
-      if (gamePhase === "Group_Stage") {
-        const subsequentGame = await Game.findOne({
-          number: game.number + 1,
-        }).exec();
-        if (subsequentGame.gamePhase != "Group_Stage") {
-          await scheduleGenerator.updateQuarterFinals();
+                timestamp: new Date(),
+                gameTimestamp: Math.floor(Math.random() * game.duration * 60),
+                teamIndex: teamIndex,
+                newScore: teamIndex === 0 ? [i + 1, goalsTeam2] : [goalsTeam1, i + 1],
+                goalIndex: i + 1,
+                sekt_won: sekt_won,
+                goalIndexTournament: goalIndexTournament
+            });
         }
-      } else {
-        await scheduleGenerator.updateGeneralKnockout("Semifinals");
-        await scheduleGenerator.updateGeneralKnockout("Finals");
-      }
+
+        await genCounters.findOneAndUpdate({}, { allGoals: goalIndexTournament, goalSektCounter: goalSektCounter });
+
+        // Update game status to "Ended"
+        game.status = "Ended";
+        await game.save();
+
+        // Update team and general counters
+        await writeGameDataToTeams(game);
+        await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
+
+        // Update placeholder games if necessary
+        const tournamentConfig = yaml.load(
+            fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
+        );
+        
+        const scheduleGenerator = new ScheduleGenerator(tournamentConfig, mainSettings);
+        
+        const gamePhase = game.gamePhase;
+        if (gamePhase === "Group_Stage") {
+          const subsequentGame = await Game.findOne({
+            number: game.number + 1,
+          }).exec();
+          if (subsequentGame.gamePhase != "Group_Stage") {
+            await scheduleGenerator.updateQuarterFinals();
+          }
+        } else {
+          await scheduleGenerator.updateGeneralKnockout("Semifinals");
+          await scheduleGenerator.updateGeneralKnockout("Finals");
+        }
     }
 
     res.status(200).send("Spiele erfolgreich automatisch gespielt.");

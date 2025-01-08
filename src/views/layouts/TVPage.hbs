@@ -1,14 +1,16 @@
-<div class="container-fluid">
-    <div class="row mt-5 d-flex justify-content-between">
-
+<div class="container-fluid px-5 pt-2" style="zoom: 0.75;">
+    <div class="row mt-1 d-flex justify-content-center" style="overflow-x: auto;">
+        <div class="col-12 text-center mb-3" style="font-size: 2.8rem; font-weight: bold;">
+            Budeturnier 2025
+        </div>
         <!-- Groups Section -->
-        <div class="col-md-3 page-divider">
-            <h1>Tabelle</h1>
+        <div class="col-auto page-divider" style="overflow-x: auto; margin: 0 auto;">
+            <h1 class="text-center">Tabelle</h1>
             {{#each teamsByGroup}}
-            <h2 class="h4 mb-3">Gruppe {{groupName}}</h2>
+             <h2 class="h4 mb-3 mt-3 fw-bold text-center">Gruppe {{groupName}}</h2>
             <div class="table-container">
-                <table class="table table-bordered table-striped">
-                    <thead class="thead-light">
+                <table class="table table-bordered table-striped text-center small-padding nowrap" >
+                    <thead class="thead-light bg-dark text-light">
                         <tr>
                             <th scope="col">Platz</th>
                             <th scope="col">Team</th>
@@ -24,7 +26,7 @@
                             <td>{{this.rank}}</td>
                             <td>{{this.name}}</td>
                             <td>{{this.gamesPlayed}}</td>
-                            <td>{{this.goalsGroupStage.[0]}}:{{this.goalsGroupStage.[1]}}</td>
+                            <td>{{this.goalsGroupStage.[0]}} : {{this.goalsGroupStage.[1]}}</td>
                             <td>{{this.goalsDifferenceGroupStage}}</td>
                             <td>{{this.points_General}}</td>
                         </tr>
@@ -38,11 +40,11 @@
         </div>
 
         <!-- Schedule List Section -->
-        <div class="col-md-4 page-divider">
-            <h1>Spielplan Gruppenphase</h1>
+        <div class="col-auto page-divider" style="overflow-x: auto; margin: 0 auto;">
+            <h1 class="text-center">Spielplan Gruppenphase</h1>
             <div class="table-container">
-                <table class="table table-bordered table-hover">
-                    <thead>
+                <table class="table table-bordered table-hover table-striped text-center small-padding nowrap" >
+                    <thead class="bg-dark text-light">
                         <tr>
                             <th>Nr.</th>
                             <th>Beginn</th>
@@ -55,8 +57,7 @@
                     <tbody>
                         {{#each gameslist}}
                         {{#streq this.gamePhase 'Group_Stage'}}
-                        <tr class={{#streq this.status 'active' }} "bg-info" {{/streq}} {{#streq
-                            this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
+                        <tr class={{#streq this.status 'active' }} "border border-4 border-warning glow" {{/streq}} {{#streq this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
                             <td>{{this.number}}</td>
                             <td><b>{{formatTime this.time}}</b></td>
                             {{#streq this.group.[0] this.group.[1]}}
@@ -66,7 +67,7 @@
                             {{/streq}}
                             <td>{{this.opponents.[0]}}</td>
                             <td>{{this.opponents.[1]}}</td>
-                            <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                            <td>{{this.goals.[0]}} : {{this.goals.[1]}}</td>
                             <td>{{this.gameDisplayName}}</td>
                         </tr>
                         {{/streq}}
@@ -77,57 +78,80 @@
         </div>
 
         <!-- Schedule List Section -->
-        <div class="col-md-4 page-divider">
-            <h1>Spielplan K.O.-Phase</h1>
-            <div class="table-container">
-                <table class="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th>Nr.</th>
-                            <th>Beginn</th>
-                            <th>Gruppe</th>
-                            <th colspan="2">Spiel</th>
-                            <th>Ergebnis</th>
-                            <th>Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{#each gameslist}}
-                        {{#streq this.gamePhase 'Group_Stage'}}
-                        {{else}}
-                        <tr class={{#streq this.status 'active' }} "bg-info" {{/streq}} {{#streq
-                            this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
-                            <td>{{this.number}}</td>
-                            <td><b>{{formatTime this.time}}</b></td>
-                            {{#streq this.group.[0] this.group.[1]}}
-                            <td>{{this.group.[0]}}</td>
+        <div class="col-auto page-divider d-flex flex-column justify-content-between" style="overflow-x: auto; margin: 0 auto;">
+            <div>
+                <h1 class="text-center">Spielplan K.O.-Phase</h1>
+                <div class="table-container">
+                    <table class="table table-bordered table-hover table-striped text-center small-padding nowrap">
+                        <thead class="bg-dark text-light">
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Beginn</th>
+                                <th>Gruppe</th>
+                                <th colspan="2">Spiel</th>
+                                <th>Ergebnis</th>
+                                <th>Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each gameslist}}
+                            {{#streq this.gamePhase 'Group_Stage'}}
                             {{else}}
-                            <td>{{this.group.[0]}} - {{this.group.[1]}}</td>
+                            <tr class={{#streq this.status 'active' }} "border border-4 border-warning glow" {{/streq}} {{#streq this.gamePhase 'Group_Stage' }} {{else}}"bg-light"{{/streq}}>
+                                <td>{{this.number}}</td>
+                                <td><b>{{formatTime this.time}}</b></td>
+                                {{#streq this.group.[0] this.group.[1]}}
+                                <td>{{this.group.[0]}}</td>
+                                {{else}}
+                                <td>{{this.group.[0]}} - {{this.group.[1]}}</td>
+                                {{/streq}}
+                                <td>{{this.opponents.[0]}}</td>
+                                <td>{{this.opponents.[1]}}</td>
+                                <td>{{this.goals.[0]}} : {{this.goals.[1]}}</td>
+                                <td>{{this.gameDisplayName}}</td>
+                            </tr>
                             {{/streq}}
-                            <td>{{this.opponents.[0]}}</td>
-                            <td>{{this.opponents.[1]}}</td>
-                            <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
-                            <td>{{this.gameDisplayName}}</td>
-                        </tr>
-                        {{/streq}}
-                        {{/each}}
-                    </tbody>
-                </table>
-                <div style="width:100%; text-align: center;">
-                    <b><span id="currentTime" style="font-size: 80px;"></span></b>
+                            {{/each}}
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+            <div class="d-flex flex-column justify-content-center align-items-center flex-grow-1">
+                <img src="/images/LogoSE.png" alt="LogoSE" class="align-middle" style="max-height: 240px; margin-top: 10px; filter: invert(1);">
+                <b><span id="currentTime" style="font-size: 90px;"></span></b>                
             </div>
         </div>
     </div>
 
-    <div class="alert alert-danger text-center mt-3 {{#unless infoBannerMessage}}d-none{{/unless}}">
-        <marquee behavior="scroll" direction="left" style="font-size: 20px;">{{infoBannerMessage}}</marquee>
+    <div class="container-fluid mt-2 mb-2">
+                <div class="alert alert-warning text-center mb-1 {{#unless infoBannerMessage}}d-none{{/unless}} info-banner">
+            <marquee behavior="scroll" direction="left" scrollamount="10" >{{infoBannerMessage}}</marquee>
+        </div>
     </div>
 
-    <div id="connectionIndicator" class="text-center mt-3">
+    <div id="connectionIndicator" class="text-center mt-1">
         <span id="connectionStatusText" class="text-success">Verbunden</span>
     </div>
 </div>
+
+<style>
+    .glow {
+        box-shadow: 0 0 10px rgba(255, 165, 0, 0.8);
+    }
+    .info-banner {
+        font-size: 1.8rem;
+        background-color: #ffc107;
+        color: black;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
+        padding: 0.5rem;
+    }
+    .small-padding th, .small-padding td {      
+        padding: 0.2rem 0.4rem 0.2rem 0.4rem;   // top right bottom left abstand text zu zellenrand
+        white-space: nowrap;
+        font-size: 1.29rem;                     // Schriftgröße in den Zellen
+    }
+</style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
 <script>
@@ -171,3 +195,4 @@
         }
     });
 </script>
+

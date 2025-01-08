@@ -370,8 +370,8 @@
             }
         }
 
-        if (infoBannerMessage) {
-            document.getElementById('infoBannerMessage').placeholder = 'Aktuelle Nachricht: ' + message;
+        if (infoBannerMessage !== '' && infoBannerMessage !== null) {
+            document.getElementById('infoBannerMessage').placeholder = 'Aktuelle Nachricht: ' + infoBannerMessage;
             document.getElementById('infoBannerButton').textContent = 'Infobanner zurücksetzen';
             document.getElementById('infoBannerButton').classList.add('btn-danger');
         }
