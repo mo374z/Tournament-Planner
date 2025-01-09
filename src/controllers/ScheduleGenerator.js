@@ -378,7 +378,7 @@ class ScheduleGenerator {
                 }))
             );
 
-            console.log(teamsWithRanks);
+            //console.log(teamsWithRanks);
     
             // Sort by overall rank (descending) to get the two worst teams
             const sortedTeams = teamsWithRanks

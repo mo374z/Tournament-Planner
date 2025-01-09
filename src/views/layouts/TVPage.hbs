@@ -4,7 +4,7 @@
             Budeturnier 2025
         </div>
         <!-- Groups Section -->
-        <div class="col-auto page-divider" style="overflow-x: auto; margin: 0 auto;">
+        <div class="col-auto page-divider grouprow" style="overflow-x: auto; margin: 0 auto;">
             <h1 class="text-center">Tabelle</h1>
             {{#each teamsByGroup}}
              <h2 class="h4 mb-3 mt-3 fw-bold text-center">Gruppe {{groupName}}</h2>
@@ -146,10 +146,13 @@
         box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
         padding: 0.5rem;
     }
+    .grouprow {
+        max-width: 25%;         //make the group table smaller
+    }
     .small-padding th, .small-padding td {      
         padding: 0.2rem 0.4rem 0.2rem 0.4rem;   // top right bottom left abstand text zu zellenrand
         white-space: nowrap;
-        font-size: 1.29rem;                     // Schriftgröße in den Zellen
+        font-size: 1.35rem;                     // Schriftgröße in den Zellen
     }
 </style>
 
