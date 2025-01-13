@@ -124,8 +124,16 @@ class ScheduleGenerator {
         let semiFinalNumber = 1;
 
         for (const [[phase1, num1], [phase2, num2]] of matchups) {
-            const team1 = await this.createDummyTeam(`Sieger ${phase1} ${num1}`, "-");
-            const team2 = await this.createDummyTeam(`Sieger ${phase2} ${num2}`, "-");
+            let phase1Display = phase1;
+            let phase2Display = phase2;
+            if(phase1 === 'Quarterfinals' && phase2 === 'Quarterfinals') {
+                phase1Display = this.config.display.game_phase_names.quarterfinals;
+                phase2Display = this.config.display.game_phase_names.quarterfinals;
+            }
+            // const team1 = await this.createDummyTeam(`Sieger ${phase1} ${num1}`, "-");
+            const team1 = await this.createDummyTeam(`Sieger ${phase1Display} ${num1}`, "-");
+            // const team2 = await this.createDummyTeam(`Sieger ${phase2} ${num2}`, "-");
+            const team2 = await this.createDummyTeam(`Sieger ${phase2Display} ${num2}`, "-");
 
             await this.createGame({
                 opponents: [team1, team2],
