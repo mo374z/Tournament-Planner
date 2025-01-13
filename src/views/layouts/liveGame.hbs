@@ -1,16 +1,16 @@
 <div class="container text-center">
-    <div class="page-divider">
+    <div class="page-divider border border-dark top-row border-2">
         <div class="d-flex justify-content-between align-items-center">
 
             <div class="text-center" style="width: 30%;">
-                <h3 id="team1Name" style="font-size: 30pt;">{{ game.opponents.[0] }}</h3>
+                <h3 id="team1Name" style="font-size: 35pt;">{{ game.opponents.[0] }}</h3>
                 <h1 id="team1Score" style="font-weight: bold; font-size: 90pt;">{{ game.goals.[0] }}</h1>
             </div>
             <div>
                 <h2><span id="liveCountdownTimer" style="font-weight: bold; font-size: 90pt;"> 00:00</span></h2>
             </div>
             <div class="text-center" style="width: 30%;">
-                <h3 id="team2Name" style="font-size: 30pt;">{{ game.opponents.[1] }}</h3>
+                <h3 id="team2Name" style="font-size: 35pt;">{{ game.opponents.[1] }}</h3>
                 <h1 id="team2Score" style="font-weight: bold; font-size: 90pt;">{{ game.goals.[1] }}</h1>
             </div>
 
@@ -135,6 +135,14 @@
 
     socket.on('playSound', (updatedGame) => {          
         audio.play();
+        const pageDivider = document.querySelector('.top-row');
+        console.log('playSound');   
+        pageDivider.classList.add('border-success');
+        pageDivider.classList.remove('border-dark');
+        setTimeout(() => {
+            pageDivider.classList.remove('border-success');
+            pageDivider.classList.add('border-dark');
+        }, 2000); // Rahmen für 2 Sekunden grün aufleuchten lassen
     });
 
     let gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
