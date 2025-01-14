@@ -164,6 +164,19 @@ async function getTeamGroupRank(rank, group) {
     return sortedTeams[rank];
 }
 
+async function getRankedTeams() {
+    let allTeams = await Team.find({}).exec();
+    allTeams.forEach(team => {
+        team.goalDifference = team.goals[0] - team.goals[1];
+    }); 
+    allTeams = rankTeams(allTeams, false);
+    // Add index to each team
+    allTeams.forEach((team, index) => {
+        team.index = index + 1;
+    });
+    return allTeams;
+}
+
 function getAllGroupNames(teams){
     groupNames = [];
     for (const team of teams) {
@@ -186,4 +199,5 @@ module.exports =  {
     rankTeams,
     getAllGroupNames,
     getAllTeamsInGroup,
+    getRankedTeams,
 }

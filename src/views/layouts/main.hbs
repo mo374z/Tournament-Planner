@@ -16,7 +16,7 @@
     <title>Budeturnier</title>
 
     <style>
-        {{#if (eqref userrole "beamer")}} 
+        {{#if (or (eqref userrole "beamer") (eqref userrole "TV"))}} 
         .navbar {
             display: none;
         }
@@ -116,11 +116,10 @@
             </div>
         </nav>
     </div>
- 
-    <div id='box' class="col-lg-11 col-md-11 col-sm-11 col-xs-11 mx-auto">
+    {{!-- Passe die Breite des Containers an die Anforderungen der TV-Anzeige an --}}
+    <div id='box' class="{{#if (eqref path '/TV')}}col-lg-12{{else}}col-lg-11 col-md-11 col-sm-11 col-xs-11{{/if}} mx-auto">
         {{{body}}}
     </div>
-
 
 </div>
 </body>

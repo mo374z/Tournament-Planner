@@ -285,8 +285,8 @@ router.post("/:id/change-score/:teamId/:i", async (req, res) => {
           gameTimestamp: game.duration * 60 - timer,
           teamIndex: req.params.teamId - 1,
           newScore: game.goals,
-          goalIndex: game.goalsLog.length + 1,
           sekt_won: addRemoveSekt === 1 ? true : false,
+          goalIndex: game.goalsLog.length + 1,
           goalIndexTournament: allGoals,
         });
       }
@@ -450,31 +450,32 @@ async function writeGameDataToTeams(game) {
 
 // render the live game view
 router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
-    try {
-        const game = await Game.findOne({ status: 'active' }).exec();
+  try {
+      const game = await Game.findOne({ status: 'active' }).exec();
 
-    if (!game) {
-      return res.render("layouts/liveGame", {
-        socketConfig: socketConfig,
-        game: null,
-        noActiveGame: true,
-        infoBannerMessage,
-      });
-    }
+      // Read images from the /images/carousel directory
+      const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
+      .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
 
-    // Fetch team names using the team IDs from the game object
-    const team1 = await Team.findById(game.opponents[0]).exec();
-    const team2 = await Team.findById(game.opponents[1]).exec();
+      if (!game) {
+        return res.render("layouts/liveGame", {
+          socketConfig: socketConfig,
+          game: null,
+          noActiveGame: true,
+          infoBannerMessage,
+          carouselImages,
+        });
+      }
 
-        // set them instead of the id - ATTENTION: dont change the db data
-        game.opponents[0] = team1 ? team1.name : 'Team not found';
-        game.opponents[1] = team2 ? team2.name : 'Team not found';
-        
-        // Read images from the /images/carousel directory
-        const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
-                        .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
+      // Fetch team names using the team IDs from the game object
+      const team1 = await Team.findById(game.opponents[0]).exec();
+      const team2 = await Team.findById(game.opponents[1]).exec();
 
-        res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage, carouselImages });
+      // set them instead of the id - ATTENTION: dont change the db data
+      game.opponents[0] = team1 ? team1.name : 'Team not found';
+      game.opponents[1] = team2 ? team2.name : 'Team not found';
+      
+      res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage, carouselImages });
 
     } catch (err) {
         console.error('Error fetching live games: ', err);
@@ -527,47 +528,103 @@ async function updateGenGoalsCounter(increment, teamId) {
   }
 }
 
-
-
 // Auto-play games for testing purposes
 router.post("/autoPlayGames/:limit", async (req, res) => {
   try {
     const limit = parseInt(req.params.limit);
-    const games = await Game.find({ status: { $ne: "Ended" }, number: { $lte: limit } }).exec();
 
-    for (const game of games) {
-        console.log("Auto-playing game: ", game.number);
-        // Generate random goals ensuring the game does not end 0:0
-        let goalsTeam1 = Math.floor(Math.random() * 11); // Random number between 0 and 10
-        let goalsTeam2 = Math.floor(Math.random() * 11);
-        if (goalsTeam1 === 0 && goalsTeam2 === 0) {
-            goalsTeam1 = 1; // Ensure at least one goal is scored
-        }
-        game.goals = [goalsTeam1, goalsTeam2];
+    let lastGamePlayed = 0;
 
-        // Generate random goal timestamps
-        game.goalsLog = [];
-        for (let i = 0; i < goalsTeam1 + goalsTeam2; i++) {
-            const teamIndex = i < goalsTeam1 ? 0 : 1;
+    
+    for(lastGamePlayed; lastGamePlayed <= limit; lastGamePlayed++) {
+      let games = await Game.find({ status: { $ne: "Ended" }, number: { $lte: limit } }).exec();
 
-            game.goalsLog.push({
-            timestamp: new Date(),
-            gameTimestamp: Math.floor(Math.random() * game.duration * 60),
-            teamIndex: teamIndex,
-            newScore: teamIndex === 0 ? [i + 1, goalsTeam2] : [goalsTeam1, i + 1],
-            goalIndex: i + 1,
-            sekt_won: false,
-            goalIndexTournament: 0
-        });
+      for (const game of games) {   // Loop through all games fetched
+          if (game.isDummy) {
+              console.log("Game is a dummy: ", game);
+              continue;
+          }
+
+          console.log("Auto-playing game: ", game.number);
+
+          // Generate random goals ensuring the game does not end 0:0
+          let goalsTeam1 = Math.floor(Math.random() * 11); // Random number between 0 and 10
+          let goalsTeam2 = Math.floor(Math.random() * 11);
+          if (goalsTeam1 === 0 && goalsTeam2 === 0) {
+              goalsTeam1 = 1; // Ensure at least one goal is scored
+          }
+          game.goals = [goalsTeam1, goalsTeam2];
+
+          // Generate random goal timestamps
+          game.goalsLog = [];
+          let goalIndexTournament = await genCounters.findOne({}).exec().then(counters => counters.allGoals);
+          let goalSektCounter = await genCounters.findOne({}).exec().then(counters => counters.goalSektCounter);
+          const mainSettings = await MainSettings.findOne({}); // Fetch main settings
+          const goalsforSekt = mainSettings.goalsforSekt;
+
+          for (let i = 0; i < goalsTeam1 + goalsTeam2; i++) {
+              const teamIndex = i < goalsTeam1 ? 0 : 1;
+              goalIndexTournament++;
+              goalSektCounter--;
+
+              let sekt_won = false;
+              if (goalSektCounter <= 0) {
+                  sekt_won = true;
+                  goalSektCounter = goalsforSekt;
+
+                  const team = await Team.findById(game.opponents[teamIndex]).exec();
+                  team.sektWon += 1;
+                  await team.save();
+                  await genCounters.findOneAndUpdate({}, { $inc: { wonSektBottles: 1 } });
+              }
+
+              game.goalsLog.push({
+                  timestamp: new Date(),
+                  gameTimestamp: Math.floor(Math.random() * game.duration * 60),
+                  teamIndex: teamIndex,
+                  newScore: teamIndex === 0 ? [i + 1, goalsTeam2] : [goalsTeam1, i + 1],
+                  goalIndex: i + 1,
+                  sekt_won: sekt_won,
+                  goalIndexTournament: goalIndexTournament
+              });
+          }
+
+          await genCounters.findOneAndUpdate({}, { allGoals: goalIndexTournament, goalSektCounter: goalSektCounter });
+
+          // Update game status to "Ended"
+          game.status = "Ended";
+          lastGamePlayed = game.number; // Store the last game played
+          await game.save();
+
+          // Update team and general counters
+          await writeGameDataToTeams(game);
+          await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
+
+          // Update placeholder games if necessary
+          const tournamentConfig = yaml.load(
+              fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
+          );
+          
+          const scheduleGenerator = new ScheduleGenerator(tournamentConfig, mainSettings);
+          
+          const gamePhase = game.gamePhase;
+          if (gamePhase === "Group_Stage") {
+            const subsequentGame = await Game.findOne({
+              number: game.number + 1,
+            }).exec();
+            if (subsequentGame.gamePhase != "Group_Stage") {
+              console.log("updating QuarterFinals");
+              await scheduleGenerator.updateQuarterFinals();
+              break;      //Break the loop to fetch the new games
+            }
+          } else {
+            console.log("updating Semifinals and Finals");
+            await scheduleGenerator.updateGeneralKnockout("Semifinals");
+            await scheduleGenerator.updateGeneralKnockout("Finals");
+            break;      //Break the loop to fetch the new games
+          }
       }
-      // Update game status to "Ended"
-      game.status = "Ended";
-      await game.save();
-
-      // Update team and general counters
-      await writeGameDataToTeams(game);
-      await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
-    }
+  }
 
     res.status(200).send("Spiele erfolgreich automatisch gespielt.");
   } catch (err) {
@@ -575,7 +632,5 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
     res.status(500).send("Interner Serverfehler.");
   }
 });
-
-
 
 module.exports = { router, getInfoBannerMessage: () => infoBannerMessage };

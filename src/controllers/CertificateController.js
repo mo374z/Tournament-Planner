@@ -59,7 +59,7 @@ router.post('/uploadTemplate', upload.single('template'), (req, res) => {
     res.redirect('/certificate');
 });
 
-router.post('/generate', async (req, res) => {
+router.post('/generateCertificate', async (req, res) => {
     const { teamId } = req.body;
     const team = await Team.findById(teamId).exec();
     const rank = await getRank(team);
