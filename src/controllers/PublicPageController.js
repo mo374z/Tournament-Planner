@@ -9,7 +9,8 @@ const MainSettings = mongoose.model('MainSettings');
 const { checkLoginStatus, authorizeRoles } = require('../middleware/auth');
 const { updateSocketConfig } = require('../config/socketConfig');
 const socketConfig = updateSocketConfig(process.argv.slice(2));
-
+const { getRankedTeams } = require('../models/Team');
+const Handlebars = require('handlebars');
 
 const cookieParser = require('cookie-parser');
 router.use(cookieParser());
@@ -38,16 +39,24 @@ async function renderPublicPage(req, res) {
         try {
             const teamsByGroup = await getTeamsByGroup();
             const infoBannerMessage = getInfoBannerMessage(); // Get the current info banner message
+            const mainSettings = await MainSettings.findOne({}); // Fetch main settings
 
             const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
                 .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
+
+            let rankedTeams = [];
+            if (mainSettings.publicPageOptions.showRankingTable) { // Check if the ranking table should be displayed
+                rankedTeams = await getRankedTeams();
+            }
 
             res.render('home', {
                 gameslist: games,
                 teamsByGroup,
                 timeBetweenGames,
                 infoBannerMessage, // Send the infoBannerMessage to the Public page
-                carouselImages // Send the carousel images to the Public page
+                carouselImages, // Send the carousel images to the Public page
+                publicPageOptions: mainSettings.publicPageOptions, // Send public page options to the Public page
+                rankedTeams // Send ranked teams to the Public page
             });
 
         } catch (err) {

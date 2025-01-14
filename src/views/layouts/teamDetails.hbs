@@ -215,7 +215,7 @@
     <form action='/team/uploadImage' method="POST" enctype="multipart/form-data">
         <input type="hidden" name="_id" value="{{team._id}}">
         <div class="form-group">
-            <label for="teamImage">Team Bild hochladen (Bitte im 4:3 Format):</label>
+            <label for="teamImage">Team Bild hochladen <strong>(Bitte im 4:3 Format)</strong>:</label>
             <input type="file" class="form-control" id="teamImage" name="teamImage" accept="image/*" required>
         </div>
         <button type="submit" class="btn btn-primary">Bild hochladen</button>

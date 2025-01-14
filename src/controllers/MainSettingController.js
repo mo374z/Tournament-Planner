@@ -19,6 +19,24 @@ const defaultgoalsforSekt = 10;
 
 const { listDbs, listBackups } = require('../models/db'); // Import the listDbs function from the db.js file
 
+function createDefaultMainSettings() {
+    return new MainSettings({
+        TornamentStartTime: defaultStartTime,
+        timeBetweenGames: defaultTimeBetweenGames,
+        gameDurationGroupStage: defaultGameDurationGroupStage,
+        gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
+        gameDurationSemifinals: defaultGameDurationSemiFinals,
+        gameDurationFinal: defaultGameDurationFinal,
+        timeBetweenGamePhases: defaultTimeBetweenGamePhases,
+        goalsforSekt: defaultgoalsforSekt,
+        groups: [],
+        publicPageOptions: {
+            showAdvertisingPosters: true,
+            showRankingTable: false,
+        }
+    });
+}
+
 // GET route to fetch MainSettings data and render the edit page
 router.get('/', async (req, res) => {
     try {
@@ -27,20 +45,7 @@ router.get('/', async (req, res) => {
 
         // If no MainSettings data found, create a new MainSettings with default values
         if (!mainSettings) {
-            mainSettings = new MainSettings({
-                TornamentStartTime: defaultStartTime,
-                timeBetweenGames: defaultTimeBetweenGames,
-                gameDurationGroupStage: defaultGameDurationGroupStage,
-                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
-                gameDurationSemifinals: defaultGameDurationSemiFinals,
-                gameDurationFinal: defaultGameDurationFinal,
-                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
-                goalsforSekt: defaultgoalsforSekt,
-                groups: [],
-                // Add other default values if needed
-            });
-
-            // Save the default MainSettings to the database
+            mainSettings = createDefaultMainSettings();
             await mainSettings.save();
             console.log('Default MainSettings created:', mainSettings);
         }
@@ -161,16 +166,7 @@ router.post('/', async (req, res) => {
 
         // If no MainSettings data found, create a new MainSettings with default values
         if (!mainSettings) {
-            mainSettings = new MainSettings({
-                TornamentStartTime: defaultStartTime,
-                timeBetweenGames: defaultTimeBetweenGames,
-                gameDurationGroupStage: defaultGameDurationGroupStage,
-                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
-                gameDurationSemifinals: defaultGameDurationSemiFinals,
-                gameDurationFinal: defaultGameDurationFinal,
-                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
-                goalsforSekt: defaultgoalsforSekt,
-            });
+            mainSettings = createDefaultMainSettings();
         }
 
         mainSettings.TornamentStartTime = TornamentStartTime;
@@ -193,7 +189,34 @@ router.post('/', async (req, res) => {
     }
 });
 
+// POST route to handle form submission and update Public Page Settings
+router.post('/publicPageSettings', async (req, res) => {
+    try {
+        const { showAdvertisingPosters, showRankingTable } = req.body;
 
+        // Find the MainSettings document and update its values
+        const mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        mainSettings.publicPageOptions = {
+            showAdvertisingPosters: showAdvertisingPosters === 'on',
+            showRankingTable: showRankingTable === 'on'
+        };
+
+        // Save the updated MainSettings
+        await mainSettings.save();
+
+        // Redirect to the main settings page after resetting counters
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating Public Page Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 // POST route to reset general counters /mainSettings/resetCounters
 router.get('/resetCounters', async (req, res) => {
@@ -224,17 +247,7 @@ router.post('/addGroups', async (req, res) => {
         const { nGroups } = req.body;
         let mainSettings = await MainSettings.findOne({});
         if (!mainSettings) {
-            mainSettings = new MainSettings({
-                TornamentStartTime: defaultStartTime,
-                timeBetweenGames: defaultTimeBetweenGames,
-                gameDurationGroupStage: defaultGameDurationGroupStage,
-                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
-                gameDurationSemifinals: defaultGameDurationSemiFinals,
-                gameDurationFinal: defaultGameDurationFinal,
-                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
-                goalsforSekt: defaultgoalsforSekt,
-                groups: []
-            });
+            mainSettings = createDefaultMainSettings();
         }
         // store nGroups in the main settings named as capital letters
         mainSettings.groups = [...mainSettings.groups, ...Array.from({ length: nGroups }, (_, i) => String.fromCharCode(65 + i))];
@@ -267,25 +280,29 @@ async function checkForMainSettings() {
     try {
         let mainSettings = await MainSettings.findOne({});
         if (!mainSettings) {
-            const newMainSettings = new MainSettings({
-                TornamentStartTime: defaultStartTime,
-                timeBetweenGames: defaultTimeBetweenGames,
-                gameDurationGroupStage: defaultGameDurationGroupStage,
-                gameDurationQuarterfinals: defaultGameDurationQuarterfinals,
-                gameDurationSemifinals: defaultGameDurationSemiFinals,
-                gameDurationFinal: defaultGameDurationFinal,
-                timeBetweenGamePhases: defaultTimeBetweenGamePhases,
-                goalsforSekt: defaultgoalsforSekt,
-                // Add other default values if needed
-            });
+            const newMainSettings = createDefaultMainSettings();
             await newMainSettings.save();
             console.log('\x1b[32m%s\x1b[0m', 'MainSettings created !');
+        } else {
+            // Check for missing fields and add them if necessary
+            const defaultSettings = createDefaultMainSettings().toObject();
+            let updated = false;
+
+            for (const key in defaultSettings) {
+                if (defaultSettings.hasOwnProperty(key) && !mainSettings[key]) {
+                    mainSettings[key] = defaultSettings[key];
+                    updated = true;
+                }
+            }
+
+            if (updated) {
+                await mainSettings.save();
+                console.log('\x1b[32m%s\x1b[0m', 'MainSettings updated with missing fields!');
+            } else {
+                console.log('MainSettings exist and are up to date!');
+            }
         }
-        else {
-            console.log('MainSettings exist !');
-        }
-    }
-    catch (err) {
+    } catch (err) {
         console.error('Error checking for MainSettings:', err);
     }
 }

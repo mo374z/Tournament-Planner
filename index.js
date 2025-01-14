@@ -48,7 +48,7 @@ app.engine('hbs', exphbs.engine({
       return formattedTime;
     },
     eq: function (v1, v2) {
-      return v1.equals(v2);
+      return v1 && v1.equals && v1.equals(v2);
     },
     eqref: function (v1, v2) {
       return v1 === v2;
@@ -79,12 +79,21 @@ app.engine('hbs', exphbs.engine({
     gt: function (a, b) {      
         return a > b ? true : false;
     },
+    or: function (a, b) {
+      return a || b;
+    },
   }
 }));
 
 app.set('view engine', 'hbs');
 app.use(express.static(__dirname + '/public'))
 app.use(express.static(path.join(__dirname, 'src/public')));
+
+app.use((req, res, next) => {
+  res.locals.path = req.path;
+  next();
+});
+
 app.use("/", PublicPageController);
 app.use("/team", TeamController);
 app.use("/schedule", ScheduleController);
