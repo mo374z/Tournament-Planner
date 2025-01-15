@@ -119,6 +119,7 @@ async function switchDb(dbName) {
 }
 
 const { exec } = require('child_process');
+const path = require('path');
 const backupPathArchive = './backup/archive';
 const backupPathJSON = './backup/JSON';
 
@@ -138,50 +139,73 @@ function checkPath(pathList) {
 
 checkPath([backupPathArchive, backupPathJSON]);
 
-function backupDb() {
-  //fetch the name of the current database
-  const dbName = mongoose.connection.db.databaseName;
-  const backupFile = `${backupPathArchive}/mongodump-${dbName}`;
-  const backupURI = 'mongodb://0.0.0.0:27017/' + dbName;
 
-  const command = `mongodump --uri=${backupURI} --db=${dbName} --archive="${backupFile}"`;
+// Backup erstellen
+function backupDb(dbName, backupPathArchive, backupPathJSON, withJSON = false) {
+  // Lokale Zeit im Format: YYYY-MM-DD_HH-mm-ss
+  const timestamp = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" })
+    .replace(/[\s,]/g, "_")  // Leerzeichen und Kommas ersetzen
+    .replace(/:/g, "-")      // Doppelpunkte durch Bindestriche ersetzen
+    .replace(/__/g, "_");      // Doppelte Unterstriche durch einen ersetzen
+  const backupFile = path.join(backupPathArchive, `${dbName}_${timestamp}.gz`);
+  const backupURI = `mongodb://0.0.0.0:27017/${dbName}`;
 
-  exec(command, (error, stdout, stderr) => {
-      if (error) {
-          console.error(`Fehler beim Erstellen des Backups: ${error}`);
-          return;
-      }
-      console.log(`Backup erfolgreich erstellt unter: ${backupFile}`);
-  });
+  return new Promise((resolve, reject) => {
+      // Archiv-Backup erstellen
+      const commandArchive = `mongodump --uri=${backupURI} --archive="${backupFile}" --gzip`;
 
-  const commandJSON = `mongodump --uri=${backupURI} --out=${backupPathJSON}`;
+      exec(commandArchive, (error, stdout, stderr) => {
+          if (error) {
+              return reject(`Fehler beim Erstellen des Backups: ${stderr}`);
+          }
+          console.log(`Backup erfolgreich erstellt unter: ${backupFile}`);
 
-  exec(commandJSON, (error, stdout, stderr) => {
-      if (error) {
-          console.error(`Fehler beim Erstellen des Backups als JSON: ${error}`);
-          return;
-      }
-      console.log(`BackupJSON erfolgreich erstellt unter: ${backupPathJSON}`);
+          if (!withJSON) {
+              return resolve(backupFile);
+          }
+          // JSON-Backup erstellen
+          const commandJSON = `mongodump --uri=${backupURI} --out="${backupPathJSON}"`;
+
+          exec(commandJSON, (jsonError, jsonStdout, jsonStderr) => {
+              if (jsonError) {
+                  return reject(`Fehler beim Erstellen des JSON-Backups: ${jsonStderr}`);
+              }
+              console.log(`BackupJSON erfolgreich erstellt unter: ${backupPathJSON}`);
+              resolve({ backupFile, backupPathJSON });
+          });
+      });
   });
 }
 
-function restoreDb(dbName) {
-  //look for the newest created db
-    console.log('Restoring database:', dbName);
-    const dbNameRestored = `${dbName}Restored`;
-    const backupFile = `${backupPathArchive}/mongodump-${dbName}`;
-    const backupURI = 'mongodb://0.0.0.0:27017/' + dbName;
+function restoreDb(backupFile) {  
+  // Den Namen der Original-Datenbank aus dem Dateinamen extrahieren
+  const originalDbName = path.basename(backupFile, '.gz').split('_')[0];  // Z.B. TournamentDB_20250115_183347 -> TournamentDB
+  const sanitizedDbName = originalDbName;  // Der Name der neuen DB bleibt der gleiche wie der alte
 
-    const command = `mongorestore --uri=${backupURI} --archive="${backupFile}" --nsFrom="${dbName}.*" --nsTo="${dbNameRestored}.*"`;
+  console.log(`Sanitized DB-Name für Wiederherstellung: ${sanitizedDbName}`);
 
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Fehler beim Wiederherstellen des Backups: ${error}`);
-            return;
-        }
-        console.log(`Backup erfolgreich wiederhergestellt von: ${backupFile}`);
-    });
+  return new Promise((resolve, reject) => {
+      // Hier wird der Befehl für den Restore angepasst, sodass alle Sammlungen in der neuen DB landen
+      const command = `mongorestore --archive="${backupFile}" --gzip --nsFrom=".*" --nsTo="${sanitizedDbName}.*" --drop`;
+
+      console.log(`Restore-Befehl: ${command}`);
+
+      exec(command, (error, stdout, stderr) => {
+          if (error) {
+              return reject(`Fehler beim Wiederherstellen des Backups: ${stderr}`);
+          }
+          console.log(stdout);
+          console.log(stderr);
+          console.log(`Backup erfolgreich wiederhergestellt für: ${sanitizedDbName}`);
+          resolve(`Restore erfolgreich: ${sanitizedDbName}`);
+      });
+  });
+
+  //Das Restoren in eine DB mit anderem namen funktioniert nicht, da die die IDs in der zu restorenden DB dann doppelt in mongodb vorhanden ind und es zu fehlern kommt wenn die alte noch da ist
 }
+
+
+
 
  function listBackups() {
   try {
@@ -203,6 +227,8 @@ module.exports = {
   backupDb,
   restoreDb,
   listBackups,
+  backupPathArchive,
+  backupPathJSON,
 };
 
 
