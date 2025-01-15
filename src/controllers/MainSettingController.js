@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const MainSettings = mongoose.model('MainSettings');
 const genCounters = mongoose.model('generalCounters');
 const { commonMiddleware } = require('../middleware/auth');
+const path = require('path');
 
 commonMiddleware(router, ['admin']); // Only admins can access the main settings page
 
@@ -17,7 +18,7 @@ const defaultTimeBetweenGamePhases = 5 * 60 * 1000;
 const defaultgoalsforSekt = 10;
 
 
-const { listDbs, listBackups } = require('../models/db'); // Import the listDbs function from the db.js file
+const { listDbs, listBackups, backupDb, restoreDb, createDb, backupPathArchive, backupPathJSON } = require('../models/db'); // Import the listDbs function from the db.js file
 
 function createDefaultMainSettings() {
     return new MainSettings({
@@ -79,9 +80,6 @@ router.get('/', async (req, res) => {
 });
 
 
-
-const { createDb } = require('../models/db');
-
 router.post('/createDb', async (req, res) => {      // Create a new database for the tournament
     try {
         const dbName = req.body.dbName;
@@ -110,33 +108,33 @@ router.post('/switchDb', async (req, res) => {
     }
 }); 
 
-const { backupDb } = require('../models/db');
+router.get('/backupDB', async (req, res) => {
+    const dbName = mongoose.connection.db.databaseName;
 
-router.get('/backupDB', async (req, res) => {      // Backup the current database
     try {
-        backupDb();
+        await backupDb(dbName, backupPathArchive, backupPathJSON, true); // Backup der Datenbank mit JSON-Datei
         setTimeout(() => {
             res.redirect('/mainSettings');
-        }, 1000); // 1000 milliseconds (1 seconds) delay
-        } catch (err) {
-            console.error(err);
-            res.status(500).send('Error backing up database');
-        }
+        }, 1000); // 1 Sekunde Verzögerung
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Fehler beim Erstellen des Backups');
+    }
 });
 
-const { restoreDb } = require('../models/db');
-
-router.post('/restoreDB', async (req, res) => {      // Restore the current database
-    const DbName = req.body.dbRestoreName;
+router.post('/restoreDB', async (req, res) => {
+    const dbName = req.body.dbRestoreName; // Name der Backup-Datei
+    const backupFile = path.join(backupPathArchive, `${dbName}`); // Hier wird der Name der Backup-Datei gesetzt
+    
     try {
-        restoreDb(DbName);
+        await restoreDb(backupFile); // Wiederherstellen der DB mit dem ursprünglichen Namen
         setTimeout(() => {
             res.redirect('/mainSettings');
-        }, 1000);
-        } catch (err) {
-            console.error(err);
-            res.status(500).send('Error restoring database');
-        }
+        }, 1000); // 1 Sekunde Verzögerung
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Fehler beim Wiederherstellen der Datenbank');
+    }
 });
 
 // POST route to handle form submission and update MainSettings

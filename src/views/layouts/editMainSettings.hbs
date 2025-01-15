@@ -130,7 +130,7 @@
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="width: 200px;"
-                                    onclick="return confirm('Are you sure you want to restore the database?')">
+                                    onclick="return confirmRestore()">
                                     Restore Backup
                                 </button>
                             </form>
@@ -272,5 +272,18 @@
                 }
             });
         }
+    }
+
+    function confirmRestore() {
+        const selectedBackup = document.getElementById('dbRestoreName').value;
+        //TournamentDB_15.1.2025_18-59-04.gz
+        const dbName = selectedBackup.split('_')[0];
+        const date = selectedBackup.split('_')[1];
+        let time = selectedBackup.split('_')[2];
+        time = time.substring(0, time.length - 6);
+        time = time.replace('-', ':');
+        const dateFormatted = date.replace(/-/g, '.').replace(/_/g, ':');
+        return confirm(`Bist du sicher, dass du das Backup vom ${dateFormatted} von ${time} wiederherstellen möchtest?\n\n` +
+            `!! Das überschreibt die aktuelle DB in Mongo: ${dbName} mit den Daten aus dem Bakup!!!`);
     }
 </script>

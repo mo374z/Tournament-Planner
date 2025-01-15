@@ -13,6 +13,7 @@ const { getRank } = require('../models/Team');
 const { commonMiddleware } = require('../middleware/auth');
 const Automizer = require('pptx-automizer').default;
 const { modify } = require('pptx-automizer');
+const { ModifyShapeHelper, CmToDxa } = require('pptx-automizer');
 
 commonMiddleware(router, ['admin']); // Only admins can access the certificate page
 
@@ -163,20 +164,43 @@ router.post('/generatePresentation', async (req, res) => {
                 slide.modifyElement('{rank}', [modify.setText(team.rank + ".")]);
 
                 const imagePath = path.join(__dirname, '../../public/', team.imagePath || '/teampictures/default.jpg');
-                // Prüfen, ob die Datei existiert
                 if (!fs.existsSync(imagePath)) {
                     throw new Error(`Image not found: ${imagePath}`);
-                }
-                else
-                {
-                    //console.log('Team Image found:', imagePath);
+                } else {
                     pres.loadMedia(path.basename(imagePath)); // Load the image to the presentation
                 }
-                // Setzen des Bilds auf den Platzhalter
-                slide.modifyElement('{image}', [
-                    modify.setRelationTarget(path.basename(imagePath)) // Nur den Dateinamen verwenden
-                ]);
 
+                // Get the size of the image to insert
+                const dimensions = sizeOf(imagePath);
+                const aspectRatio = dimensions.width / dimensions.height;
+
+                // Retrieve the placeholder position and size
+                const placeholder = await slide.getElement('{image}');
+                const originalPosition = {
+                    x: placeholder.position.x,
+                    y: placeholder.position.y,
+                    width: placeholder.position.cx,
+                    height: placeholder.position.cy
+                };
+
+                // Berechne die neue Breite basierend auf dem Seitenverhältnis und der Höhe des Platzhalters
+                const newHeight = originalPosition.height; // Behalte die Höhe des Platzhalters bei
+                const newWidth = newHeight * aspectRatio; // Berechne die neue Breite basierend auf dem Seitenverhältnis
+
+                // Berechne die x-Position, um das Bild horizontal zu zentrieren
+                const widthDifference = newWidth - originalPosition.width; // Unterschied zwischen neuer und alter Breite
+                const newX = originalPosition.x - (widthDifference / 2); // Zentriere das Bild, indem der Unterschied halbiert und vom originalen x-Wert abgezogen wird
+
+                // Setze das Bild in den Platzhalter und passe die Größe und Position an
+                slide.modifyElement('{image}', [
+                    ModifyShapeHelper.setPosition({
+                        x: newX, // Neue x-Position (zentriert)
+                        y: originalPosition.y, // Behalte die gleiche y-Position bei
+                        w: newWidth, // Neue Breite basierend auf dem Seitenverhältnis
+                        h: newHeight, // Behalte die gleiche Höhe bei
+                    }),
+                    modify.setRelationTarget(path.basename(imagePath)), // Bild zuweisen
+                ]);
             });
         }
 
