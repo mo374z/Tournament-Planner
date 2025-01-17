@@ -6,6 +6,7 @@ const fs = require('fs');
 
 const { getAllGroupNames, getAllTeamsInGroup, rankTeams, getRank } = require('../models/Team');
 
+
 class ScheduleGenerator {
     constructor(config, settings) {
         this.config = config;
@@ -264,7 +265,7 @@ class ScheduleGenerator {
             const allTeams = await Team.find({}).exec();
             
             for (const group of getAllGroupNames(allTeams)) {
-                groupedTeams[group] = rankTeams(getAllTeamsInGroup(allTeams, group), true);
+                groupedTeams[group] = await rankTeams(getAllTeamsInGroup(allTeams, group), true);
             }
 
             const games = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
@@ -386,7 +387,10 @@ class ScheduleGenerator {
                 }))
             );
 
-            //console.log(teamsWithRanks);
+            //log the teams with their ranks
+            for (const team of teamsWithRanks) {
+                console.log(team.team.name + " " + team.overallRank);
+            }
     
             // Sort by overall rank (descending) to get the two worst teams
             const sortedTeams = teamsWithRanks

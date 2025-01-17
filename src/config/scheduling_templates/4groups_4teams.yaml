@@ -22,10 +22,15 @@ knockout_stage:
     enabled: true
     format: "single_elimination"
     matchups: # [group_letter, position]      
-      - [["A", 1], ["D", 2]]
-      - [["B", 1], ["C", 2]]
-      - [["C", 1], ["B", 2]]
-      - [["D", 1], ["A", 2]]
+      - [["A", 1], ["B", 2]]
+      - [["B", 1], ["A", 2]]
+      - [["C", 1], ["D", 2]]
+      - [["D", 1], ["C", 2]]
+
+      # - [["A", 1], ["D", 2]]
+      # - [["B", 1], ["C", 2]]
+      # - [["C", 1], ["B", 2]]
+      # - [["D", 1], ["A", 2]]
   
   semifinals:
     enabled: true

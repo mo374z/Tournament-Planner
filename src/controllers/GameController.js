@@ -375,12 +375,24 @@ router.get("/:id/endGame", async (req, res) => {
         const subsequentGame = await Game.findOne({
           number: game.number + 1,
         }).exec();
+        console.log("subsequentGame: ", subsequentGame);
         if (subsequentGame.gamePhase != "Group_Stage") {
           await scheduleGenerator.updateQuarterFinals();
         }
       } else {
+        console.log("updating Semifinals");
         await scheduleGenerator.updateGeneralKnockout("Semifinals");
-        await scheduleGenerator.updateGeneralKnockout("Finals");
+
+        if (gamePhase.includes("Semifinals")) {
+          const subsequentGame = await Game.findOne({
+            number: game.number + 1,
+          }).exec();
+          console.log("subsequentGame: ", subsequentGame);
+          if (subsequentGame.gamePhase.includes("Finals") && !gamePhase.includes("Finals")) {
+            console.log("updating Finals");
+            await scheduleGenerator.updateGeneralKnockout("Finals");
+          }
+        }
       }
 
       resetTimer(0); // Reset the timer to the value 0 in seconds
@@ -552,6 +564,10 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
           let goalsTeam2 = Math.floor(Math.random() * 11);
           if (goalsTeam1 === 0 && goalsTeam2 === 0) {
               goalsTeam1 = 1; // Ensure at least one goal is scored
+          }
+          //ensure that the goals are not the same
+          while (goalsTeam1 === goalsTeam2) {
+              goalsTeam2 = Math.floor(Math.random() * 11);
           }
           game.goals = [goalsTeam1, goalsTeam2];
 

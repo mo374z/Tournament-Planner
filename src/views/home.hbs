@@ -34,10 +34,12 @@
                         <tr>
                             <th scope="col">Platz</th>
                             <th scope="col">Team</th>
+                            <th scope="col">Spiele</th>
                             <th scope="col">T</th>
                             <th scope="col">TD</th>
                             <th scope="col">Pkt</th>
-                            <th scope="col">Sekt</th>
+                            {{!-- <th scope="col">Sekt</th> --}}
+                            
                         </tr>
                     </thead>
                     <tbody>
@@ -45,10 +47,12 @@
                         <tr>
                             <td>{{index}}</td>
                             <td>{{this.name}}</td>
+                            <td>{{this.gamesPlayed}}</td>
                             <td><strong>{{this.goals.[0]}}</strong>:{{this.goals.[1]}}</td>
                             <td>{{this.goalDifference}}</td>
                             <td>{{this.points_General}}</td>
-                            <td>{{this.sektWon}}</td>
+                            {{!-- <td>{{this.sektWon}}</td> --}}
+                            
                         </tr>
                         {{/each}}
                     </tbody>
