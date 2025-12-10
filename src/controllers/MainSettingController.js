@@ -276,7 +276,22 @@ router.post('/deleteGroup', async (req, res) => {
 
 async function checkForMainSettings() {
     try {
-        let mainSettings = await MainSettings.findOne({});
+        // Check if mongoose is connected
+        if (mongoose.connection.readyState !== 1) {
+            console.log('Waiting for database connection...');
+            await new Promise((resolve, reject) => {
+                if (mongoose.connection.readyState === 1) {
+                    resolve();
+                } else {
+                    mongoose.connection.once('connected', resolve);
+                    mongoose.connection.once('error', reject);
+                    // Set a timeout for connection waiting
+                    setTimeout(() => reject(new Error('Database connection timeout')), 15000);
+                }
+            });
+        }
+
+        let mainSettings = await MainSettings.findOne({}).maxTimeMS(15000); // Use maxTimeMS instead of timeout
         if (!mainSettings) {
             const newMainSettings = createDefaultMainSettings();
             await newMainSettings.save();
@@ -301,7 +316,14 @@ async function checkForMainSettings() {
             }
         }
     } catch (err) {
-        console.error('Error checking for MainSettings:', err);
+        if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
+            console.error('\x1b[31m%s\x1b[0m', 'Database connection timeout. Please check if MongoDB is running and accessible.');
+        } else if (err.message === 'Database connection timeout') {
+            console.error('\x1b[31m%s\x1b[0m', 'Could not establish database connection within 15 seconds.');
+        } else {
+            console.error('\x1b[31m%s\x1b[0m', 'Error checking for MainSettings:', err.message);
+        }
+        console.log('\x1b[33m%s\x1b[0m', 'Skipping MainSettings initialization due to database issues.');
     }
 }
 

@@ -145,4 +145,6 @@ const checkForUsers = require('./src/controllers/AuthenticationController').chec
 checkForMainSettings();
 checkForUsers();
 
+console.log('Tournament Planner is running...');
+
 
