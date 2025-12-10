@@ -8,7 +8,7 @@ const path = require('path');
 
 commonMiddleware(router, ['admin']); // Only admins can access the main settings page
 
-const defaultStartTime = new Date('2024-01-20T08:00:00.000Z'); //in unserer Zeitzone: 20.01.2024 09:00 Uhr
+const defaultStartTime = new Date('2026-01-17T08:00:00.000Z'); //in unserer Zeitzone: 17.01.2026 08:00 Uhr
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
 const defaultGameDurationGroupStage = 8 * 60 * 1000; 
 const defaultGameDurationQuarterfinals = 10 * 60 * 1000;

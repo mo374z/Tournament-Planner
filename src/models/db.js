@@ -75,7 +75,7 @@ async function insertDefaultUser(db) { // Create a default user for the database
 
 async function insertDefaultValues(db) { // Insert default values into the new database
 
-  const defaultStartTime = new Date('2024-01-20T08:00:00.000Z'); //in unserer Zeitzone: 20.01.2024 09:00 Uhr
+  const defaultStartTime = new Date('2026-01-17T08:00:00.000Z'); //in unserer Zeitzone: 17.01.2026 08:00 Uhr
   const defaultTimeBetweenGames = 2 * 60 * 1000; 
   const defaultGameDurationGroupStage = 8 * 60 * 1000; 
   const defaultGameDurationQuarterfinals = 10 * 60 * 1000;
@@ -179,7 +179,7 @@ function backupDb(dbName, backupPathArchive, backupPathJSON, withJSON = false) {
 
 function restoreDb(backupFile) {  
   // Den Namen der Original-Datenbank aus dem Dateinamen extrahieren
-  const originalDbName = path.basename(backupFile, '.gz').split('_')[0];  // Z.B. TournamentDB_20250115_183347 -> TournamentDB
+  const originalDbName = path.basename(backupFile, '.gz').split('_')[0];  // Z.B. TournamentDB_20260115_183347 -> TournamentDB
   const sanitizedDbName = originalDbName;  // Der Name der neuen DB bleibt der gleiche wie der alte
 
   console.log(`Sanitized DB-Name für Wiederherstellung: ${sanitizedDbName}`);
