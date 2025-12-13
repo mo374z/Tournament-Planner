@@ -107,7 +107,10 @@ router.post('/generateCertificate', async (req, res) => {
     if (!fs.existsSync(path.join(__dirname, '../../public/certificates/'))) {
         fs.mkdirSync(path.join(__dirname, '../../public/certificates/'), { recursive: true });
     }
-    const outputPath = path.join(__dirname, '../../public/certificates/', `${rank}_${team.name}_certificate.docx`);
+    const fileName = `${rank}_${team.name}_certificate.docx`;
+    const sanitizedfileName = fileName.replace(/[^a-z0-9_\-\.]/gi, '_'); // Sanitize filename
+
+    const outputPath = path.join(__dirname, '../../public/certificates/', sanitizedfileName);
     fs.writeFileSync(outputPath, buffer);
 
     res.download(outputPath);

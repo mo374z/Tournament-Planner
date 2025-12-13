@@ -150,9 +150,11 @@
         {{{body}}}
     </div>
 
+    {{#unless username}} {{!-- Share Button only for non-logged-in users --}}
     <button class="share-button" onclick="shareCurrentPage()" title="Seite teilen">
         <i class="fas fa-share-alt"></i>
     </button>
+    {{/unless}}
 
     <script>
         function shareCurrentPage() {
