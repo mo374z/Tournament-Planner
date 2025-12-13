@@ -202,5 +202,85 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
         }
+        
+        .share-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 1000;
+            transition: background-color 0.3s ease;
+        }
+        
+        .share-button:hover {
+            background-color: #0056b3;
+        }
+        
+        .feedback-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 1000;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feedback-button:hover {
+            background-color: #218838;
+            color: white;
+            text-decoration: none;
+            transform: scale(1.1);
+        }
     </style>
+
+    {{#unless username}} {{!-- Share Button only for non-logged-in users --}}
+    <button class="share-button" onclick="shareCurrentPage()" title="Seite teilen">
+        <i class="fas fa-share-alt"></i>
+    </button>
+    {{/unless}}
+
+    {{!-- Feedback Button for everyone --}}
+    <a href="/feedback" class="feedback-button" title="Feedback geben">
+        <i class="fas fa-comment-dots"></i>
+    </a>
+
+    <script>
+        function shareCurrentPage() {
+            if (navigator.share) {
+                // Wenn Web Share API verfügbar ist (hauptsächlich auf Mobilgeräten)
+                navigator.share({
+                    title: document.title,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback: URL in die Zwischenablage kopieren
+                navigator.clipboard.writeText(window.location.href).then(function() {
+                    alert('Link wurde in die Zwischenablage kopiert!');
+                }, function(err) {
+                    // Weitere Fallback-Option
+                    prompt('Link kopieren:', window.location.href);
+                });
+            }
+        }
+    </script>
 </body>

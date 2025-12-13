@@ -1,0 +1,89 @@
+<div class="container mt-5">
+    <h1 class="text-center">
+        <i class="fas fa-comment-dots"></i> Budeturnier Feedback
+    </h1>
+
+    {{#if success}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Vielen Dank!</strong> Ihr Feedback wurde erfolgreich übermittelt.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {{/if}}
+
+    {{#if error}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Fehler!</strong> Beim Senden Ihres Feedbacks ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {{/if}}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Euer Feedback ist uns wichtig</h4>
+                </div>
+                <div class="card-body">
+                    <form action="/feedback/submit" method="POST" onsubmit="return validateFeedbackForm()">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Titel <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" required maxlength="100" placeholder="Kurzer Titel für Ihr Feedback">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name (optional)</label>
+                            <input type="text" class="form-control" id="name" name="name" maxlength="50" placeholder="Ihr Name">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Verbesserungsvorschläge / Nachricht <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="message" name="message" rows="6" required maxlength="1000" placeholder="Beschreiben Sie Ihre Anregungen, Verbesserungsvorschläge oder Feedback..."></textarea>
+                            <div class="form-text">Maximal 1000 Zeichen</div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane"></i> Absenden
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{#if username}}
+                {{#if (eqref userrole "admin")}}
+                    <div class="text-center mt-4">
+                        <a href="/feedback/list" class="btn btn-outline-secondary">
+                            <i class="fas fa-list"></i> Admin: Feedback-Übersicht
+                        </a>
+                    </div>
+                {{/if}}
+            {{/if}}
+
+            <div class="text-center mt-3">
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="fas fa-home"></i> Zurück zur Startseite
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function validateFeedbackForm() {
+    const title = document.getElementById('title').value.trim();
+    const message = document.getElementById('message').value.trim();
+    
+    if (title.length < 3) {
+        alert('Der Titel muss mindestens 3 Zeichen lang sein.');
+        return false;
+    }
+    
+    if (message.length < 10) {
+        alert('Die Nachricht muss mindestens 10 Zeichen lang sein.');
+        return false;
+    }
+    
+    return true;
+}
+</script>
