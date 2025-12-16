@@ -227,6 +227,29 @@
                 </div>
             </div>
 
+            <!-- Visitor Statistics Main Page -->
+            <div class="page-divider"
+                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Visitor Statistics Main Page</h3>
+                <div style="margin-bottom: 20px; padding: 15px; background: #fff; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span><strong>Total Page Views:</strong></span>
+                        <span class="badge bg-primary" style="font-size: 1.1em;">{{ mainSettings.visitorCounters.totalPageViews }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>Unique Visitors:</strong></span>
+                        <span class="badge bg-success" style="font-size: 1.1em;">{{ mainSettings.visitorCounters.uniqueVisitors }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <a href="/mainSettings/resetVisitorCounters" class="btn btn-warning" style="width: 200px;"
+                        onclick="return confirm('Are you sure you want to reset all visitor counters?');">
+                        <i class="fas fa-chart-bar me-2"></i>Reset Visitor Counters
+                    </a>
+                </div>
+            </div>
+
             <!-- Public Page Settings -->
             <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3>Public Page Settings</h3>

@@ -151,13 +151,50 @@
 {{#unless (eqref userrole "beamer")}}
 <footer class="text-center text-lg-start bg-dark text-white py-5">
         <div class="container d-flex justify-content-center">
-
          </div>
 
         <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2);">
-            © 2026 S'scharfe Eck: <a class="text-white" href="/">Budeturnier 2026</a>
+            <div class="d-flex justify-content-center align-items-center flex-wrap">
+                <span class="me-3">© 2026 S'scharfe Eck: <a class="text-white" href="/">Budeturnier 2026</a></span>
+                <button onclick="showCookieInfo()" class="btn btn-outline-light btn-sm" title="Cookie-Informationen">
+                    <i class="fas fa-cookie-bite me-2"></i> Cookie-Info
+                </button>
+            </div>
         </div>
 </footer>
 {{/unless}}
+
+<script>
+// Cookie Information Popup (global function)
+function showCookieInfo() {
+    const cookieInfo = `
+📍 COOKIE-INFORMATIONEN
+
+🍪 VERWENDETE COOKIES:
+
+✅ TECHNISCH NOTWENDIG:
+• Session-Cookie: Für Login-Funktionen
+• Authentifizierung: Sichere Anmeldung
+
+📄 ANALYSE:
+• Besucherzähler: Anonyme Statistiken
+• Seitenaufrufe: Zur Optimierung der Website
+
+⏱️ SPEICHERDAUER:
+• Session-Cookies: 24 Stunden
+• Login-Cookies: Bis zum Logout
+
+🛽 DATENSCHUTZ:
+• Keine Weitergabe an Dritte
+• Keine persönlichen Daten
+• Jederzeit löschbar über Browser-Einstellungen
+
+ℹ️ Die Analyse-Cookies helfen uns, die Website zu verbessern.
+Sie können diese jederzeit in Ihren Browser-Einstellungen deaktivieren.
+    `;
+    
+    alert(cookieInfo);
+}
+</script>
 
 </html>

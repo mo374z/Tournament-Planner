@@ -37,6 +37,10 @@ function createDefaultMainSettings() {
         },
         feedbackOptions: {
             enableFeedback: true
+        },
+        visitorCounters: {
+            totalPageViews: 0,
+            uniqueVisitors: 0
         }
     });
 }
@@ -269,6 +273,28 @@ router.get('/resetCounters', async (req, res) => {
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error resetting counters:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// GET route to reset visitor counters /mainSettings/resetVisitorCounters
+router.get('/resetVisitorCounters', async (req, res) => {
+    try {
+        const mainSettings = await MainSettings.findOne({});
+        if (!mainSettings) {
+            return res.status(404).send('MainSettings not found');
+        }
+
+        // Reset visitor counters
+        mainSettings.visitorCounters = {
+            totalPageViews: 0,
+            uniqueVisitors: 0
+        };
+        
+        await mainSettings.save();
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error resetting visitor counters:', err);
         res.status(500).send('Internal Server Error');
     }
 });

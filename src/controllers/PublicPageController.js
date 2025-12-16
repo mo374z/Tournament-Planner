@@ -13,7 +13,17 @@ const { getRankedTeams } = require('../models/Team');
 const Handlebars = require('handlebars');
 
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
 router.use(cookieParser());
+
+// Session configuration for visitor tracking
+router.use(session({
+    secret: 'tournament-planner-visitor-tracking',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+}));
+
 router.use(checkLoginStatus);
 router.use((req, res, next) => {
     res.locals.username = req.username;
@@ -39,7 +49,57 @@ async function renderPublicPage(req, res) {
         try {
             const teamsByGroup = await getTeamsByGroup();
             const infoBannerMessage = getInfoBannerMessage(); // Get the current info banner message
-            const mainSettings = await MainSettings.findOne({}); // Fetch main settings
+            let mainSettings = await MainSettings.findOne({}); // Fetch main settings
+            
+            // Initialize visitor counters if they don't exist
+            if (!mainSettings.visitorCounters) {
+                mainSettings.visitorCounters = {
+                    totalPageViews: 0,
+                    uniqueVisitors: 0
+                };
+            }
+            
+            // Only track if this is an actual HTML page request (not favicon, images, etc.)
+            const userAgent = req.get('User-Agent') || '';
+            const acceptsHtml = req.accepts('html');
+            const isPageRequest = acceptsHtml && !userAgent.toLowerCase().includes('bot') && !userAgent.toLowerCase().includes('crawler');
+            
+            if (isPageRequest && !req.session.pageViewCounted) {
+                // Track visitor statistics
+                mainSettings.visitorCounters.totalPageViews += 1;
+                
+                // Check if this is a new unique visitor (based on session)
+                if (!req.session.hasVisited) {
+                    mainSettings.visitorCounters.uniqueVisitors += 1;
+                    req.session.hasVisited = true;
+                }
+                
+                // Mark that we've counted this page view for this request
+                req.session.pageViewCounted = true;
+                
+                // Save updated visitor counters
+                await mainSettings.save();
+            }
+            
+            // Initialize visitor counters if they don't exist
+            if (!mainSettings.visitorCounters) {
+                mainSettings.visitorCounters = {
+                    totalPageViews: 0,
+                    uniqueVisitors: 0
+                };
+            }
+            
+            // Track visitor statistics
+            mainSettings.visitorCounters.totalPageViews += 1;
+            
+            // Check if this is a new unique visitor (based on session)
+            if (!req.session.hasVisited) {
+                mainSettings.visitorCounters.uniqueVisitors += 1;
+                req.session.hasVisited = true;
+            }
+            
+            // Save updated visitor counters
+            await mainSettings.save();
 
             const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
                 .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
@@ -60,8 +120,9 @@ async function renderPublicPage(req, res) {
                 carouselImages, // Send the carousel images to the Public page
                 publicPageOptions: {
                     ...mainSettings.publicPageOptions,
-                    feedbackOptions: mainSettings.feedbackOptions || { enableFeedback: true }
-                }, // Send public page options to the Public page including feedback options
+                    feedbackOptions: mainSettings.feedbackOptions || { enableFeedback: true },
+                    visitorCounters: mainSettings.visitorCounters || { totalPageViews: 0, uniqueVisitors: 0 }
+                }, // Send public page options to the Public page including feedback and visitor options
                 rankedTeams, // Send ranked teams to the Public page
                 allTeams // Send all teams for the filter dropdown
             });

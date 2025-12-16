@@ -157,6 +157,18 @@
         <div id="connectionIndicator" class="text-center mt-3">
             <span id="connectionStatusText" class="text-success">Verbunden</span>
         </div>
+        
+        <!-- Optional: Display visitor count for admins -->
+        {{#if username}}
+        {{#if (eqref userrole "admin")}}
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                <i class="fas fa-eye"></i> {{publicPageOptions.visitorCounters.totalPageViews}} Aufrufe | 
+                <i class="fas fa-users"></i> {{publicPageOptions.visitorCounters.uniqueVisitors}} Besucher
+            </small>
+        </div>
+        {{/if}}
+        {{/if}}
     </div>
 
     <!-- Carousel Section -->
@@ -233,7 +245,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             cursor: pointer;
             z-index: 1000;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
         }
         
         .share-button:hover {
@@ -254,7 +266,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             cursor: pointer;
             z-index: 1000;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, opacity 0.3s ease;
             text-decoration: none;
             display: flex;
             align-items: center;
@@ -265,6 +277,37 @@
             background-color: #218838;
             color: white;
             text-decoration: none;
+            transform: scale(1.1);
+        }
+        
+        /* Hide buttons when near footer */
+        .buttons-hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+        .cookie-button {
+            position: fixed;
+            bottom: 20px;
+            right: 80px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 1000;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cookie-button:hover {
+            background-color: #5a6268;
             transform: scale(1.1);
         }
     </style>
@@ -303,6 +346,35 @@
 
         // Team Filter Functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Hide buttons when scrolling near footer
+            function handleButtonVisibility() {
+                const footer = document.querySelector('footer');
+                const shareButton = document.querySelector('.share-button');
+                const feedbackButton = document.querySelector('.feedback-button');
+                
+                if (footer && (shareButton || feedbackButton)) {
+                    const footerRect = footer.getBoundingClientRect();
+                    const windowHeight = window.innerHeight;
+                    
+                    // Hide buttons when footer is visible (with 100px buffer)
+                    const shouldHide = footerRect.top < windowHeight + 100;
+                    
+                    if (shareButton) {
+                        shareButton.classList.toggle('buttons-hidden', shouldHide);
+                    }
+                    if (feedbackButton) {
+                        feedbackButton.classList.toggle('buttons-hidden', shouldHide);
+                    }
+                }
+            }
+            
+            // Listen to scroll events
+            window.addEventListener('scroll', handleButtonVisibility);
+            window.addEventListener('resize', handleButtonVisibility);
+            
+            // Initial check
+            handleButtonVisibility();
+
             const teamFilter = document.getElementById('teamFilter');
             const clearFilter = document.getElementById('clearFilter');
             const gameRows = document.querySelectorAll('table tbody tr');
