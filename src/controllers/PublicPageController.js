@@ -49,6 +49,9 @@ async function renderPublicPage(req, res) {
                 rankedTeams = await getRankedTeams();
             }
 
+            // Get all teams for the filter dropdown sorted by name alphabetically
+            const allTeams = await Team.find({}).sort({ name: 1 });
+
             res.render('home', {
                 gameslist: games,
                 teamsByGroup,
@@ -59,7 +62,8 @@ async function renderPublicPage(req, res) {
                     ...mainSettings.publicPageOptions,
                     feedbackOptions: mainSettings.feedbackOptions || { enableFeedback: true }
                 }, // Send public page options to the Public page including feedback options
-                rankedTeams // Send ranked teams to the Public page
+                rankedTeams, // Send ranked teams to the Public page
+                allTeams // Send all teams for the filter dropdown
             });
 
         } catch (err) {

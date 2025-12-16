@@ -104,6 +104,22 @@
     <section style="text-align: center;">
 
         <h1>Spielplan</h1>
+        
+        <!-- Team Filter -->
+        <div class="mb-3 d-flex justify-content-center align-items-center flex-wrap">
+            <div class="d-flex align-items-center">
+                <select id="teamFilter" class="form-select me-2" style="width: auto; min-width: 200px;">
+                    <option value="">Alle Spiele anzeigen</option>
+                    {{#each allTeams}}
+                    <option value="{{this.name}}">{{this.name}}</option>
+                    {{/each}}
+                </select>
+                <button id="clearFilter" class="btn btn-outline-secondary btn-sm" title="Filter zurücksetzen">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
         <div class="table-responsive">
             <table class="table table-bordered table-hover table-striped">
                 <thead class="bg-dark text-light">
@@ -117,7 +133,7 @@
                 </thead>
                 <tbody>
                     {{#each gameslist}}
-                        <tr class={{#streq this.status 'active'}} "border border-4 border-warning glow"{{/streq}} {{#streq this.gamePhase 'Group_Stage'}} {{else}}"bg-light"{{/streq}} >
+                        <tr class="{{#streq this.status 'active'}}border border-4 border-warning glow{{/streq}} {{#streq this.gamePhase 'Group_Stage'}}{{else}}bg-light{{/streq}}" data-team1="{{this.opponents.[0]}}" data-team2="{{this.opponents.[1]}}">
                             <td>{{this.number}}</td>
                             <td>{{formatTime this.time}}</td>
                             {{#streq this.group.[0] this.group.[1]}}
@@ -211,9 +227,9 @@
             color: white;
             border: none;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             cursor: pointer;
             z-index: 1000;
@@ -232,9 +248,9 @@
             color: white;
             border: none;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             cursor: pointer;
             z-index: 1000;
@@ -284,5 +300,44 @@
                 });
             }
         }
+
+        // Team Filter Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const teamFilter = document.getElementById('teamFilter');
+            const clearFilter = document.getElementById('clearFilter');
+            const gameRows = document.querySelectorAll('table tbody tr');
+
+            function filterGames() {
+                const selectedTeam = teamFilter.value;
+                
+                gameRows.forEach(row => {
+                    const team1 = row.getAttribute('data-team1');
+                    const team2 = row.getAttribute('data-team2');
+                    
+                    // Show row if no filter is selected OR if selected team is either team1 OR team2
+                    if (selectedTeam === '' || team1 === selectedTeam || team2 === selectedTeam) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Update clear button visibility
+                clearFilter.style.display = selectedTeam === '' ? 'none' : 'inline-block';
+            }
+
+            // Ensure "All games" is selected on page load
+            teamFilter.value = '';
+
+            teamFilter.addEventListener('change', filterGames);
+            
+            clearFilter.addEventListener('click', function() {
+                teamFilter.value = '';
+                filterGames();
+            });
+            
+            // Initial filter state - show all games
+            filterGames();
+        });
     </script>
 </body>
