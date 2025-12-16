@@ -259,10 +259,12 @@
     </button>
     {{/unless}}
 
-    {{!-- Feedback Button for everyone --}}
+    {{!-- Feedback Button for everyone (only if enabled in settings) --}}
+    {{#if publicPageOptions.feedbackOptions.enableFeedback}}
     <a href="/feedback" class="feedback-button" title="Feedback geben">
         <i class="fas fa-comment-dots"></i>
     </a>
+    {{/if}}
 
     <script>
         function shareCurrentPage() {

@@ -2,13 +2,33 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Feedback = mongoose.model('Feedback');
+const MainSettings = mongoose.model('MainSettings');
 const { checkLoginStatus, verifyToken, isAdmin } = require('../middleware/auth');
 const cookieParser = require('cookie-parser');
 
 router.use(cookieParser());
 
-// Public feedback form - accessible to everyone
-router.get('/', checkLoginStatus, (req, res) => {
+// Middleware to check if feedback is enabled
+async function checkFeedbackEnabled(req, res, next) {
+    try {
+        const mainSettings = await MainSettings.findOne({});
+        if (!mainSettings || !mainSettings.feedbackOptions || !mainSettings.feedbackOptions.enableFeedback) {
+            return res.status(403).render('layouts/feedback', {
+                error: true,
+                feedbackDisabled: true,
+                username: req.username,
+                userrole: req.userRole
+            });
+        }
+        next();
+    } catch (error) {
+        console.error('Error checking feedback settings:', error);
+        res.status(500).send('Internal Server Error');
+    }
+}
+
+// Public feedback form - accessible to everyone (if enabled)
+router.get('/', checkLoginStatus, checkFeedbackEnabled, (req, res) => {
     res.locals.username = req.username;
     res.locals.userrole = req.userRole;
     res.render('layouts/feedback', { 
@@ -19,8 +39,8 @@ router.get('/', checkLoginStatus, (req, res) => {
     });
 });
 
-// Public feedback submission - accessible to everyone
-router.post('/submit', checkLoginStatus, async (req, res) => {
+// Public feedback submission - accessible to everyone (if enabled)
+router.post('/submit', checkLoginStatus, checkFeedbackEnabled, async (req, res) => {
     try {
         const { title, name, message } = req.body;
         

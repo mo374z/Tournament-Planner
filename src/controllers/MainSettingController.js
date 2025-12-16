@@ -34,6 +34,9 @@ function createDefaultMainSettings() {
         publicPageOptions: {
             showAdvertisingPosters: true,
             showRankingTable: false,
+        },
+        feedbackOptions: {
+            enableFeedback: true
         }
     });
 }
@@ -212,6 +215,37 @@ router.post('/publicPageSettings', async (req, res) => {
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error updating Public Page Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// POST route to handle form submission and update Feedback Settings
+router.post('/feedbackSettings', async (req, res) => {
+    try {
+        const { enableFeedback } = req.body;
+
+        // Find the MainSettings document and update its values
+        let mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        // Ensure feedbackOptions exists
+        if (!mainSettings.feedbackOptions) {
+            mainSettings.feedbackOptions = {};
+        }
+
+        mainSettings.feedbackOptions.enableFeedback = enableFeedback === 'on';
+
+        // Save the updated MainSettings
+        await mainSettings.save();
+
+        // Redirect to the main settings page
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating Feedback Settings:', err);
         res.status(500).send('Internal Server Error');
     }
 });

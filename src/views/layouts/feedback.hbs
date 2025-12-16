@@ -3,6 +3,18 @@
         <i class="fas fa-comment-dots"></i> Budeturnier Feedback
     </h1>
 
+    {{#if feedbackDisabled}}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>Feedback deaktiviert!</strong> Das Feedback-System ist derzeit von der Administration deaktiviert.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div class="text-center mt-3">
+            <a href="/" class="btn btn-outline-primary">
+                <i class="fas fa-home"></i> Zurück zur Startseite
+            </a>
+        </div>
+    {{else}}
+    
     {{#if success}}
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <strong>Vielen Dank!</strong> Ihr Feedback wurde erfolgreich übermittelt.
@@ -67,6 +79,8 @@
             </div>
         </div>
     </div>
+    
+    {{/if}}
 </div>
 
 <script>

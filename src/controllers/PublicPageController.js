@@ -55,7 +55,10 @@ async function renderPublicPage(req, res) {
                 timeBetweenGames,
                 infoBannerMessage, // Send the infoBannerMessage to the Public page
                 carouselImages, // Send the carousel images to the Public page
-                publicPageOptions: mainSettings.publicPageOptions, // Send public page options to the Public page
+                publicPageOptions: {
+                    ...mainSettings.publicPageOptions,
+                    feedbackOptions: mainSettings.feedbackOptions || { enableFeedback: true }
+                }, // Send public page options to the Public page including feedback options
                 rankedTeams // Send ranked teams to the Public page
             });
 
