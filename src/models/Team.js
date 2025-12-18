@@ -42,6 +42,15 @@ var TeamSchema = new mongoose.Schema({
     imagePath: {
         type: String,
     },
+    logo: {
+        path: { type: String, default: '/teamlogos/default_logo.png' },
+        position: {
+            x: { type: Number, default: 50 },
+            y: { type: Number, default: 50 }
+        },
+        scale: { type: Number, default: 0.5 },
+        backgroundColor: { type: String, default: '#f8f9fa' }
+    },
     //array of opponents the team has played against (maybe add this later)
     // opponents: {
     //     type: Array,

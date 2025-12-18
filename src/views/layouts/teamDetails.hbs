@@ -211,6 +211,183 @@
         </tbody>
     </table>
  <hr>
+    <h2>Team Logo</h2>
+    <form action='/team/uploadLogo' method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="_id" value="{{team._id}}">
+        <div class="form-group">
+            <label for="teamLogo">Team Logo hochladen:</label>
+            <input type="file" class="form-control" id="teamLogo" name="teamLogo" accept="image/*" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Logo hochladen</button>
+    </form>
+    <h3 class="mt-4">Aktuelles Logo:</h3>
+    {{#if logoPath}}
+        <div class="team-logo" style="background-color: #f8f9fa; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+            <p class="text-muted mb-4 text-center"><i class="fa fa-info-circle"></i> <strong>Anleitung:</strong> Logo im Kreis an passende Position schieben und Größe anpassen</p>
+            
+            <!-- Logo Container - zentriert -->
+            <div class="text-center mb-4">
+                <div id="logo-container" style="position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 3px solid #007bff; margin: 0 auto; background: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}};">
+                    <img id="team-logo-img" src="{{logoPath}}" alt="Team Logo" 
+                         style="position: absolute; 
+                                transform-origin: center center;
+                                transform: translate(-50%, -50%) scale({{#if team.logo.scale}}{{team.logo.scale}}{{else}}1{{/if}});
+                                left: {{#if team.logo.position.x}}{{team.logo.position.x}}{{else}}50{{/if}}%;
+                                top: {{#if team.logo.position.y}}{{team.logo.position.y}}{{else}}50{{/if}}%;
+                                max-width: none;
+                                cursor: move;">
+                </div>
+            </div>
+            
+            <!-- Zentrieren Buttons -->
+            <div class="text-center mb-4">
+                <button type="button" id="center-horizontal" class="btn btn-outline-primary btn-sm mx-2">Horizontal zentrieren</button>
+                <button type="button" id="center-vertical" class="btn btn-outline-primary btn-sm mx-2">Vertikal zentrieren</button>
+            </div>
+            
+            <!-- Größe Regler -->
+            <div class="text-center mb-4">
+                <label for="logo-scale" class="form-label"><strong>Größe:</strong></label><br>
+                <div style="display: inline-block; width: 300px;">
+                    <input type="range" id="logo-scale" min="0.05" max="1" step="0.05" 
+                           value="{{#if team.logo.scale}}{{team.logo.scale}}{{else}}1{{/if}}" 
+                           class="form-range" style="width: 100%;">
+                    <div class="text-center mt-1">
+                        <span id="scale-value" style="font-weight: bold;">{{#if team.logo.scale}}{{team.logo.scale}}{{else}}1{{/if}}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hintergrundfarbe -->
+            <div class="text-center mb-4">
+                <label for="background-color" class="form-label"><strong>Hintergrundfarbe:</strong></label><br>
+                <input type="color" id="background-color" 
+                       value="{{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}}"
+                       class="form-control" style="width: 100px; height: 40px; margin: 0 auto;">
+            </div>
+            
+            <!-- Zurücksetzen und Speichern -->
+            <div class="text-center mb-4">
+                <button type="button" id="reset-logo" class="btn btn-secondary me-2">Zurücksetzen</button>
+                <button type="button" id="save-logo-position" class="btn btn-success">Speichern</button>
+            </div>
+            
+            <!-- Logo löschen -->
+            <div class="text-center">
+                <form action='/team/deleteLogo' method="POST" style="display: inline;">
+                    <input type="hidden" name="_id" value="{{team._id}}">
+                    <button type="submit" class="btn btn-danger">Logo löschen</button>
+                </form>
+            </div>
+        </div>
+        
+        <script>
+        let isDragging = false;
+        let logoImg = document.getElementById('team-logo-img');
+        let logoContainer = document.getElementById('logo-container');
+        let scaleSlider = document.getElementById('logo-scale');
+        let scaleValue = document.getElementById('scale-value');
+        let backgroundColorPicker = document.getElementById('background-color');
+        
+        // Logo dragging functionality
+        logoImg.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                let rect = logoContainer.getBoundingClientRect();
+                let x = ((e.clientX - rect.left) / rect.width) * 100;
+                let y = ((e.clientY - rect.top) / rect.height) * 100;
+                
+                // Begrenze die Position auf den Container
+                x = Math.max(0, Math.min(100, x));
+                y = Math.max(0, Math.min(100, y));
+                
+                logoImg.style.left = x + '%';
+                logoImg.style.top = y + '%';
+            }
+        });
+        
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+        
+        // Scale functionality
+        scaleSlider.addEventListener('input', function() {
+            let scale = this.value;
+            logoImg.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            scaleValue.textContent = scale;
+        });
+        
+        // Background color functionality
+        backgroundColorPicker.addEventListener('input', function() {
+            logoContainer.style.backgroundColor = this.value;
+        });
+        
+        // Center horizontally
+        document.getElementById('center-horizontal').addEventListener('click', function() {
+            logoImg.style.left = '50%';
+        });
+        
+        // Center vertically  
+        document.getElementById('center-vertical').addEventListener('click', function() {
+            logoImg.style.top = '50%';
+        });
+        
+        // Reset functionality
+        document.getElementById('reset-logo').addEventListener('click', function() {
+            logoImg.style.left = '50%';
+            logoImg.style.top = '50%';
+            logoImg.style.transform = 'translate(-50%, -50%) scale(0.5)';
+            scaleSlider.value = 0.5;
+            scaleValue.textContent = '0.5';
+            backgroundColorPicker.value = '#f8f9fa';
+            logoContainer.style.backgroundColor = '#f8f9fa';
+        });
+        
+        // Save functionality
+        document.getElementById('save-logo-position').addEventListener('click', function() {
+            let rect = logoContainer.getBoundingClientRect();
+            let currentLeft = parseFloat(logoImg.style.left);
+            let currentTop = parseFloat(logoImg.style.top);
+            let currentScale = parseFloat(scaleSlider.value);
+            let currentBackgroundColor = backgroundColorPicker.value;
+            
+            // Send AJAX request to save position
+            fetch('/team/saveLogoPosition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    teamId: '{{team._id}}',
+                    x: currentLeft,
+                    y: currentTop,
+                    scale: currentScale,
+                    backgroundColor: currentBackgroundColor
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Logo-Einstellungen erfolgreich gespeichert!');
+                } else {
+                    alert('Fehler beim Speichern der Logo-Einstellungen.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Fehler beim Speichern der Logo-Einstellungen.');
+            });
+        });
+        </script>
+    {{else}}
+        <p class="text-muted">Kein Logo vorhanden</p>
+    {{/if}}
+
+    <hr>
     <h2 >Team Bild</h2>
     <form action='/team/uploadImage' method="POST" enctype="multipart/form-data">
         <input type="hidden" name="_id" value="{{team._id}}">

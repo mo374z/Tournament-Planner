@@ -35,6 +35,9 @@ function createDefaultMainSettings() {
             showAdvertisingPosters: true,
             showRankingTable: false,
         },
+        liveGamePageOptions: {
+            showTeamLogos: true
+        },
         feedbackOptions: {
             enableFeedback: true
         },
@@ -250,6 +253,37 @@ router.post('/feedbackSettings', async (req, res) => {
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error updating Feedback Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// POST route to handle form submission and update Live Game Page Settings
+router.post('/liveGamePageSettings', async (req, res) => {
+    try {
+        const { showTeamLogos } = req.body;
+
+        // Find the MainSettings document and update its values
+        let mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        // Ensure liveGamePageOptions exists
+        if (!mainSettings.liveGamePageOptions) {
+            mainSettings.liveGamePageOptions = {};
+        }
+
+        mainSettings.liveGamePageOptions.showTeamLogos = showTeamLogos === 'on';
+
+        // Save the updated MainSettings
+        await mainSettings.save();
+
+        // Redirect to the main settings page
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating Live Game Page Settings:', err);
         res.status(500).send('Internal Server Error');
     }
 });

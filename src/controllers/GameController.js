@@ -471,11 +471,55 @@ router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
       const team1 = await Team.findById(game.opponents[0]).exec();
       const team2 = await Team.findById(game.opponents[1]).exec();
 
+      // Fetch main settings for live game page options
+      const mainSettings = await MainSettings.findOne({}).exec();
+
+      // Create team objects with name and logo data
+      const teamData = {
+        team1: {
+          name: team1 ? team1.name : 'Team not found',
+          logo: team1 ? team1.logo : null
+        },
+        team2: {
+          name: team2 ? team2.name : 'Team not found', 
+          logo: team2 ? team2.logo : null
+        }
+      };
+
+      //if teamlogo pasth is null set it to default logo path
+      if (!teamData.team1.logo || !teamData.team1.logo.path) {
+        teamData.team1.logo =  {
+          path: '/teamlogos/default_logo.png',
+          position: { x: 50, y: 50 },
+          scale: 0.5,
+          backgroundColor: '#f8f9fa'
+        };
+      }
+      if (!teamData.team2.logo || !teamData.team2.logo.path) {
+        teamData.team2.logo =  {
+          path: '/teamlogos/default_logo.png',
+          position: { x: 50, y: 50 },
+          scale: 0.5,
+          backgroundColor: '#f8f9fa'
+        };
+      }
+
+      // console.log('Team Logo Data path team 1: ', teamData.team1.logo ? teamData.team1.logo.path : 'No logo');
+      // console.log('Team Logo Data path team 2: ', teamData.team2.logo ? teamData.team2.logo.path : 'No logo');
+
       // set them instead of the id - ATTENTION: dont change the db data
-      game.opponents[0] = team1 ? team1.name : 'Team not found';
-      game.opponents[1] = team2 ? team2.name : 'Team not found';
+      game.opponents[0] = teamData.team1.name;
+      game.opponents[1] = teamData.team2.name;
       
-      res.render('layouts/liveGame', { socketConfig: socketConfig, game, noActiveGame: false, infoBannerMessage, carouselImages });
+      res.render('layouts/liveGame', { 
+        socketConfig: socketConfig, 
+        game, 
+        teamData,
+        mainSettings,
+        noActiveGame: false, 
+        infoBannerMessage, 
+        carouselImages 
+      });
 
     } catch (err) {
         console.error('Error fetching live games: ', err);
