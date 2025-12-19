@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
 const MainSettings = mongoose.model('MainSettings');
+const genCounters = mongoose.model('generalCounters');
 const { checkLoginStatus, authorizeRoles } = require('../middleware/auth');
 const { updateSocketConfig } = require('../config/socketConfig');
 const socketConfig = updateSocketConfig(process.argv.slice(2));
@@ -50,13 +51,19 @@ async function renderPublicPage(req, res) {
             const teamsByGroup = await getTeamsByGroup();
             const infoBannerMessage = getInfoBannerMessage(); // Get the current info banner message
             let mainSettings = await MainSettings.findOne({}); // Fetch main settings
+            let generalCounters = await genCounters.findOne({});
             
-            // Initialize visitor counters if they don't exist
-            if (!mainSettings.visitorCounters) {
-                mainSettings.visitorCounters = {
+            // Initialize general counters if they don't exist
+            if (!generalCounters) {
+                generalCounters = new genCounters({
+                    allGoals: 0,
+                    gamesPlayed: 0,
+                    goalSektCounter: 0,
+                    wonSektBottles: 0,
                     totalPageViews: 0,
                     uniqueVisitors: 0
-                };
+                });
+                await generalCounters.save(); // Save the new counters initially
             }
             
             // Only track if this is an actual HTML page request (not favicon, images, etc.)
@@ -64,43 +71,22 @@ async function renderPublicPage(req, res) {
             const acceptsHtml = req.accepts('html');
             const isPageRequest = acceptsHtml && !userAgent.toLowerCase().includes('bot') && !userAgent.toLowerCase().includes('crawler');
             
-            if (isPageRequest && !req.session.pageViewCounted) {
-                // Track visitor statistics
-                mainSettings.visitorCounters.totalPageViews += 1;
+            if (isPageRequest) {
+                // Track every page load (page views)
+                generalCounters.totalPageViews += 1;
+                //console.log(`Total Page Views: ${generalCounters.totalPageViews}`);
                 
                 // Check if this is a new unique visitor (based on session)
                 if (!req.session.hasVisited) {
-                    mainSettings.visitorCounters.uniqueVisitors += 1;
+                    generalCounters.uniqueVisitors += 1;
                     req.session.hasVisited = true;
+                    //console.log(`Unique Visitors: ${generalCounters.uniqueVisitors}`);
                 }
                 
-                // Mark that we've counted this page view for this request
-                req.session.pageViewCounted = true;
-                
                 // Save updated visitor counters
-                await mainSettings.save();
+                await generalCounters.save();
             }
             
-            // Initialize visitor counters if they don't exist
-            if (!mainSettings.visitorCounters) {
-                mainSettings.visitorCounters = {
-                    totalPageViews: 0,
-                    uniqueVisitors: 0
-                };
-            }
-            
-            // Track visitor statistics
-            mainSettings.visitorCounters.totalPageViews += 1;
-            
-            // Check if this is a new unique visitor (based on session)
-            if (!req.session.hasVisited) {
-                mainSettings.visitorCounters.uniqueVisitors += 1;
-                req.session.hasVisited = true;
-            }
-            
-            // Save updated visitor counters
-            await mainSettings.save();
-
             const carouselImages = fs.readdirSync(path.join(__dirname, '../../public/images/carousel'))
                 .filter(file => ['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(file.split('.').pop().toLowerCase()));
 
@@ -121,7 +107,10 @@ async function renderPublicPage(req, res) {
                 publicPageOptions: {
                     ...mainSettings.publicPageOptions,
                     feedbackOptions: mainSettings.feedbackOptions || { enableFeedback: true },
-                    visitorCounters: mainSettings.visitorCounters || { totalPageViews: 0, uniqueVisitors: 0 }
+                    visitorCounters: { 
+                        totalPageViews: generalCounters.totalPageViews || 0, 
+                        uniqueVisitors: generalCounters.uniqueVisitors || 0
+                    }
                 }, // Send public page options to the Public page including feedback and visitor options
                 rankedTeams, // Send ranked teams to the Public page
                 allTeams // Send all teams for the filter dropdown

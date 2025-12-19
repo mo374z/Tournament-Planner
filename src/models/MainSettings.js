@@ -66,16 +66,6 @@ var MainSettingsSchema = new mongoose.Schema({
             type: Boolean,
             default: true
         }
-    },
-    visitorCounters: {
-        totalPageViews: {
-            type: Number,
-            default: 0
-        },
-        uniqueVisitors: {
-            type: Number,
-            default: 0
-        }
     }
 });
 

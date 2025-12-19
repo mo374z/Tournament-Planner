@@ -40,10 +40,6 @@ function createDefaultMainSettings() {
         },
         feedbackOptions: {
             enableFeedback: true
-        },
-        visitorCounters: {
-            totalPageViews: 0,
-            uniqueVisitors: 0
         }
     });
 }
@@ -70,6 +66,8 @@ router.get('/', async (req, res) => {
                 gamesPlayed: 0,
                 goalSektCounter: 0,
                 wonSektBottles: 0,
+                totalPageViews: 0,
+                uniqueVisitors: 0
             });
             await generalCounters.save();
         }
@@ -314,18 +312,23 @@ router.get('/resetCounters', async (req, res) => {
 // GET route to reset visitor counters /mainSettings/resetVisitorCounters
 router.get('/resetVisitorCounters', async (req, res) => {
     try {
-        const mainSettings = await MainSettings.findOne({});
-        if (!mainSettings) {
-            return res.status(404).send('MainSettings not found');
+        let generalCounters = await genCounters.findOne({});
+        if (!generalCounters) {
+            generalCounters = new genCounters({
+                allGoals: 0,
+                gamesPlayed: 0,
+                goalSektCounter: 0,
+                wonSektBottles: 0,
+                totalPageViews: 0,
+                uniqueVisitors: 0
+            });
         }
 
         // Reset visitor counters
-        mainSettings.visitorCounters = {
-            totalPageViews: 0,
-            uniqueVisitors: 0
-        };
+        generalCounters.totalPageViews = 0;
+        generalCounters.uniqueVisitors = 0;
         
-        await mainSettings.save();
+        await generalCounters.save();
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error resetting visitor counters:', err);
