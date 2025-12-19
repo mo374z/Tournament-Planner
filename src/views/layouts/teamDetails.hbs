@@ -226,16 +226,47 @@
             <p class="text-muted mb-4 text-center"><i class="fa fa-info-circle"></i> <strong>Anleitung:</strong> Logo im Kreis an passende Position schieben und Größe anpassen</p>
             
             <!-- Logo Container - zentriert -->
-            <div class="text-center mb-4">
-                <div id="logo-container" style="position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 3px solid #007bff; margin: 0 auto; background: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}};">
-                    <img id="team-logo-img" src="{{logoPath}}" alt="Team Logo" 
-                         style="position: absolute; 
-                                transform-origin: center center;
-                                transform: translate(-50%, -50%) scale({{#if team.logo.scale}}{{team.logo.scale}}{{else}}1{{/if}});
-                                left: {{#if team.logo.position.x}}{{team.logo.position.x}}{{else}}50{{/if}}%;
-                                top: {{#if team.logo.position.y}}{{team.logo.position.y}}{{else}}50{{/if}}%;
-                                max-width: none;
-                                cursor: move;">
+            <div class="text-center mb-5" style="padding: 50px 60px;">
+                <div style="position: relative; display: inline-block;">
+                    <!-- Pfeil nach oben -->
+                    <div style="position: absolute; top: -35px; left: 50%; transform: translateX(-50%);">
+                        <button type="button" id="move-up" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                            <i class="fa fa-arrow-up"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Pfeil nach links -->
+                    <div style="position: absolute; top: 50%; left: -45px; transform: translateY(-50%);">
+                        <button type="button" id="move-left" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                            <i class="fa fa-arrow-left"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Pfeil nach rechts -->
+                    <div style="position: absolute; top: 50%; right: -45px; transform: translateY(-50%);">
+                        <button type="button" id="move-right" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                            <i class="fa fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Pfeil nach unten -->
+                    <div style="position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%);">
+                        <button type="button" id="move-down" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                            <i class="fa fa-arrow-down"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Logo Container -->
+                    <div id="logo-container" style="position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 3px solid #007bff; margin: 0 auto; background: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}};">
+                        <img id="team-logo-img" src="{{logoPath}}" alt="Team Logo" 
+                             style="position: absolute; 
+                                    transform-origin: center center;
+                                    transform: translate(-50%, -50%) scale({{#if team.logo.scale}}{{team.logo.scale}}{{else}}1{{/if}});
+                                    left: {{#if team.logo.position.x}}{{team.logo.position.x}}{{else}}50{{/if}}%;
+                                    top: {{#if team.logo.position.y}}{{team.logo.position.y}}{{else}}50{{/if}}%;
+                                    max-width: none;
+                                    cursor: move;">
+                    </div>
                 </div>
             </div>
             
@@ -249,7 +280,7 @@
             <div class="text-center mb-4">
                 <label for="logo-scale" class="form-label"><strong>Größe:</strong></label><br>
                 <div style="display: inline-block; width: 300px;">
-                    <input type="range" id="logo-scale" min="0.05" max="1" step="0.05" 
+                    <input type="range" id="logo-scale" min="0.05" max="1.5" step="0.05" 
                            value="{{#if team.logo.scale}}{{team.logo.scale}}{{else}}1{{/if}}" 
                            class="form-range" style="width: 100%;">
                     <div class="text-center mt-1">
@@ -334,6 +365,49 @@
         // Center vertically  
         document.getElementById('center-vertical').addEventListener('click', function() {
             logoImg.style.top = '50%';
+        });
+        
+        // Arrow movement functions
+        function moveLogoByArrow(direction) {
+            let currentLeft = parseFloat(logoImg.style.left) || 50;
+            let currentTop = parseFloat(logoImg.style.top) || 50;
+            let step = 2; // Bewegungsschritt in Prozent
+            
+            switch(direction) {
+                case 'up':
+                    currentTop = Math.max(0, currentTop - step);
+                    logoImg.style.top = currentTop + '%';
+                    break;
+                case 'down':
+                    currentTop = Math.min(100, currentTop + step);
+                    logoImg.style.top = currentTop + '%';
+                    break;
+                case 'left':
+                    currentLeft = Math.max(0, currentLeft - step);
+                    logoImg.style.left = currentLeft + '%';
+                    break;
+                case 'right':
+                    currentLeft = Math.min(100, currentLeft + step);
+                    logoImg.style.left = currentLeft + '%';
+                    break;
+            }
+        }
+        
+        // Arrow button event listeners
+        document.getElementById('move-up').addEventListener('click', function() {
+            moveLogoByArrow('up');
+        });
+        
+        document.getElementById('move-down').addEventListener('click', function() {
+            moveLogoByArrow('down');
+        });
+        
+        document.getElementById('move-left').addEventListener('click', function() {
+            moveLogoByArrow('left');
+        });
+        
+        document.getElementById('move-right').addEventListener('click', function() {
+            moveLogoByArrow('right');
         });
         
         // Reset functionality
