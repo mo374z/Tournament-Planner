@@ -486,7 +486,7 @@ router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
         }
       };
 
-      //if teamlogo pasth is null set it to default logo path
+      //if teamlogo path is null set it to default logo path
       if (!teamData.team1.logo || !teamData.team1.logo.path) {
         teamData.team1.logo =  {
           path: '/teamlogos/default_logo.png',

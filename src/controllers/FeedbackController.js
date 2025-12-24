@@ -44,10 +44,42 @@ router.post('/submit', checkLoginStatus, checkFeedbackEnabled, async (req, res) 
     try {
         const { title, name, message } = req.body;
         
+        // Server-side input validation
+        const validationErrors = [];
+        
+        // Validate title
+        if (!title || typeof title !== 'string') {
+            validationErrors.push('Titel ist erforderlich');
+        } else if (title.trim().length < 3) {
+            validationErrors.push('Titel muss mindestens 3 Zeichen lang sein');
+        } else if (title.trim().length > 100) {
+            validationErrors.push('Titel darf maximal 100 Zeichen lang sein');
+        }
+        
+        // Validate message
+        if (!message || typeof message !== 'string') {
+            validationErrors.push('Nachricht ist erforderlich');
+        } else if (message.trim().length < 10) {
+            validationErrors.push('Nachricht muss mindestens 10 Zeichen lang sein');
+        } else if (message.trim().length > 2000) {
+            validationErrors.push('Nachricht darf maximal 2000 Zeichen lang sein');
+        }
+        
+        // Validate name (optional but if provided, should be reasonable)
+        if (name && typeof name === 'string' && name.trim().length > 50) {
+            validationErrors.push('Name darf maximal 50 Zeichen lang sein');
+        }
+        
+        // If validation fails, redirect with error
+        if (validationErrors.length > 0) {
+            console.log('Validation errors:', validationErrors);
+            return res.redirect('/feedback?error=validation&details=' + encodeURIComponent(validationErrors.join(', ')));
+        }
+        
         const newFeedback = new Feedback({
-            title,
-            name: name || '',
-            message,
+            title: title.trim(),
+            name: (name && typeof name === 'string') ? name.trim() : '', 
+            message: message.trim(),
             userRole: req.userRole || 'anonymous'
         });
         
@@ -106,7 +138,7 @@ router.get('/download', verifyToken, isAdmin, async (req, res) => {
         const feedbacks = await Feedback.find({}).sort({ timestamp: -1 });
         
         let textContent = '='.repeat(80) + '\n';
-        textContent += 'BUDETURNIER 2026 - FEEDBACK ÜBERSICHT\n';
+           textContent += `BUDETURNIER ${new Date().getFullYear()} - FEEDBACK ÜBERSICHT\n`;
         textContent += '='.repeat(80) + '\n';
         textContent += `Generiert am: ${new Date().toLocaleString('de-DE')}\n`;
         textContent += `Anzahl Einträge: ${feedbacks.length}\n\n`;
