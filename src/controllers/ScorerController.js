@@ -106,6 +106,46 @@ router.post('/assignPlayer', async (req, res) => {
     }
 });
 
+router.post('/unassignPlayer', async (req, res) => {
+    try {
+        const { gameId, goalId } = req.body;
+        const game = await Game.findById(gameId).exec();
+        const goal = game.goalsLog.id(goalId);
+
+        if (!goal.player) {
+            console.log("Kein Spieler dem Tor zugewiesen");
+            return res.redirect('/scorer');
+        }
+
+        // Spieler vom Tor entfernen
+        const playerId = goal.player;
+        goal.player = null; // Spieler vom Tor entfernen
+
+        // Spielerdaten aktualisieren
+        const player = await Player.findById(playerId).exec();
+        if (player) {
+            // Tor aus dem Spieler-Array entfernen
+            player.goals = player.goals.filter(g => 
+                g.gameId.toString() !== gameId.toString() || g.goalId.toString() !== goalId.toString()
+            );
+            // Torzähler des Spielers reduzieren
+            if (player.total_goals > 0) {
+                player.total_goals -= 1;
+            }
+            await player.save();
+            console.log("Tor von Spieler " + player.name + " entfernt. Spieler hat jetzt " + player.total_goals + " Tore");
+        }
+
+        // Spiel speichern
+        await game.save();
+
+        res.redirect('/scorer');
+    } catch (err) {
+        console.error('Error unassigning player from goal: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 
 async function removeAllPlayerfromAllGameGoals() {
     try {

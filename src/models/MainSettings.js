@@ -54,6 +54,18 @@ var MainSettingsSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         }
+    },
+    liveGamePageOptions: {
+        showTeamLogos: {
+            type: Boolean,
+            default: false
+        }
+    },
+    feedbackOptions: {
+        enableFeedback: {
+            type: Boolean,
+            default: true
+        }
     }
 });
 

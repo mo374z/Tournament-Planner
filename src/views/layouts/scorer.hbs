@@ -92,7 +92,7 @@
                     <th>Sekt</th>
                     <th>Tor Tunier</th>
                     <th>Torschütze</th>
-                    {{!-- <th>goalID</th> --}}
+                    <th>Aktion</th>
                 </tr>
             </thead>
             <tbody>
@@ -115,7 +115,13 @@
                         <td>{{sekt}}</td>
                         <td>{{goalIndexTournament}}</td>
                         <td>{{playerName}}</td>
-                        {{!-- <td>{{goalId}}</td> --}}
+                        <td>
+                            <form action="/scorer/unassignPlayer" method="POST" style="display: inline;" onsubmit="return confirm('Sind Sie sicher, dass Sie die Spielerzuweisung entfernen möchten?')">
+                                <input type="hidden" name="gameId" value="{{gameId}}">
+                                <input type="hidden" name="goalId" value="{{goalId}}">
+                                <button type="submit" class="btn btn-sm btn-danger">Rückgängig</button>
+                            </form>
+                        </td>
                     </tr>
                 {{/each}}
             </tbody>

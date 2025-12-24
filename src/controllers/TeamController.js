@@ -22,7 +22,17 @@ const storage = multer.diskStorage({
   },
 });
 
+const logoStorage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, "public/teamlogos/");
+  },
+  filename: function(req, file, cb) {
+    cb(null, req.body._id + "_logo" + path.extname(file.originalname));
+  },
+});
+
 const upload = multer({ storage: storage });
+const uploadLogo = multer({ storage: logoStorage });
 
 router.post("/uploadImage", upload.single("teamImage"), async (req, res) => {
   try {
@@ -38,6 +48,31 @@ router.post("/uploadImage", upload.single("teamImage"), async (req, res) => {
     }
   } catch (err) {
     console.log("Error during image upload:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.post("/uploadLogo", uploadLogo.single("teamLogo"), async (req, res) => {
+  try {
+    const team = await Team.findById(req.body._id).exec();
+    if (team) {
+      if (!team.logo) {
+        team.logo = {
+          position: { x: 50, y: 50 },
+          scale: 1,
+          backgroundColor: '#f8f9fa'
+        };
+      }
+      team.logo.path = "/teamlogos/" + req.file.filename;
+      await team.save();
+      console.log("Logo uploaded successfully:", req.file.filename);
+      res.redirect("/team/details/" + req.body._id);
+    } else {
+      console.log("Team not found for ID:", req.body._id);
+      res.status(404).send("Team not found");
+    }
+  } catch (err) {
+    console.log("Error during logo upload:", err);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -61,6 +96,29 @@ async function deleteImage(team) {
     }
 }
 
+async function deleteLogo(team) {
+    if (team && team.logo && team.logo.path) {
+        const logoPath = path.join(__dirname, '../../public', team.logo.path);
+        return new Promise((resolve, reject) => {
+            fs.unlink(logoPath, async (err) => {
+                if (err) {
+                    console.log('Error deleting logo:', err);
+                    reject(err);
+                } else {
+                    team.logo.path = '/teamlogos/default_logo.png';
+                    //reset logo settings to default
+                    team.logo.position = { x: 50, y: 50 };
+                    team.logo.scale = 0.5;
+                    team.logo.backgroundColor = '#f8f9fa';
+                    await team.save();
+                    console.log('Logo deleted successfully');
+                    resolve();
+                }
+            });
+        });
+    }
+}
+
 router.post('/deleteImage', async (req, res) => {
     try {
         console.log('Deleting image for team ID:', req.body._id);
@@ -75,6 +133,51 @@ router.post('/deleteImage', async (req, res) => {
     } catch (err) {
         console.log('Error during image deletion:', err);
         res.status(500).send('Internal Server Error');
+    }
+});
+
+router.post('/deleteLogo', async (req, res) => {
+    try {
+        console.log('Deleting logo for team ID:', req.body._id);
+        const team = await Team.findById(req.body._id).exec();
+        if (team) {
+            await deleteLogo(team);
+            res.redirect('/team/details/' + req.body._id);
+        } else {
+            console.log('Team or logo not found for ID:', req.body._id);
+            res.status(404).send('Team or logo not found');
+        }
+    } catch (err) {
+        console.log('Error during logo deletion:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.post('/saveLogoPosition', async (req, res) => {
+    try {
+        const { teamId, x, y, scale, backgroundColor } = req.body;
+        console.log('Saving logo settings for team ID:', teamId, 'Position:', x, y, 'Scale:', scale, 'Background:', backgroundColor);
+        
+        const team = await Team.findById(teamId).exec();
+        if (team) {
+            if (!team.logo) {
+                team.logo = {};
+            }
+            team.logo.position = { x: x, y: y };
+            team.logo.scale = scale;
+            if (backgroundColor) {
+                team.logo.backgroundColor = backgroundColor;
+            }
+            await team.save();
+            console.log('Logo settings saved successfully');
+            res.json({ success: true });
+        } else {
+            console.log('Team not found for ID:', teamId);
+            res.status(404).json({ success: false, message: 'Team not found' });
+        }
+    } catch (err) {
+        console.log('Error during logo settings save:', err);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 });
 
@@ -368,6 +471,25 @@ router.get("/getTeamName/:id", async (req, res) => {
   }
 });
 
+// return the team logo data as JSON
+router.get("/getTeamLogo/:id", async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id).exec();
+
+    if (team) {
+      const logoData = {
+        logo: team.logo || null
+      };
+      res.status(200).json(logoData);
+    } else {
+      res.status(404).json({ error: "Team not found" });
+    }
+  } catch (err) {
+    console.log("Error: " + err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // return the current rank of the team within the group
 // the rank is based on the points, goal difference, and goals scored (in this order)
 router.get("/getTeamRank/:id", async (req, res) => {
@@ -405,6 +527,7 @@ router.get("/details/:id", async (req, res) => {
         tournamentRank: tournamentRank,
         groupRank: groupRank,
         imagePath: team.imagePath || "/teampictures/default.jpg",
+        logoPath: (team.logo && team.logo.path) ? team.logo.path : "/teamlogos/default_logo.png"
       });
     } else {
       res.status(404).send("Team not found");

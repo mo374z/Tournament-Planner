@@ -21,6 +21,7 @@ const PublicPageController = require("./src/controllers/PublicPageController");
 const ScorerController = require("./src/controllers/ScorerController").router;
 const PlayerController = require("./src/controllers/PlayerController");
 const CertificateController = require("./src/controllers/CertificateController");
+const FeedbackController = require("./src/controllers/FeedbackController");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -82,6 +83,16 @@ app.engine('hbs', exphbs.engine({
     or: function (a, b) {
       return a || b;
     },
+    getQueryParams: function() {
+      return {};
+    },
+    lookup: function(obj, key) {
+      return obj && obj[key];
+    },
+    substring: function(str, start, end) {
+      if (!str) return '';
+      return str.substring(start, end);
+    },
   }
 }));
 
@@ -102,6 +113,7 @@ app.use("/game", GameController);
 app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
 app.use("/certificate", CertificateController);
+app.use("/feedback", FeedbackController);
 
 app.use("/user", AuthenticationController);
 
@@ -144,5 +156,7 @@ const checkForUsers = require('./src/controllers/AuthenticationController').chec
 
 checkForMainSettings();
 checkForUsers();
+
+console.log('Tournament Planner is running...');
 
 

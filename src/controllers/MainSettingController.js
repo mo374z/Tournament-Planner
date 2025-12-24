@@ -8,7 +8,7 @@ const path = require('path');
 
 commonMiddleware(router, ['admin']); // Only admins can access the main settings page
 
-const defaultStartTime = new Date('2024-01-20T08:00:00.000Z'); //in unserer Zeitzone: 20.01.2024 09:00 Uhr
+const defaultStartTime = new Date('2026-01-17T08:00:00.000Z'); //in unserer Zeitzone: 17.01.2026 08:00 Uhr
 const defaultTimeBetweenGames = 2 * 60 * 1000; 
 const defaultGameDurationGroupStage = 8 * 60 * 1000; 
 const defaultGameDurationQuarterfinals = 10 * 60 * 1000;
@@ -34,6 +34,12 @@ function createDefaultMainSettings() {
         publicPageOptions: {
             showAdvertisingPosters: true,
             showRankingTable: false,
+        },
+        liveGamePageOptions: {
+            showTeamLogos: true
+        },
+        feedbackOptions: {
+            enableFeedback: true
         }
     });
 }
@@ -60,6 +66,8 @@ router.get('/', async (req, res) => {
                 gamesPlayed: 0,
                 goalSektCounter: 0,
                 wonSektBottles: 0,
+                totalPageViews: 0,
+                uniqueVisitors: 0
             });
             await generalCounters.save();
         }
@@ -216,6 +224,68 @@ router.post('/publicPageSettings', async (req, res) => {
     }
 });
 
+// POST route to handle form submission and update Feedback Settings
+router.post('/feedbackSettings', async (req, res) => {
+    try {
+        const { enableFeedback } = req.body;
+
+        // Find the MainSettings document and update its values
+        let mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        // Ensure feedbackOptions exists
+        if (!mainSettings.feedbackOptions) {
+            mainSettings.feedbackOptions = {};
+        }
+
+        mainSettings.feedbackOptions.enableFeedback = enableFeedback === 'on';
+
+        // Save the updated MainSettings
+        await mainSettings.save();
+
+        // Redirect to the main settings page
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating Feedback Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// POST route to handle form submission and update Live Game Page Settings
+router.post('/liveGamePageSettings', async (req, res) => {
+    try {
+        const { showTeamLogos } = req.body;
+
+        // Find the MainSettings document and update its values
+        let mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        // Ensure liveGamePageOptions exists
+        if (!mainSettings.liveGamePageOptions) {
+            mainSettings.liveGamePageOptions = {};
+        }
+
+        mainSettings.liveGamePageOptions.showTeamLogos = showTeamLogos === 'on';
+
+        // Save the updated MainSettings
+        await mainSettings.save();
+
+        // Redirect to the main settings page
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating Live Game Page Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 // POST route to reset general counters /mainSettings/resetCounters
 router.get('/resetCounters', async (req, res) => {
     try {
@@ -235,6 +305,33 @@ router.get('/resetCounters', async (req, res) => {
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error resetting counters:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// GET route to reset visitor counters /mainSettings/resetVisitorCounters
+router.get('/resetVisitorCounters', async (req, res) => {
+    try {
+        let generalCounters = await genCounters.findOne({});
+        if (!generalCounters) {
+            generalCounters = new genCounters({
+                allGoals: 0,
+                gamesPlayed: 0,
+                goalSektCounter: 0,
+                wonSektBottles: 0,
+                totalPageViews: 0,
+                uniqueVisitors: 0
+            });
+        }
+
+        // Reset visitor counters
+        generalCounters.totalPageViews = 0;
+        generalCounters.uniqueVisitors = 0;
+        
+        await generalCounters.save();
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error resetting visitor counters:', err);
         res.status(500).send('Internal Server Error');
     }
 });
@@ -276,7 +373,22 @@ router.post('/deleteGroup', async (req, res) => {
 
 async function checkForMainSettings() {
     try {
-        let mainSettings = await MainSettings.findOne({});
+        // Check if mongoose is connected
+        if (mongoose.connection.readyState !== 1) {
+            console.log('Waiting for database connection...');
+            await new Promise((resolve, reject) => {
+                if (mongoose.connection.readyState === 1) {
+                    resolve();
+                } else {
+                    mongoose.connection.once('connected', resolve);
+                    mongoose.connection.once('error', reject);
+                    // Set a timeout for connection waiting
+                    setTimeout(() => reject(new Error('Database connection timeout')), 15000);
+                }
+            });
+        }
+
+        let mainSettings = await MainSettings.findOne({}).maxTimeMS(15000); // Use maxTimeMS instead of timeout
         if (!mainSettings) {
             const newMainSettings = createDefaultMainSettings();
             await newMainSettings.save();
@@ -301,7 +413,14 @@ async function checkForMainSettings() {
             }
         }
     } catch (err) {
-        console.error('Error checking for MainSettings:', err);
+        if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
+            console.error('\x1b[31m%s\x1b[0m', 'Database connection timeout. Please check if MongoDB is running and accessible.');
+        } else if (err.message === 'Database connection timeout') {
+            console.error('\x1b[31m%s\x1b[0m', 'Could not establish database connection within 15 seconds.');
+        } else {
+            console.error('\x1b[31m%s\x1b[0m', 'Error checking for MainSettings:', err.message);
+        }
+        console.log('\x1b[33m%s\x1b[0m', 'Skipping MainSettings initialization due to database issues.');
     }
 }
 
