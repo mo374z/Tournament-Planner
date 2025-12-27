@@ -22,6 +22,7 @@ const ScorerController = require("./src/controllers/ScorerController").router;
 const PlayerController = require("./src/controllers/PlayerController");
 const CertificateController = require("./src/controllers/CertificateController");
 const FeedbackController = require("./src/controllers/FeedbackController");
+const MyTeamController = require("./src/controllers/MyTeamController");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -93,6 +94,18 @@ app.engine('hbs', exphbs.engine({
       if (!str) return '';
       return str.substring(start, end);
     },
+    math: function(lvalue, operator, rvalue) {
+      lvalue = parseFloat(lvalue);
+      rvalue = parseFloat(rvalue);
+      
+      return {
+        "+": lvalue + rvalue,
+        "-": lvalue - rvalue,
+        "*": lvalue * rvalue,
+        "/": rvalue !== 0 ? lvalue / rvalue : 0,
+        "%": lvalue % rvalue
+      }[operator];
+    },
   }
 }));
 
@@ -105,6 +118,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Global middleware to load MainSettings for all views
+app.use(async (req, res, next) => {
+  try {
+    const MainSettings = mongoose.model('MainSettings');
+    const mainSettings = await MainSettings.findOne({});
+    res.locals.mainSettings = mainSettings;
+  } catch (err) {
+    console.log('Error loading MainSettings for navigation:', err);
+    res.locals.mainSettings = null;
+  }
+  next();
+});
+
 app.use("/", PublicPageController);
 app.use("/team", TeamController);
 app.use("/schedule", ScheduleController);
@@ -114,6 +140,7 @@ app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
 app.use("/certificate", CertificateController);
 app.use("/feedback", FeedbackController);
+app.use("/myteam", MyTeamController);
 
 app.use("/user", AuthenticationController);
 

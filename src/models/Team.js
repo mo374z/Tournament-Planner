@@ -51,6 +51,12 @@ var TeamSchema = new mongoose.Schema({
         scale: { type: Number, default: 0.5 },
         backgroundColor: { type: String, default: '#f8f9fa' }
     },
+    accessCode: {
+        type: String,
+    },
+    accessCodeHash: {
+        type: String,
+    },
     //array of opponents the team has played against (maybe add this later)
     // opponents: {
     //     type: Array,

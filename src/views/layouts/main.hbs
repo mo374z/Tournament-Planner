@@ -57,6 +57,11 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                 {{#if mainSettings.myTeamEnabled}}
+                        <li class="nav-item">
+                            <a class="nav-link ms-5" href="/myteam/login">MyTeam</a>
+                        </li>
+                {{/if}}
                     {{#if username}}
 
                     {{#unless (eqref userrole "beamer")}}

@@ -66,6 +66,10 @@ var MainSettingsSchema = new mongoose.Schema({
             type: Boolean,
             default: true
         }
+    },
+    myTeamEnabled: {
+        type: Boolean,
+        default: false
     }
 });
 

@@ -40,7 +40,8 @@ function createDefaultMainSettings() {
         },
         feedbackOptions: {
             enableFeedback: true
-        }
+        },
+        myTeamEnabled: false
     });
 }
 
@@ -285,7 +286,31 @@ router.post('/liveGamePageSettings', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
+// POST route to handle MyTeam Settings
+router.post('/myTeamSettings', async (req, res) => {
+    try {
+        const { myTeamEnabled } = req.body;
 
+        // Find the MainSettings document and update its values
+        let mainSettings = await MainSettings.findOne({});
+
+        // If no MainSettings data found, create a new MainSettings with default values
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        mainSettings.myTeamEnabled = myTeamEnabled === 'on';
+
+        // Save the updated MainSettings
+        await mainSettings.save();
+
+        // Redirect to the main settings page
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating MyTeam Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 // POST route to reset general counters /mainSettings/resetCounters
 router.get('/resetCounters', async (req, res) => {
     try {
