@@ -115,7 +115,7 @@ router.get("/dashboard", async (req, res) => {
         goals: team.goals,
         name: team.name,
         imagePath: team.imagePath,
-        logo: team.logo
+        logo: team.logo || {}
     };
 
     res.render("layouts/myTeamDashboard", {

@@ -1,4 +1,4 @@
-<div class="container-fluid">
+<div class="container">
     <!-- Header Section -->
     <div class="page-divider">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 p-3 bg-dark text-white rounded">
@@ -82,7 +82,7 @@
                                     <div class="result-label">Siege</div>
                                     <div class="result-progress">
                                         <div class="progress">
-                                            <div class="progress-bar bg-success" style="width: {{#if team.gamesPlayed}}{{math team.gamesWon '/' team.gamesPlayed '*' 100}}{{else}}0{{/if}}%"></div>
+                                            <div class="progress-bar bg-success" style="width: {{percentage team.gamesWon team.gamesPlayed}}%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -96,7 +96,7 @@
                                     <div class="result-label">Unentsch.</div>
                                     <div class="result-progress">
                                         <div class="progress">
-                                            <div class="progress-bar bg-warning" style="width: {{#if team.gamesPlayed}}{{math team.gamesDraw '/' team.gamesPlayed '*' 100}}{{else}}0{{/if}}%"></div>
+                                            <div class="progress-bar bg-warning" style="width: {{percentage team.gamesDraw team.gamesPlayed}}%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -110,7 +110,7 @@
                                     <div class="result-label">Niederlagen</div>
                                     <div class="result-progress">
                                         <div class="progress">
-                                            <div class="progress-bar bg-danger" style="width: {{#if team.gamesPlayed}}{{math team.gamesLost '/' team.gamesPlayed '*' 100}}{{else}}0{{/if}}%"></div>
+                                            <div class="progress-bar bg-danger" style="width: {{percentage team.gamesLost team.gamesPlayed}}%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -121,27 +121,59 @@
             </div>
             
             <div class="col-lg-4">
-                {{#if team.imagePath}}
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-secondary text-white">
-                        <h2 class="card-title mb-0">
-                            <i class="fas fa-image me-2"></i>Team Bild
-                        </h2>
-                    </div>
-                    <div class="card-body text-center d-flex align-items-center justify-content-center">
-                        <img src="{{team.imagePath}}" alt="{{team.name}}" class="img-fluid rounded shadow" style="max-height: 250px;">
-                    </div>
-                </div>
-                {{else}}
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center d-flex align-items-center justify-content-center">
-                        <div class="text-muted">
-                            <i class="fas fa-image fa-3x mb-3"></i>
-                            <p>Kein Team-Bild verfügbar</p>
+                <div class="row g-3">
+                    <!-- Team Image -->
+                    {{#if team.imagePath}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-secondary text-white">
+                                <h2 class="card-title mb-0">
+                                    <i class="fas fa-image me-2"></i>Team Bild
+                                </h2>
+                            </div>
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                                <img src="{{team.imagePath}}" alt="{{team.name}}" class="img-fluid rounded shadow" style="max-height: 200px;">
+                            </div>
                         </div>
                     </div>
+                    {{/if}}
+                    
+                    <!-- Team Logo -->
+                    {{#if team.logo.path}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h2 class="card-title mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>Team Logo
+                                </h2>
+                            </div>
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                               <div class="logo-container-responsive  size-small" 
+                                    style="--logo-bg: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}}; 
+                                           --logo-x: {{#if team.logo.position.x}}{{team.logo.position.x}}{{else}}50{{/if}}%; 
+                                           --logo-y: {{#if team.logo.position.y}}{{team.logo.position.y}}{{else}}50{{/if}}%; 
+                                           --logo-scale: {{#if team.logo.scale}}{{team.logo.scale}}{{else}}0.5{{/if}};">
+                                    <img src="{{team.logo.path}}" alt="{{team.name}} Logo" class="logo-img-responsive" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    <!-- Fallback wenn weder Bild noch Logo vorhanden -->
+                    {{#unless (or team.imagePath team.logo.path)}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                                <div class="text-muted">
+                                    <i class="fas fa-image fa-3x mb-3"></i>
+                                    <p>Kein Team-Bild oder Logo verfügbar</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/unless}}
                 </div>
-                {{/if}}
             </div>
         </div>
     </div>
@@ -258,6 +290,46 @@
 </div>
 
 <style>
+    /* Logo Container - Responsive & Container-Size Independent */
+    .logo-container-responsive {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #17a2b8;
+        margin: 0 auto;
+        background: var(--logo-bg, #f8f9fa);
+        /* Container can be resized by changing width/height while keeping logo proportions */
+    }
+    
+    .logo-img-responsive {
+        position: absolute;
+        left: var(--logo-x, 50%);
+        top: var(--logo-y, 50%);
+        transform: translate(-50%, -50%) scale(var(--logo-scale, 0.5));
+        transform-origin: center center;
+        max-width: none;
+        height: auto;
+        /* Logo scales relative to container size automatically */
+    }
+    
+    /* Alternative container sizes for different use cases */
+    .logo-container-responsive.size-small {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .logo-container-responsive.size-large {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .logo-container-responsive.size-xlarge {
+        width: 300px;
+        height: 300px;
+    }
+    
     .page-divider {
         margin-bottom: 2rem;
     }
@@ -403,7 +475,7 @@
     }
     
     @media (max-width: 576px) {
-        .container-fluid {
+        .container {
             padding: 0.5rem;
         }
         
@@ -486,21 +558,19 @@
     
     /* Mobile-first responsive design */
     @media (min-width: 576px) {
-        .container-fluid {
+        .container {
             padding: 1rem;
         }
     }
     
     @media (min-width: 768px) {
-        .container-fluid {
+        .container {
             padding: 1.5rem;
         }
     }
     
     @media (min-width: 992px) {
-        .container-fluid {
-            max-width: 1200px;
-            margin: 0 auto;
+        .container {
             padding: 2rem 1rem;
         }
     }

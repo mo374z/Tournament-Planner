@@ -106,6 +106,13 @@ app.engine('hbs', exphbs.engine({
         "%": lvalue % rvalue
       }[operator];
     },
+    percentage: function(numerator, denominator) {
+      numerator = parseFloat(numerator) || 0;
+      denominator = parseFloat(denominator) || 0;
+      
+      if (denominator === 0) return 0;
+      return Math.round((numerator / denominator) * 100 * 100) / 100; // Runde auf 2 Dezimalstellen
+    },
   }
 }));
 

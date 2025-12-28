@@ -48,7 +48,7 @@ var TeamSchema = new mongoose.Schema({
             x: { type: Number, default: 50 },
             y: { type: Number, default: 50 }
         },
-        scale: { type: Number, default: 0.5 },
+        scale: { type: Number, default: 0.5 },      // scale factor for a 150x150 px Logo container
         backgroundColor: { type: String, default: '#f8f9fa' }
     },
     accessCode: {
