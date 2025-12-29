@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0, minimum-scale=0.5">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     
 
@@ -16,6 +16,13 @@
     <title>Budeturnier</title>
 
     <style>
+        /* Enable zooming and touch actions for mobile devices */
+        html, body {
+            touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        
         {{#if (or (eqref userrole "beamer") (eqref userrole "TV"))}} 
         .navbar {
             display: none;
@@ -41,7 +48,7 @@
         
             <img src="/images/LogoSE.png" alt="LogoSE" class="align-middle zoom">
 
-                <span class="align-middle ms-2"><i class="fas fa-trophy"></i> Budeturnier 2025</span>
+                <span class="align-middle ms-2"><i class="fas fa-trophy"></i> Budeturnier 2026</span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -122,6 +129,20 @@
     </div>
 
 </div>
+
+{{#unless (eqref userrole "beamer")}}
+{{#unless username}}
+<!-- Instagram Link zwischen Content und Footer -->
+<div class="text-center py-3" style="background-color: #f8f9fa;">
+    <div class="container">
+        <a href="https://www.instagram.com/s_scharfe_eck/" target="_blank" class="text-dark text-decoration-none">
+            <i class="fab fa-instagram me-2"></i> Folgt uns auf Instagram: @s_scharfe_eck !
+        </a>
+    </div>
+</div>
+{{/unless}}
+{{/unless}}
+
 </body>
 
 <br>
@@ -130,13 +151,50 @@
 {{#unless (eqref userrole "beamer")}}
 <footer class="text-center text-lg-start bg-dark text-white py-5">
         <div class="container d-flex justify-content-center">
-         
-        </div>
+         </div>
 
         <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2);">
-            © 2024 S'schafe Eck: <a class="text-white" href="/">Budeturnier 2025</a>
+            <div class="d-flex justify-content-center align-items-center flex-wrap">
+                <span class="me-3">© 2026 S'scharfe Eck: <a class="text-white" href="/">Budeturnier 2026</a></span>
+                <button onclick="showCookieInfo()" class="btn btn-outline-light btn-sm" title="Cookie-Informationen">
+                    <i class="fas fa-cookie-bite me-2"></i> Cookie-Info
+                </button>
+            </div>
         </div>
 </footer>
 {{/unless}}
+
+<script>
+// Cookie Information Popup (global function)
+function showCookieInfo() {
+    const cookieInfo = `
+📍 COOKIE-INFORMATIONEN
+
+🍪 VERWENDETE COOKIES:
+
+✅ TECHNISCH NOTWENDIG:
+• Session-Cookie: Für Login-Funktionen
+• Authentifizierung: Sichere Anmeldung
+
+📄 ANALYSE:
+• Besucherzähler: Anonyme Statistiken
+• Seitenaufrufe: Zur Optimierung der Website
+
+⏱️ SPEICHERDAUER:
+• Session-Cookies: 24 Stunden
+• Login-Cookies: Bis zum Logout
+
+🛡️ DATENSCHUTZ:
+• Keine Weitergabe an Dritte
+• Keine persönlichen Daten
+• Jederzeit löschbar über Browser-Einstellungen
+
+ℹ️ Die Analyse-Cookies helfen uns, die Website zu verbessern.
+Sie können diese jederzeit in Ihren Browser-Einstellungen deaktivieren.
+    `;
+    
+    alert(cookieInfo);
+}
+</script>
 
 </html>

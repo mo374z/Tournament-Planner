@@ -13,6 +13,14 @@ var CountersSchema = new mongoose.Schema({
     wonSektBottles: {
         type: Number,
         default: 0
+    },
+    totalPageViews: {
+        type: Number,
+        default: 0
+    },
+    uniqueVisitors: {
+        type: Number,
+        default: 0
     }
 });
 

@@ -3,6 +3,8 @@
 *.pem
 *OneDrive
 /public/teampictures/*
+/public/teamlogos/*
+!/public/teamlogos/default_logo.png
 /public/presentations/*
 !/public/teampictures/default.jpg
 /public/certificates/*

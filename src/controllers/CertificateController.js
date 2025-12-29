@@ -104,10 +104,25 @@ router.post('/generateCertificate', async (req, res) => {
 
     // Save the certificate to the server
     //Check if the folder exists, if not create it
-    if (!fs.existsSync(path.join(__dirname, '../../public/certificates/'))) {
-        fs.mkdirSync(path.join(__dirname, '../../public/certificates/'), { recursive: true });
+    const certificatesDir = path.join(__dirname, '../../public/certificates/');
+    if (!fs.existsSync(certificatesDir)) {
+        fs.mkdirSync(certificatesDir, { recursive: true });
     }
-    const outputPath = path.join(__dirname, '../../public/certificates/', `${rank}_${team.name}_certificate.docx`);
+    
+    // Robust filename sanitization to prevent path traversal attacks
+    const fileName = `${rank}_${team.name}_certificate.docx`;
+    // Remove or replace dangerous characters, normalize unicode, and ensure only filename (no path components)
+    const sanitizedfileName = path.basename(fileName)
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') // Remove dangerous characters
+        .replace(/^\.+/, '_') // Prevent hidden files starting with dots
+        .replace(/\.+$/, '') + '.docx'; // Remove trailing dots and ensure .docx extension
+    
+    // Double-check: ensure the resulting path is within the certificates directory
+    const outputPath = path.resolve(certificatesDir, sanitizedfileName);
+    if (!outputPath.startsWith(path.resolve(certificatesDir))) {
+        throw new Error('Invalid filename: path traversal detected');
+    }
+    
     fs.writeFileSync(outputPath, buffer);
 
     res.download(outputPath);

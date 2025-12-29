@@ -1,0 +1,158 @@
+<div class="container mt-5">
+    <h1 class="text-center">
+        <i class="fas fa-comments"></i> Feedback-Übersicht
+    </h1>
+    
+    <div class="row">
+        <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Alle Feedback-Einträge ({{feedbacks.length}})</h4>
+                <div>
+                    <a href="/feedback/download" class="btn btn-success me-2">
+                        <i class="fas fa-download"></i> Als Textdatei herunterladen
+                    </a>
+                    <a href="/feedback" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Neues Feedback
+                    </a>
+                </div>
+            </div>            {{#if feedbacks}}
+                <div class="feedback-list">
+                    {{#each feedbacks}}
+                        <div class="card mb-3 {{#unless this.isRead}}border-warning{{/unless}}">
+                            <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="toggleFeedback('{{this._id}}')">
+                                <div class="d-flex align-items-center">
+                                    {{#if this.isRead}}
+                                        <span class="badge bg-success me-2">
+                                            <i class="fas fa-check"></i> Gelesen
+                                        </span>
+                                    {{else}}
+                                        <span class="badge bg-warning me-2">
+                                            <i class="fas fa-eye-slash"></i> Ungelesen
+                                        </span>
+                                    {{/if}}
+                                    <h5 class="mb-0">{{this.title}}</h5>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <small class="text-muted me-3">
+                                        {{formatDateTime this.timestamp}} - {{formatTime this.timestamp}}
+                                    </small>
+                                    <span class="badge bg-secondary me-2">{{this.userRole}}</span>
+                                    <i class="fas fa-chevron-down toggle-icon" id="icon-{{this._id}}"></i>
+                                </div>
+                            </div>
+                            <div class="card-body collapse" id="feedback-{{this._id}}">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6><i class="fas fa-comment"></i> Nachricht:</h6>
+                                        <p class="feedback-message">{{this.message}}</p>
+                                        
+                                        {{#if this.name}}
+                                            <p><strong><i class="fas fa-user"></i> Name:</strong> {{this.name}}</p>
+                                        {{else}}
+                                            <p><strong><i class="fas fa-user-secret"></i> Name:</strong> <em>Anonym</em></p>
+                                        {{/if}}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex flex-column gap-2">
+                                            {{#unless this.isRead}}
+                                                <form action="/feedback/markRead/{{this._id}}" method="POST">
+                                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                                        <i class="fas fa-eye"></i> Als gelesen markieren
+                                                    </button>
+                                                </form>
+                                            {{/unless}}
+                                            <form action="/feedback/delete/{{this._id}}" method="POST" 
+                                                  onsubmit="return confirm('Möchten Sie dieses Feedback wirklich löschen?');">
+                                                <button type="submit" class="btn btn-danger btn-sm w-100">
+                                                    <i class="fas fa-trash"></i> Löschen
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="alert alert-info text-center">
+                    <h5><i class="fas fa-info-circle"></i> Noch kein Feedback vorhanden</h5>
+                    <p>Bisher wurde noch kein Feedback eingereicht.</p>
+                </div>
+            {{/if}}
+
+            <div class="text-center mt-4">
+                <a href="/mainSettings" class="btn btn-secondary me-2">
+                    <i class="fas fa-cogs"></i> Einstellungen
+                </a>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="fas fa-home"></i> Startseite
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feedback-list .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s ease;
+}
+
+.feedback-list .card-header:hover {
+    background-color: #e9ecef;
+}
+
+.feedback-message {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.card.border-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+
+.card.border-warning .card-header {
+    background-color: #fff3cd;
+}
+
+.gap-2 > * + * {
+    margin-top: 0.5rem;
+}
+</style>
+
+<script>
+function toggleFeedback(feedbackId) {
+    const content = document.getElementById('feedback-' + feedbackId);
+    const icon = document.getElementById('icon-' + feedbackId);
+    
+    if (content.classList.contains('show')) {
+        content.classList.remove('show');
+        icon.classList.remove('rotated');
+    } else {
+        content.classList.add('show');
+        icon.classList.add('rotated');
+    }
+}
+
+// Auto-expand first unread feedback if available
+document.addEventListener('DOMContentLoaded', function() {
+    const firstUnread = document.querySelector('.border-warning .card-header');
+    if (firstUnread) {
+        firstUnread.click();
+    }
+});
+</script>

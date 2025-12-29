@@ -227,6 +227,29 @@
                 </div>
             </div>
 
+            <!-- Visitor Statistics Main Page -->
+            <div class="page-divider"
+                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Visitor Statistics Main Page</h3>
+                <div style="margin-bottom: 20px; padding: 15px; background: #fff; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span><strong>Total Page Views:</strong></span>
+                        <span class="badge bg-primary" style="font-size: 1.1em;">{{ generalCounters.totalPageViews }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong>Unique Visitors:</strong>
+                        <span class="badge bg-success" style="font-size: 1.1em;">{{ generalCounters.uniqueVisitors }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <a href="/mainSettings/resetVisitorCounters" class="btn btn-warning" style="width: 200px;"
+                        onclick="return confirm('Are you sure you want to reset all visitor counters?');">
+                        <i class="fas fa-chart-bar me-2"></i>Reset Visitor Counters
+                    </a>
+                </div>
+            </div>
+
             <!-- Public Page Settings -->
             <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3>Public Page Settings</h3>
@@ -243,13 +266,43 @@
                 </form>
             </div>
 
+            <!-- Live Game Page Settings -->
+            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Live Game Page Settings</h3>
+                <form action="/mainSettings/liveGamePageSettings" method="POST" autocomplete="off" style="width: 100%;">
+                    <div class="form-check form-switch" style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <input class="form-check-input" type="checkbox" id="showTeamLogos" name="showTeamLogos" {{#if mainSettings.liveGamePageOptions.showTeamLogos}}checked{{/if}}>
+                        <label class="form-check-label" for="showTeamLogos" style="margin-left: 10px;">Show Team Logos</label>
+                        <label class="ms-3 text-muted">(Bitte danach die Live Game Seite neu laden !)</label>
+                    </div>
+                    <button id="saveLiveGamePageSettings" type="submit" class="btn btn-primary">Save Live Game Page Settings</button>
+                </form>
+            </div>
+
             <!-- User Management -->
-            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3>User Management</h3>
                 <div class="d-flex flex-column" style="gap: 10px;">
                     <a href="user/register" class="btn btn-secondary" style="width: 200px;">Register New User</a>
                     <a href="user/list" class="btn btn-secondary" style="width: 200px;">List Users</a>
                     <a href="user/deleteAdmin" class="btn btn-secondary" style="width: 200px;">Delete Admin User</a>
+                </div>
+            </div>
+
+            <!-- Feedback Management -->
+            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                <h3>Feedback Management</h3>
+                <form action="/mainSettings/feedbackSettings" method="POST" autocomplete="off" style="width: 100%; margin-bottom: 15px;">
+                    <div class="form-check form-switch" style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <input class="form-check-input" type="checkbox" id="enableFeedback" name="enableFeedback" {{#if mainSettings.feedbackOptions.enableFeedback}}checked{{/if}}>
+                        <label class="form-check-label" for="enableFeedback" style="margin-left: 10px;">Enable Feedback System</label>
+                    </div>
+                    <button id="saveFeedbackSettings" type="submit" class="btn btn-primary">Save Feedback Settings</button>
+                </form>
+                <div class="mt-3">
+                    <a href="/feedback/list" class="btn btn-info" style="width: 200px;">
+                        <i class="fas fa-comments"></i> Feedback Admin
+                    </a>
                 </div>
             </div>
         </div>
@@ -276,7 +329,7 @@
 
     function confirmRestore() {
         const selectedBackup = document.getElementById('dbRestoreName').value;
-        //TournamentDB_15.1.2025_18-59-04.gz
+        //TournamentDB_15.1.2026_18-59-04.gz
         const dbName = selectedBackup.split('_')[0];
         const date = selectedBackup.split('_')[1];
         let time = selectedBackup.split('_')[2];

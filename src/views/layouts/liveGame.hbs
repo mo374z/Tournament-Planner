@@ -1,20 +1,59 @@
 <div class="container text-center">
     <div class="page-divider border border-dark top-row border-2">
+        {{#if mainSettings.liveGamePageOptions.showTeamLogos}}
+        <!-- Layout mit Logos: Logo oben, Name unten, Score in der Mitte -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; align-items: center; height: 200px; gap: 20px;">
+            <!-- Team 1 Logo + Name -->
+            <div class="text-center">
+                <div id="team1-logo-live" class="team-logo-live" style="margin-bottom: 10px; display: flex; justify-content: center;">
+                    {{{logoDiv teamData.team1.logo teamData.team1.name 150 150}}}
+                </div>
+                <h3 id="team1Name" style="font-size: 28pt; margin-bottom: 0;">{{ game.opponents.[0] }}</h3>
+            </div>
+            
+            <!-- Team 1 Score -->
+            <div class="text-center">
+                <h1 id="team1Score" style="font-weight: bold; font-size: 90pt; margin: 0;">{{ game.goals.[0] }}</h1>
+            </div>
+            
+            <!-- Timer -->
+            <div class="text-center">
+                <h2><span id="liveCountdownTimer" style="font-weight: bold; font-size: 90pt;"> 00:00</span></h2>
+            </div>
+            
+            <!-- Team 2 Score -->
+            <div class="text-center">
+                <h1 id="team2Score" style="font-weight: bold; font-size: 90pt; margin: 0;">{{ game.goals.[1] }}</h1>
+            </div>
+            
+            <!-- Team 2 Logo + Name -->
+            <div class="text-center">
+                <div id="team2-logo-live" class="team-logo-live" style="margin-bottom: 10px; display: flex; justify-content: center;">
+                    {{{logoDiv teamData.team2.logo teamData.team2.name 150 150}}}
+                </div>
+                <h3 id="team2Name" style="font-size: 28pt; margin-bottom: 0;">{{ game.opponents.[1] }}</h3>
+            </div>
+        </div>
+        {{else}}
+        <!-- Layout ohne Logos: Aktuelles Layout beibehalten -->
         <div class="d-flex justify-content-between align-items-center">
-
-            <div class="text-center" style="width: 30%;">
-                <h3 id="team1Name" style="font-size: 35pt;">{{ game.opponents.[0] }}</h3>
-                <h1 id="team1Score" style="font-weight: bold; font-size: 90pt;">{{ game.goals.[0] }}</h1>
+            <div class="text-center d-flex align-items-center justify-content-center" style="width: 30%;">
+                <div>
+                    <h3 id="team1Name" style="font-size: 35pt;">{{ game.opponents.[0] }}</h3>
+                    <h1 id="team1Score" style="font-weight: bold; font-size: 90pt;">{{ game.goals.[0] }}</h1>
+                </div>
             </div>
             <div>
                 <h2><span id="liveCountdownTimer" style="font-weight: bold; font-size: 90pt;"> 00:00</span></h2>
             </div>
-            <div class="text-center" style="width: 30%;">
-                <h3 id="team2Name" style="font-size: 35pt;">{{ game.opponents.[1] }}</h3>
-                <h1 id="team2Score" style="font-weight: bold; font-size: 90pt;">{{ game.goals.[1] }}</h1>
+            <div class="text-center d-flex align-items-center justify-content-center" style="width: 30%;">
+                <div>
+                    <h3 id="team2Name" style="font-size: 35pt;">{{ game.opponents.[1] }}</h3>
+                    <h1 id="team2Score" style="font-weight: bold; font-size: 90pt;">{{ game.goals.[1] }}</h1>
+                </div>
             </div>
-
         </div>
+        {{/if}}
 
         {{#if noActiveGame}}
         <p class="mt-3" id="noActiveGameMessage">Aktuell kein Spiel aktiv !</p>
@@ -146,12 +185,33 @@
     });
 
     let gameOppNames = ['{{ game.opponents.[0] }}', '{{ game.opponents.[1] }}'];
+    let lastgameStatus = '{{ game.status }}';
+    const logoDisplaySetting = {{#if mainSettings.liveGamePageOptions.showTeamLogos}} true {{else}} false {{/if}};
 
     async function updatePage(game) {
+
+        //Wenn davor kein aktives spiel bzw lastgame
+        if (lastgameStatus !== 'active') {
+            location.reload();
+            return;
+        }
+        console.log('last gameStatus: ' + lastgameStatus + ' -> ' + game.status);
+        lastgameStatus = game.status;
         updateScore('team1Score', game.goals[0]);
         updateScore('team2Score', game.goals[1]);  
         const teamName1 = await updateName('team1Name', game.opponents[0]);
         const teamName2 = await updateName('team2Name', game.opponents[1]); 
+
+        // Update logos if logos are available
+        if (game != null && logoDisplaySetting === true) {
+            console.log('Logos aktiv');
+            if(gameOppNames[0] !== '' || gameOppNames[1] !== '') {
+                await updateLogo('team1', game.opponents[0]);
+                await updateLogo('team2', game.opponents[1]);
+                console.log('Logos updated');
+            }
+
+        }
 
         gameOppNames = [teamName1, teamName2];
         console.log('gameOppNames: ' + gameOppNames);
@@ -191,6 +251,68 @@
         } else {
             console.error('Failed to get team name');
             return "Error fetching team name";
+        }
+    }
+
+    async function updateLogo(teamPrefix, teamID) { // Lade die neuen Logos beim Starten eines neuen Spiels
+        try {
+            const response = await fetch(`/team/getTeamLogo/${teamID}`, { method: 'GET'});
+            
+            if (response.ok) {
+                const logoData = await response.json();
+                const logoContainer = document.getElementById(`${teamPrefix}-logo-live`);
+                
+                if (logoContainer) {
+                    if (logoData.logo && logoData.logo.path) {
+                        // Verwende normalisierte Werte für konsistente Positionierung
+                        const normalizedX = logoData.logo.position?.x ?? 0.5;
+                        const normalizedY = logoData.logo.position?.y ?? 0.5;
+                        const baseScale = logoData.logo.scale || 0.5;
+                        const backgroundColor = logoData.logo.backgroundColor || '#f8f9fa';
+                        
+                        // Berechne angepasste Skalierung für 150x150 Container
+                        const containerSize = 150;
+                        const scaleFactor = containerSize / 150;
+                        const adjustedScale = Math.max(0.1, Math.min(2, baseScale * scaleFactor));
+                        
+                        // Berechne Prozent-Position aus normalisierten Werten
+                        const leftPercent = (normalizedX * 100).toFixed(1) + '%';
+                        const topPercent = (normalizedY * 100).toFixed(1) + '%';
+                        
+                        // Erzeuge neuen Logo-HTML mit dem gleichen Format wie logoDiv Helper
+                        logoContainer.innerHTML = `
+                            <div style="width: 150px; height: 150px; position: relative; 
+                                        background: ${backgroundColor}; border-radius: 50%; border: none; overflow: hidden;">
+                                <img src="${logoData.logo.path}" alt="Team Logo" 
+                                     style="position: absolute;
+                                            left: ${leftPercent};
+                                            top: ${topPercent};
+                                            transform: translate(-50%, -50%) scale(${adjustedScale});
+                                            max-width: none;
+                                            pointer-events: none;">
+                            </div>
+                        `;
+                        
+                        // Show logo container
+                        logoContainer.style.display = 'block';
+                        console.log(`Updated logo for ${teamPrefix} using normalized positioning: (${normalizedX}, ${normalizedY})`);
+                    } else {
+                        // Hide logo container if no logo - zeige Fallback
+                        logoContainer.innerHTML = `
+                            <div style="width: 150px; height: 150px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 50%; 
+                                        display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                <small class="text-muted">Logo</small>
+                            </div>
+                        `;
+                        logoContainer.style.display = 'block';
+                        console.log(`No logo found for ${teamPrefix}, showing fallback`);
+                    }
+                } else {
+                    console.log(`No logo container found for ${teamPrefix}`);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update logo:', error);
         }
     }
 

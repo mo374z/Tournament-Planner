@@ -21,6 +21,7 @@ const PublicPageController = require("./src/controllers/PublicPageController");
 const ScorerController = require("./src/controllers/ScorerController").router;
 const PlayerController = require("./src/controllers/PlayerController");
 const CertificateController = require("./src/controllers/CertificateController");
+const FeedbackController = require("./src/controllers/FeedbackController");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -82,6 +83,72 @@ app.engine('hbs', exphbs.engine({
     or: function (a, b) {
       return a || b;
     },
+    getQueryParams: function() {
+      return {};
+    },
+    lookup: function(obj, key) {
+      return obj && obj[key];
+    },
+    substring: function(str, start, end) {
+      if (!str) return '';
+      return str.substring(start, end);
+    },
+    // Logo-System Helpers für container-unabhängige Positionierung
+    logoPosition: function(normalizedValue) {
+      // Auto-Migration: Wenn Wert > 1, dann ist es ein alter Prozentwert
+      if (normalizedValue > 1) {
+        return Math.max(0, Math.min(100, normalizedValue)).toFixed(1) + '%';
+      }
+      // Inline normalizedToPercent
+      const value = normalizedValue || 0.5;
+      return `${(value * 100).toFixed(1)}%`;
+    },
+    // Math helper for division
+    divide: function(a, b) {
+      return a / b;
+    },
+    // Math helper for multiplication  
+    multiply: function(a, b) {
+      return a * b;
+    },
+    // Kompletter Logo Helper - rendert komplettes Logo-Div (benötigt team.logo Objekt und Teamnamen und Höhe/Breite)
+    logoDiv: function(logoConfig, teamName, width = 150, height = 150, options = {}) {
+      if (!logoConfig || !logoConfig.path) {
+        // Fallback wenn kein Logo vorhanden
+        const fallbackStyle = options.fallback || 'background: #f8f9fa; border: 1px solid #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden;';
+        return `<div style="width: ${width}px; height: ${height}px; ${fallbackStyle}">
+          <small class="text-muted">Logo</small>
+        </div>`;
+      }
+      
+      // Berechne Positionen und Skalierung
+      // Inline normalizedToPercent für x und y
+      const xValue = logoConfig.position?.x || 0.5;
+      const yValue = logoConfig.position?.y || 0.5;
+      const x = `${(xValue * 100).toFixed(1)}%`;
+      const y = `${(yValue * 100).toFixed(1)}%`;
+      
+      const baseScale = logoConfig.scale || 0.5;
+      const containerSize = Math.min(width, height);
+      const scaleFactor = containerSize / 150;
+      const adjustedScale = Math.max(0.1, Math.min(2, baseScale * scaleFactor));
+      
+      const backgroundColor = logoConfig.backgroundColor || '#f8f9fa';
+      const borderRadius = options.borderRadius || '50%';  // Standard: Kreis
+      const border = options.border || 'none'; // Standard: kein Rahmen
+      const overflow = options.overflow || 'hidden';  // Wichtig für Kreis-Clipping
+      
+      return `<div style="width: ${width}px; height: ${height}px; position: relative; 
+                          background: ${backgroundColor}; border-radius: ${borderRadius}; border: ${border}; overflow: ${overflow};">
+        <img src="${logoConfig.path}" alt="${teamName || 'Team Logo'}" 
+             style="position: absolute;
+                    left: ${x};
+                    top: ${y};
+                    transform: translate(-50%, -50%) scale(${adjustedScale});
+                    max-width: none;
+                    pointer-events: none;">
+      </div>`;
+    }
   }
 }));
 
@@ -102,6 +169,7 @@ app.use("/game", GameController);
 app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
 app.use("/certificate", CertificateController);
+app.use("/feedback", FeedbackController);
 
 app.use("/user", AuthenticationController);
 
@@ -144,5 +212,7 @@ const checkForUsers = require('./src/controllers/AuthenticationController').chec
 
 checkForMainSettings();
 checkForUsers();
+
+console.log('Tournament Planner is running...');
 
 
