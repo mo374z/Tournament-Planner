@@ -45,8 +45,8 @@ var TeamSchema = new mongoose.Schema({
     logo: {
         path: { type: String, default: '/teamlogos/default_logo.png' },
         position: {
-            x: { type: Number, default: 50 },
-            y: { type: Number, default: 50 }
+            x: { type: Number, default: 0.5 },
+            y: { type: Number, default: 0.5 }
         },
         scale: { type: Number, default: 0.5 },
         backgroundColor: { type: String, default: '#f8f9fa' }

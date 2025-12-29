@@ -1,5 +1,8 @@
 <div class="container">
-    <h1>{{viewTitle}}</h1>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h1 class="mb-0">{{viewTitle}}</h1>
+        {{{logoDiv team.logo team.name 50 50}}}
+    </div>
     <form action='/team/updateName' method="POST" autocomplete="off">
         <input type="hidden" name="_id" value="{{team._id}}">
         <div class="form-group">
@@ -223,7 +226,11 @@
     <h3 class="mt-4">Aktuelles Logo:</h3>
     {{#if logoPath}}
         <div class="team-logo" style="background-color: #f8f9fa; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
-            <p class="text-muted mb-4 text-center"><i class="fa fa-info-circle"></i> <strong>Anleitung:</strong> Logo im Kreis an passende Position schieben und Größe anpassen</p>
+            <p class="text-muted mb-4 text-center">
+                <i class="fa fa-info-circle"></i> 
+                <strong>Anleitung:</strong> Logo im Kreis an passende Position schieben und Größe anpassen. 
+                Das Logo passt sich automatisch an verschiedene Container-Größen an.
+            </p>
             
             <!-- Logo Container - zentriert -->
             <div class="text-center mb-5" style="padding: 50px 60px;">
@@ -257,16 +264,41 @@
                     </div>
                     
                     <!-- Logo Container -->
-                    <div id="logo-container" style="position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 3px solid #007bff; margin: 0 auto; background: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}};">
-                        <img id="team-logo-img" src="{{logoPath}}" alt="Team Logo" 
+                    <div id="logo-container" 
+                         style="position: relative; 
+                                width: 150px; 
+                                height: 150px; 
+                                border-radius: 50%; 
+                                overflow: hidden; 
+                                border: 3px solid #007bff; 
+                                margin: 0 auto; 
+                                background: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}};"
+                         data-container-width="150"
+                         data-container-height="150">
+                        <img id="team-logo-img" 
+                             src="{{logoPath}}" 
+                             alt="Team Logo" 
                              style="position: absolute; 
                                     transform-origin: center center;
                                     transform: translate(-50%, -50%) scale({{#if team.logo.scale}}{{team.logo.scale}}{{else}}1{{/if}});
-                                    left: {{#if team.logo.position.x}}{{team.logo.position.x}}{{else}}50{{/if}}%;
-                                    top: {{#if team.logo.position.y}}{{team.logo.position.y}}{{else}}50{{/if}}%;
+                                    left: {{logoPosition team.logo.position.x}};
+                                    top: {{logoPosition team.logo.position.y}};
                                     max-width: none;
-                                    cursor: move;">
+                                    cursor: move;"
+                             data-normalized-x="{{#if team.logo.position.x}}{{#if (gt team.logo.position.x 1)}}{{divide team.logo.position.x 100}}{{else}}{{team.logo.position.x}}{{/if}}{{else}}0.5{{/if}}"
+                             data-normalized-y="{{#if team.logo.position.y}}{{#if (gt team.logo.position.y 1)}}{{divide team.logo.position.y 100}}{{else}}{{team.logo.position.y}}{{/if}}{{else}}0.5{{/if}}">
                     </div>
+                </div>
+            </div>
+            
+            <!-- Container-Größe Auswahl für Vorschau -->
+            <div class="text-center mb-4">
+                <label class="form-label"><strong>Vorschau-Container-Größe:</strong></label><br>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary" data-size="100,100">100x100</button>
+                    <button type="button" class="btn btn-outline-secondary active" data-size="150,150">150x150 (Live)</button>
+                    <button type="button" class="btn btn-outline-secondary" data-size="200,200">200x200</button>
+                    <button type="button" class="btn btn-outline-secondary" data-size="300,200">300x200</button>
                 </div>
             </div>
             
@@ -312,43 +344,80 @@
             </div>
         </div>
         
+        <script src="/js/logoUtils.js"></script>
         <script>
+        // Enhanced JavaScript mit normalisierter Positionierung
         let isDragging = false;
         let logoImg = document.getElementById('team-logo-img');
         let logoContainer = document.getElementById('logo-container');
         let scaleSlider = document.getElementById('logo-scale');
         let scaleValue = document.getElementById('scale-value');
         let backgroundColorPicker = document.getElementById('background-color');
-        
-        // Logo dragging functionality
+
+        // Container size preview functionality
+        document.querySelectorAll('[data-size]').forEach(button => {
+            button.addEventListener('click', function() {
+                const [width, height] = this.dataset.size.split(',').map(Number);
+                
+                // Update container size
+                logoContainer.style.width = width + 'px';
+                logoContainer.style.height = height + 'px';
+                logoContainer.dataset.containerWidth = width;
+                logoContainer.dataset.containerHeight = height;
+                
+                // Update position while maintaining normalized values
+                const normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+                const normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+                const currentScale = parseFloat(scaleSlider.value) || 1;
+                
+                ClientLogoUtils.updateLogoPosition(logoImg, normalizedX, normalizedY, currentScale, width, height);
+                
+                // Update active button
+                document.querySelectorAll('[data-size]').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                console.log(`Container size changed to: ${width}x${height}, maintaining normalized position: (${normalizedX}, ${normalizedY})`);
+            });
+        });
+
+        // Enhanced dragging with normalization
         logoImg.addEventListener('mousedown', function(e) {
             isDragging = true;
             e.preventDefault();
         });
-        
+
         document.addEventListener('mousemove', function(e) {
             if (isDragging) {
-                let rect = logoContainer.getBoundingClientRect();
-                let x = ((e.clientX - rect.left) / rect.width) * 100;
-                let y = ((e.clientY - rect.top) / rect.height) * 100;
+                const rect = logoContainer.getBoundingClientRect();
+                const centerX = e.clientX - rect.left;
+                const centerY = e.clientY - rect.top;
                 
-                // Begrenze die Position auf den Container
-                x = Math.max(0, Math.min(100, x));
-                y = Math.max(0, Math.min(100, y));
+                // Convert to normalized values
+                const normalizedX = ClientLogoUtils.pixelToNormalized(centerX, rect.width);
+                const normalizedY = ClientLogoUtils.pixelToNormalized(centerY, rect.height);
                 
-                logoImg.style.left = x + '%';
-                logoImg.style.top = y + '%';
+                // Update position with container dimensions
+                const currentScale = parseFloat(scaleSlider.value) || 1;
+                ClientLogoUtils.updateLogoPosition(logoImg, normalizedX, normalizedY, currentScale, rect.width, rect.height);
+                
+                // Store normalized values in data attributes
+                logoImg.dataset.normalizedX = normalizedX;
+                logoImg.dataset.normalizedY = normalizedY;
             }
         });
-        
+
         document.addEventListener('mouseup', function() {
             isDragging = false;
         });
         
-        // Scale functionality
+        // Scale functionality mit Container-Anpassung
         scaleSlider.addEventListener('input', function() {
-            let scale = this.value;
-            logoImg.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            const scale = this.value;
+            const normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+            const normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+            const rect = logoContainer.getBoundingClientRect();
+            
+            ClientLogoUtils.updateLogoPosition(logoImg, normalizedX, normalizedY, scale, rect.width, rect.height);
             scaleValue.textContent = scale;
         });
         
@@ -359,38 +428,48 @@
         
         // Center horizontally
         document.getElementById('center-horizontal').addEventListener('click', function() {
-            logoImg.style.left = '50%';
+            const normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+            const currentScale = parseFloat(scaleSlider.value) || 1;
+            const rect = logoContainer.getBoundingClientRect();
+            ClientLogoUtils.updateLogoPosition(logoImg, 0.5, normalizedY, currentScale, rect.width, rect.height);
+            logoImg.dataset.normalizedX = 0.5;
         });
         
         // Center vertically  
         document.getElementById('center-vertical').addEventListener('click', function() {
-            logoImg.style.top = '50%';
+            const normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+            const currentScale = parseFloat(scaleSlider.value) || 1;
+            const rect = logoContainer.getBoundingClientRect();
+            ClientLogoUtils.updateLogoPosition(logoImg, normalizedX, 0.5, currentScale, rect.width, rect.height);
+            logoImg.dataset.normalizedY = 0.5;
         });
         
-        // Arrow movement functions
+        // Arrow movement functions mit normalization
         function moveLogoByArrow(direction) {
-            let currentLeft = parseFloat(logoImg.style.left) || 50;
-            let currentTop = parseFloat(logoImg.style.top) || 50;
-            let step = 2; // Bewegungsschritt in Prozent
+            let normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+            let normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+            let step = 0.02; // 2% in normalized values
             
             switch(direction) {
                 case 'up':
-                    currentTop = Math.max(0, currentTop - step);
-                    logoImg.style.top = currentTop + '%';
+                    normalizedY = Math.max(0, normalizedY - step);
                     break;
                 case 'down':
-                    currentTop = Math.min(100, currentTop + step);
-                    logoImg.style.top = currentTop + '%';
+                    normalizedY = Math.min(1, normalizedY + step);
                     break;
                 case 'left':
-                    currentLeft = Math.max(0, currentLeft - step);
-                    logoImg.style.left = currentLeft + '%';
+                    normalizedX = Math.max(0, normalizedX - step);
                     break;
                 case 'right':
-                    currentLeft = Math.min(100, currentLeft + step);
-                    logoImg.style.left = currentLeft + '%';
+                    normalizedX = Math.min(1, normalizedX + step);
                     break;
             }
+            
+            const rect = logoContainer.getBoundingClientRect();
+            const currentScale = parseFloat(scaleSlider.value) || 1;
+            ClientLogoUtils.updateLogoPosition(logoImg, normalizedX, normalizedY, currentScale, rect.width, rect.height);
+            logoImg.dataset.normalizedX = normalizedX;
+            logoImg.dataset.normalizedY = normalizedY;
         }
         
         // Arrow button event listeners
@@ -410,25 +489,33 @@
             moveLogoByArrow('right');
         });
         
-        // Reset functionality
+        // Enhanced reset functionality mit normalization
         document.getElementById('reset-logo').addEventListener('click', function() {
-            logoImg.style.left = '50%';
-            logoImg.style.top = '50%';
-            logoImg.style.transform = 'translate(-50%, -50%) scale(0.5)';
-            scaleSlider.value = 0.5;
-            scaleValue.textContent = '0.5';
-            backgroundColorPicker.value = '#f8f9fa';
-            logoContainer.style.backgroundColor = '#f8f9fa';
+            const normalizedX = 0.5;
+            const normalizedY = 0.5;
+            const defaultScale = 0.5;
+            const defaultBackgroundColor = '#f8f9fa';
+            const rect = logoContainer.getBoundingClientRect();
+            ClientLogoUtils.updateLogoPosition(logoImg, normalizedX, normalizedY, defaultScale, rect.width, rect.height);
+            logoImg.dataset.normalizedX = normalizedX;
+            logoImg.dataset.normalizedY = normalizedY;
+            
+            scaleSlider.value = defaultScale;
+            scaleValue.textContent = defaultScale;
+            backgroundColorPicker.value = defaultBackgroundColor;
+            logoContainer.style.backgroundColor = defaultBackgroundColor;
         });
         
-        // Save functionality
+        // Enhanced save functionality mit normalization
         document.getElementById('save-logo-position').addEventListener('click', function() {
-            let currentLeft = parseFloat(logoImg.style.left);
-            let currentTop = parseFloat(logoImg.style.top);
-            let currentScale = parseFloat(scaleSlider.value);
-            let currentBackgroundColor = backgroundColorPicker.value;
+            const normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+            const normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+            const currentScale = parseFloat(scaleSlider.value);
+            const currentBackgroundColor = backgroundColorPicker.value;
             
-            // Send AJAX request to save position
+            console.log('Saving normalized position:', normalizedX, normalizedY);
+            
+            // Send AJAX request to save normalized position
             fetch('/team/saveLogoPosition', {
                 method: 'POST',
                 headers: {
@@ -436,8 +523,8 @@
                 },
                 body: JSON.stringify({
                     teamId: '{{team._id}}',
-                    x: currentLeft,
-                    y: currentTop,
+                    x: normalizedX,    // Jetzt normalisierte Werte senden
+                    y: normalizedY,    // Jetzt normalisierte Werte senden
                     scale: currentScale,
                     backgroundColor: currentBackgroundColor
                 })

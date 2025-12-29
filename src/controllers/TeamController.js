@@ -58,7 +58,7 @@ router.post("/uploadLogo", uploadLogo.single("teamLogo"), async (req, res) => {
     if (team) {
       if (!team.logo) {
         team.logo = {
-          position: { x: 50, y: 50 },
+          position: { x: 0.5, y: 0.5 },
           scale: 1,
           backgroundColor: '#f8f9fa'
         };
@@ -106,12 +106,12 @@ async function deleteLogo(team) {
                     reject(err);
                 } else {
                     team.logo.path = '/teamlogos/default_logo.png';
-                    //reset logo settings to default
-                    team.logo.position = { x: 50, y: 50 };
+                    //reset logo settings to normalized defaults
+                    team.logo.position = { x: 0.5, y: 0.5 };
                     team.logo.scale = 0.5;
                     team.logo.backgroundColor = '#f8f9fa';
                     await team.save();
-                    console.log('Logo deleted successfully');
+                    console.log('Logo deleted successfully with normalized defaults');
                     resolve();
                 }
             });
@@ -156,20 +156,32 @@ router.post('/deleteLogo', async (req, res) => {
 router.post('/saveLogoPosition', async (req, res) => {
     try {
         const { teamId, x, y, scale, backgroundColor } = req.body;
-        console.log('Saving logo settings for team ID:', teamId, 'Position:', x, y, 'Scale:', scale, 'Background:', backgroundColor);
+        
+        // Inline Validierung für normalisierte Positionswerte
+        if (typeof x !== 'number' || x < 0 || x > 1) {
+            return res.status(400).json({ success: false, message: 'X-Position muss zwischen 0 und 1 liegen' });
+        }
+        if (typeof y !== 'number' || y < 0 || y > 1) {
+            return res.status(400).json({ success: false, message: 'Y-Position muss zwischen 0 und 1 liegen' });
+        }
+        
+        console.log('Saving normalized logo settings for team ID:', teamId, 'Position:', x, y, 'Scale:', scale, 'Background:', backgroundColor);
         
         const team = await Team.findById(teamId).exec();
         if (team) {
             if (!team.logo) {
                 team.logo = {};
             }
+            
+            // Speichere normalisierte Werte direkt
             team.logo.position = { x: x, y: y };
             team.logo.scale = scale;
             if (backgroundColor) {
                 team.logo.backgroundColor = backgroundColor;
             }
+            
             await team.save();
-            console.log('Logo settings saved successfully');
+            console.log('Normalized logo settings saved successfully');
             res.json({ success: true });
         } else {
             console.log('Team not found for ID:', teamId);

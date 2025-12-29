@@ -5,19 +5,9 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; align-items: center; height: 200px; gap: 20px;">
             <!-- Team 1 Logo + Name -->
             <div class="text-center">
-                {{#if teamData.team1.logo.path}}
-                <div id="team1-logo-live" class="team-logo-live" style="margin-bottom: 10px;">
-                    <div style="position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background: {{#if teamData.team1.logo.backgroundColor}}{{teamData.team1.logo.backgroundColor}}{{else}}#f8f9fa{{/if}}; margin: 0 auto;">
-                        <img src="{{teamData.team1.logo.path}}" alt="Team Logo" 
-                             style="position: absolute; 
-                                    transform-origin: center center;
-                                    transform: translate(-50%, -50%) scale({{#if teamData.team1.logo.scale}}{{teamData.team1.logo.scale}}{{else}}1{{/if}});
-                                    left: {{#if teamData.team1.logo.position.x}}{{teamData.team1.logo.position.x}}{{else}}50{{/if}}%;
-                                    top: {{#if teamData.team1.logo.position.y}}{{teamData.team1.logo.position.y}}{{else}}50{{/if}}%;
-                                    max-width: none;">
-                    </div>
+                <div id="team1-logo-live" class="team-logo-live" style="margin-bottom: 10px; display: flex; justify-content: center;">
+                    {{{logoDiv teamData.team1.logo teamData.team1.name 150 150}}}
                 </div>
-                {{/if}}
                 <h3 id="team1Name" style="font-size: 28pt; margin-bottom: 0;">{{ game.opponents.[0] }}</h3>
             </div>
             
@@ -38,19 +28,9 @@
             
             <!-- Team 2 Logo + Name -->
             <div class="text-center">
-                {{#if teamData.team2.logo.path}}
-                <div id="team2-logo-live" class="team-logo-live" style="margin-bottom: 10px;">
-                    <div style="position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background: {{#if teamData.team2.logo.backgroundColor}}{{teamData.team2.logo.backgroundColor}}{{else}}#f8f9fa{{/if}}; margin: 0 auto;">
-                        <img src="{{teamData.team2.logo.path}}" alt="Team Logo" 
-                             style="position: absolute; 
-                                    transform-origin: center center;
-                                    transform: translate(-50%, -50%) scale({{#if teamData.team2.logo.scale}}{{teamData.team2.logo.scale}}{{else}}1{{/if}});
-                                    left: {{#if teamData.team2.logo.position.x}}{{teamData.team2.logo.position.x}}{{else}}50{{/if}}%;
-                                    top: {{#if teamData.team2.logo.position.y}}{{teamData.team2.logo.position.y}}{{else}}50{{/if}}%;
-                                    max-width: none;">
-                    </div>
+                <div id="team2-logo-live" class="team-logo-live" style="margin-bottom: 10px; display: flex; justify-content: center;">
+                    {{{logoDiv teamData.team2.logo teamData.team2.name 150 150}}}
                 </div>
-                {{/if}}
                 <h3 id="team2Name" style="font-size: 28pt; margin-bottom: 0;">{{ game.opponents.[1] }}</h3>
             </div>
         </div>
@@ -274,7 +254,7 @@
         }
     }
 
-    async function updateLogo(teamPrefix, teamID) {
+    async function updateLogo(teamPrefix, teamID) { // Lade die neuen Logos beim Starten eines neuen Spiels
         try {
             const response = await fetch(`/team/getTeamLogo/${teamID}`, { method: 'GET'});
             
@@ -283,38 +263,49 @@
                 const logoContainer = document.getElementById(`${teamPrefix}-logo-live`);
                 
                 if (logoContainer) {
-                    const logoDiv = logoContainer.querySelector('div');
-                    const logoImg = logoContainer.querySelector('img');
-                    
                     if (logoData.logo && logoData.logo.path) {
-                        // Update logo if it exists
-                        if (!logoImg) {
-                            // Create new logo if it doesn't exist
-                            logoDiv.innerHTML = `<img src="${logoData.logo.path}" alt="Team Logo" 
-                                 style="position: absolute; 
-                                        transform-origin: center center;
-                                        transform: translate(-50%, -50%) scale(${logoData.logo.scale || 1});
-                                        left: ${logoData.logo.position?.x || 50}%;
-                                        top: ${logoData.logo.position?.y || 50}%;
-                                        max-width: none;">`;
-                        } else {
-                            // Update existing logo
-                            logoImg.src = logoData.logo.path;
-                            logoImg.style.transform = `translate(-50%, -50%) scale(${logoData.logo.scale || 1})`;
-                            logoImg.style.left = `${logoData.logo.position?.x || 50}%`;
-                            logoImg.style.top = `${logoData.logo.position?.y || 50}%`;
-                        }
+                        // Verwende normalisierte Werte für konsistente Positionierung
+                        const normalizedX = logoData.logo.position?.x ?? 0.5;
+                        const normalizedY = logoData.logo.position?.y ?? 0.5;
+                        const baseScale = logoData.logo.scale || 0.5;
+                        const backgroundColor = logoData.logo.backgroundColor || '#f8f9fa';
                         
-                        // Update background color
-                        logoDiv.style.background = logoData.logo.backgroundColor || '#f8f9fa';
+                        // Berechne angepasste Skalierung für 150x150 Container
+                        const containerSize = 150;
+                        const scaleFactor = containerSize / 150;
+                        const adjustedScale = Math.max(0.1, Math.min(2, baseScale * scaleFactor));
+                        
+                        // Berechne Prozent-Position aus normalisierten Werten
+                        const leftPercent = (normalizedX * 100).toFixed(1) + '%';
+                        const topPercent = (normalizedY * 100).toFixed(1) + '%';
+                        
+                        // Erzeuge neuen Logo-HTML mit dem gleichen Format wie logoDiv Helper
+                        logoContainer.innerHTML = `
+                            <div style="width: 150px; height: 150px; position: relative; 
+                                        background: ${backgroundColor}; border-radius: 50%; border: none; overflow: hidden;">
+                                <img src="${logoData.logo.path}" alt="Team Logo" 
+                                     style="position: absolute;
+                                            left: ${leftPercent};
+                                            top: ${topPercent};
+                                            transform: translate(-50%, -50%) scale(${adjustedScale});
+                                            max-width: none;
+                                            pointer-events: none;">
+                            </div>
+                        `;
                         
                         // Show logo container
                         logoContainer.style.display = 'block';
-                        console.log(`Updated logo for ${teamPrefix} to ${logoData.logo.path}`);
+                        console.log(`Updated logo for ${teamPrefix} using normalized positioning: (${normalizedX}, ${normalizedY})`);
                     } else {
-                        // Hide logo container if no logo
-                        logoContainer.style.display = 'none';
-                        console.log(`No logo found for ${teamPrefix}, hiding container`);
+                        // Hide logo container if no logo - zeige Fallback
+                        logoContainer.innerHTML = `
+                            <div style="width: 150px; height: 150px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 50%; 
+                                        display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                <small class="text-muted">Logo</small>
+                            </div>
+                        `;
+                        logoContainer.style.display = 'block';
+                        console.log(`No logo found for ${teamPrefix}, showing fallback`);
                     }
                 } else {
                     console.log(`No logo container found for ${teamPrefix}`);
