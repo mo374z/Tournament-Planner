@@ -149,7 +149,7 @@ app.engine('hbs', exphbs.engine({
                     max-width: none;
                     pointer-events: none;">
       </div>`;
-    }
+    },
     math: function(lvalue, operator, rvalue) {
       lvalue = parseFloat(lvalue);
       rvalue = parseFloat(rvalue);
