@@ -490,7 +490,7 @@ router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
       if (!teamData.team1.logo || !teamData.team1.logo.path) {
         teamData.team1.logo =  {
           path: '/teamlogos/default_logo.png',
-          position: { x: 50, y: 50 },
+          position: { x: 0.5, y: 50 },
           scale: 0.5,
           backgroundColor: '#f8f9fa'
         };
@@ -498,7 +498,7 @@ router.get('/live', authorizeRoles('admin', 'beamer'), async (req, res) => {
       if (!teamData.team2.logo || !teamData.team2.logo.path) {
         teamData.team2.logo =  {
           path: '/teamlogos/default_logo.png',
-          position: { x: 50, y: 50 },
+          position: { x: 0.5, y: 0.5 },
           scale: 0.5,
           backgroundColor: '#f8f9fa'
         };

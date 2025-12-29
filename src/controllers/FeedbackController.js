@@ -61,7 +61,7 @@ router.post('/submit', checkLoginStatus, checkFeedbackEnabled, async (req, res) 
             validationErrors.push('Nachricht ist erforderlich');
         } else if (message.trim().length < 10) {
             validationErrors.push('Nachricht muss mindestens 10 Zeichen lang sein');
-        } else if (message.trim().length > 2000) {
+        } else if (message.trim().length > 1000) {
             validationErrors.push('Nachricht darf maximal 2000 Zeichen lang sein');
         }
         
