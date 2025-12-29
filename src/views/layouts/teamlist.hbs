@@ -10,7 +10,7 @@
             <input type="text" class="form-control" id="name" name="name" value="" required>
         </div>
         <div class="form-group">
-            <label for="group">Gruppe auswählen (Gruppen sind in der <a href="/mainSettings">Einstellungen</a> verwalbar):</label>
+            <label for="group">Gruppe auswählen (Gruppen sind in der <a href="/mainSettings">Einstellungen</a> verwaltbar):</label>
             <select class="form-control" id="group" name="group" required>
                 {{#each groups}}
                     <option value="{{this}}">{{this}}</option>
@@ -30,28 +30,29 @@
                 <th style="text-align: center;" rowspan="2" onclick="sortTable(0)">Index</th>
                 <th style="text-align: center;" onclick="sortTable(1)">Name</th>
                 <th style="text-align: center;" onclick="sortTable(2)">Gruppe</th>
-                <th style="text-align: center;" rowspan="2" onclick="sortTable(3)">Spiele gespielt</th>
-                <th style="text-align: center;" rowspan="2" onclick="sortTable(4)">Spiele gewonnen</th>
-                <th style="text-align: center;" rowspan="2" onclick="sortTable(5)">Spiele verloren</th>
-                <th style="text-align: center;" rowspan="2" onclick="sortTable(6)">Spiele unentsch.</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(3)">Zugangscode</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(4)">Spiele gespielt</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(5)">Spiele gewonnen</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(6)">Spiele verloren</th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(7)">Spiele unentsch.</th>
                 <th colspan="3" style="text-align: center;">Spiele in der Gruppenphase</th>
-                <th style="text-align: center;"  rowspan="2" onclick="sortTable(10)">Sekt gewonnen</th>
+                <th style="text-align: center;"  rowspan="2" onclick="sortTable(11)">Sekt gewonnen</th>
                 <th colspan="3" style="text-align: center;">Spiele im Tunier</th>
-                <th	style="text-align: center;" rowspan="2" onclick="sortTable(14)">Tunier Rang</th></th>
-                <th style="text-align: center;" rowspan="2" onclick="sortTable(15)">Foto</th>
+                <th	style="text-align: center;" rowspan="2" onclick="sortTable(15)">Tunier Rang</th></th>
+                <th style="text-align: center;" rowspan="2" onclick="sortTable(16)">Foto</th>
                 <th style="text-align: center;" rowspan="2">Aktionen</th>
             </tr>
             <tr style="background-color: #f2f2f2;">
                 <th style="text-align: center;"><input type="text" id="nameFilter" onkeyup="filterTable(0)" placeholder="Filter Name"></th>
                 <th style="text-align: center;"><input type="text" id="groupFilter" onkeyup="filterTable(1)" placeholder="Filter Gruppe" style="width: 100px;"></th>
                 
-                <th style="text-align: center;" onclick="sortTable(7)">Tore</th>
-                <th style="text-align: center;" onclick="sortTable(8)">Tordifferenz</th>
-                <th style="text-align: center;" onclick="sortTable(9)">Punkte</th>
+                <th style="text-align: center;" onclick="sortTable(8)">Tore</th>
+                <th style="text-align: center;" onclick="sortTable(9)">Tordifferenz</th>
+                <th style="text-align: center;" onclick="sortTable(10)">Punkte</th>
                 
-                <th style="text-align: center;" onclick="sortTable(11)">Tore</th>
-                <th style="text-align: center;" onclick="sortTable(12)">Tordifferenz</th>
-                <th style="text-align: center;" onclick="sortTable(13)">Punkte Gesamt</th>
+                <th style="text-align: center;" onclick="sortTable(12)">Tore</th>
+                <th style="text-align: center;" onclick="sortTable(13)">Tordifferenz</th>
+                <th style="text-align: center;" onclick="sortTable(14)">Punkte Gesamt</th>
             </tr>
         </thead>
         <tbody>
@@ -60,6 +61,7 @@
                 <td>{{this.index}}</td>
                 <td><strong>{{this.name}}</strong></td>
                 <td>{{this.group}}</td>
+                <td><strong>{{this.accessCode}}</strong></td>
                 <td>{{this.gamesPlayed}}</td>
                 <td>{{this.gamesWon}}</td>
                 <td>{{this.gamesLost}}</td>
@@ -89,7 +91,7 @@
 </div>
 
 <script>
-let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
+let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
 
 function validateForm() {
     const name = document.getElementById('name').value.trim();
@@ -117,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function sortTable(columnIndex) {
     const table = document.getElementById("teamTable");
     const rows = Array.from(table.rows).slice(2); // Skip header rows
-    const isNumericColumn = columnIndex === 0 || (columnIndex >= 3 && columnIndex <= 14); // Check if the column is numeric
+    const isNumericColumn = columnIndex === 0 || (columnIndex >= 4 && columnIndex <= 15); // Check if the column is numeric
     const direction = sortDirections[columnIndex] ? 1 : -1; // Determine sort direction 
     const sortedRows = rows.sort((a, b) => {
         const cellA = isNumericColumn ? parseFloat(a.cells[columnIndex].innerText) : a.cells[columnIndex].innerText.toLowerCase();

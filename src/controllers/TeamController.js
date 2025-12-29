@@ -1,6 +1,7 @@
 const express = require("express");
 var router = express.Router();
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const Team = mongoose.model('Team');
 const Game = mongoose.model('Game');
 const Player = mongoose.model('Player');
@@ -12,6 +13,25 @@ const path = require('path');
 const fs = require('fs');
 
 commonMiddleware(router, ['admin']); // Only admins have access to the team management page
+
+// Generate unique access code for teams
+async function generateUniqueAccessCode() {
+  const codeLength = 6; // Length of the access code
+  let accessCode;
+  let isUnique = false;
+  
+  while (!isUnique) {
+    // Generate random alphanumeric code
+    accessCode = Math.random().toString(36).substring(2, 2 + codeLength).toUpperCase();
+    // Check if code already exists
+    const existingTeam = await Team.findOne({ accessCode: accessCode });
+    if (!existingTeam) {
+      isUnique = true;
+    }
+  }
+  
+  return accessCode;
+}
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -220,6 +240,10 @@ router.post("/add", async (req, res) => {
     const { name, group, newGroup } = req.body;
     const teamGroup = group === "Neu" ? newGroup : group;
 
+    // Generate unique access code
+    const accessCode = await generateUniqueAccessCode();
+    const accessCodeHash = await bcrypt.hash(accessCode, 10);
+
     const team = new Team({
       name: name,
       group: teamGroup,
@@ -233,49 +257,14 @@ router.post("/add", async (req, res) => {
       points_Group_Stage: 0,
       points_General: 0,
       gamesPlayed_Group_Stage: 0,
+      accessCode: accessCode,
+      accessCodeHash: accessCodeHash,
     });
 
     await team.save();
     res.redirect("/team/list");
   } catch (err) {
     console.log("Error during insert: " + err);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-router.post("/createMultiple", async (req, res) => {
-  try {
-    const mainSettings = await MainSettings.findOne({});
-    const groups = mainSettings ? mainSettings.groups : [];
-
-    if (groups.length === 0) {
-      return res.status(400).send("Keine Gruppen in den MainSettings gefunden. Bitte fügen Sie Gruppen hinzu und versuchen Sie es erneut.");
-    }
-
-    const teams = [];
-    const teamCount = 16;
-
-    for (let i = 1; i <= teamCount; i++) {
-      const groupIndex = Math.floor((i - 1) / 4) % groups.length;
-      teams.push({
-        name: `Team ${i}`,
-        group: groups[groupIndex] || 'default',
-        gamesPlayed: 0,
-        gamesWon: 0,
-        gamesLost: 0,
-        gamesDraw: 0,
-        goals: [0, 0],
-        goalsGroupStage: [0, 0],
-        sektWon: 0,
-        points_Group_Stage: 0,
-        points_General: 0,
-        gamesPlayed_Group_Stage: 0,
-      });
-    }
-    await Team.insertMany(teams);
-    res.redirect("/team/list");
-  } catch (err) {
-    console.log("Error during multiple team creation: " + err);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -294,6 +283,9 @@ router.get("/createMultiple", async (req, res) => {
 
     for (let i = 1; i <= teamCount; i++) {
       const groupIndex = Math.floor((i - 1) / 4) % groups.length;
+      const accessCode = await generateUniqueAccessCode();
+      const accessCodeHash = await bcrypt.hash(accessCode, 10);
+      
       teams.push({
         name: `Team ${i}`,
         group: groups[groupIndex] || 'default',
@@ -307,6 +299,50 @@ router.get("/createMultiple", async (req, res) => {
         points_Group_Stage: 0,
         points_General: 0,
         gamesPlayed_Group_Stage: 0,
+        accessCode: accessCode,
+        accessCodeHash: accessCodeHash,
+      });
+    }
+    await Team.insertMany(teams);
+    res.redirect("/team/list");
+  } catch (err) {
+    console.log("Error during multiple team creation: " + err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+router.post("/createMultiple", async (req, res) => {
+  try {
+    const mainSettings = await MainSettings.findOne({});
+    const groups = mainSettings ? mainSettings.groups : [];
+
+    if (groups.length === 0) {
+      return res.status(400).send("Keine Gruppen in den MainSettings gefunden. Bitte fügen Sie Gruppen hinzu und versuchen Sie es erneut.");
+    }
+
+    const teams = [];
+    const teamCount = 16;
+
+    for (let i = 1; i <= teamCount; i++) {
+      const groupIndex = Math.floor((i - 1) / 4) % groups.length;
+      const accessCode = await generateUniqueAccessCode();
+      const accessCodeHash = await bcrypt.hash(accessCode, 10);
+      
+      teams.push({
+        name: `Team ${i}`,
+        group: groups[groupIndex] || 'default',
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0,
+        gamesDraw: 0,
+        goals: [0, 0],
+        goalsGroupStage: [0, 0],
+        sektWon: 0,
+        points_Group_Stage: 0,
+        points_General: 0,
+        gamesPlayed_Group_Stage: 0,
+        accessCode: accessCode,
+        accessCodeHash: accessCodeHash,
       });
     }
     await Team.insertMany(teams);
@@ -569,7 +605,7 @@ router.post("/updateName", async (req, res) => {
   }
 });
 
-async function getUpcomingGamesForTeam(teamId) {
+async function getUpcomingGamesForTeam(teamId) { //return upcoming games for a team requering the team ID object
   const games = await Game.find({
     opponents: teamId,
     status: { $in: ["Scheduled", "active"] },
@@ -697,4 +733,6 @@ async function updateRanks(teamsByGroup) {
 module.exports = {
   TeamController: router,
   getTeamsByGroup,
+  getUpcomingGamesForTeam,
+  getPastGamesForTeam,
 };

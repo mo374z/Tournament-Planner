@@ -1,0 +1,619 @@
+<div class="container">
+    <!-- Header Section -->
+    <div class="page-divider">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 p-3 bg-dark text-white rounded">
+            <h1 class="mb-2 mb-md-0">
+                <i class="fas fa-users text-primary me-2"></i>{{viewTitle}}
+            </h1>
+            <a href="/myteam/logout" class="btn btn-outline-light">
+                <i class="fas fa-sign-out-alt me-1"></i>Abmelden
+            </a>
+        </div>
+    </div>
+    
+    <!-- Team Info Section -->
+    <div class="page-divider">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <!-- Team Basic Info -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>{{team.name}}
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card group-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.group}}</div>
+                                    <div class="stat-label">Gruppe</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card games-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-gamepad"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.gamesPlayed}}</div>
+                                    <div class="stat-label">Gespielt</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card goals-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-futbol"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.goals.[0]}}:{{team.goals.[1]}}</div>
+                                    <div class="stat-label">Tore</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card sekt-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-wine-bottle"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.sektWon}}</div>
+                                    <div class="stat-label">Sekt</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Results Breakdown -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Spielergebnisse
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-4">
+                                <div class="result-card win-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="result-number">{{team.gamesWon}}</div>
+                                    <div class="result-label">Siege</div>
+                                    <div class="result-progress">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-success" style="width: {{percentage team.gamesWon team.gamesPlayed}}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="result-card draw-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-equals"></i>
+                                    </div>
+                                    <div class="result-number">{{team.gamesDraw}}</div>
+                                    <div class="result-label">Unentsch.</div>
+                                    <div class="result-progress">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-warning" style="width: {{percentage team.gamesDraw team.gamesPlayed}}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="result-card loss-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-times-circle"></i>
+                                    </div>
+                                    <div class="result-number">{{team.gamesLost}}</div>
+                                    <div class="result-label">Niederlagen</div>
+                                    <div class="result-progress">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-danger" style="width: {{percentage team.gamesLost team.gamesPlayed}}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="row g-3">
+                    <!-- Team Image -->
+                    {{#if team.imagePath}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-secondary text-white">
+                                <h2 class="card-title mb-0">
+                                    <i class="fas fa-image me-2"></i>Team Bild
+                                </h2>
+                            </div>
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                                <img src="{{team.imagePath}}" alt="{{team.name}}" class="img-fluid rounded shadow" style="max-height: 200px;">
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    <!-- Team Logo -->
+                    {{#if team.logo.path}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h2 class="card-title mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>Team Logo
+                                </h2>
+                            </div>
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                               <div class="logo-container-responsive  size-small" 
+                                    style="--logo-bg: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}}; 
+                                           --logo-x: {{#if team.logo.position.x}}{{team.logo.position.x}}{{else}}50{{/if}}%; 
+                                           --logo-y: {{#if team.logo.position.y}}{{team.logo.position.y}}{{else}}50{{/if}}%; 
+                                           --logo-scale: {{#if team.logo.scale}}{{team.logo.scale}}{{else}}0.5{{/if}};">
+                                    <img src="{{team.logo.path}}" alt="{{team.name}} Logo" class="logo-img-responsive" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    <!-- Fallback wenn weder Bild noch Logo vorhanden -->
+                    {{#unless (or team.imagePath team.logo.path)}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                                <div class="text-muted">
+                                    <i class="fas fa-image fa-3x mb-3"></i>
+                                    <p>Kein Team-Bild oder Logo verfügbar</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/unless}}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Games Section -->
+    <div class="page-divider">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Kommende Spiele
+                </h2>
+            </div>
+            <div class="card-body">
+                {{#if upcomingGames.length}}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i>SpielNr.</th>
+                                    <th><i class="fas fa-clock me-1"></i>Uhrzeit</th>
+                                    <th class="d-none d-md-table-cell"><i class="fas fa-gamepad me-1"></i>Spiel</th>
+                                    <th><i class="fas fa-users me-1"></i>Gegner</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each upcomingGames}}
+                                <tr>
+                                    <td class="fw-bold">{{number}}</td>
+                                    <td><span class="badge bg-info">{{formattedTime}}</span></td>
+                                    <td class="d-none d-md-table-cell">{{gameDisplayName}}</td>
+                                    <td><strong>{{opponent.name}}</strong></td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                {{else}}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p class="mb-0">Keine kommenden Spiele</p>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Past Games Section -->
+    <div class="page-divider">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>Bisherige Spiele
+                </h2>
+            </div>
+            <div class="card-body">
+                {{#if pastGames.length}}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i>SpielNr.</th>
+                                    <th><i class="fas fa-clock me-1"></i>Uhrzeit</th>
+                                    <th class="d-none d-md-table-cell"><i class="fas fa-gamepad me-1"></i>Spiel</th>
+                                    <th><i class="fas fa-users me-1"></i>Gegner</th>
+                                    <th><i class="fas fa-futbol me-1"></i>Ergebnis</th>
+                                    <th class="d-none d-sm-table-cell"><i class="fas fa-medal me-1"></i>Resultat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each pastGames}}
+                                <tr>
+                                    <td class="fw-bold">{{number}}</td>
+                                    <td><span class="badge bg-secondary">{{formattedTime}}</span></td>
+                                    <td class="d-none d-md-table-cell">{{gameDisplayName}}</td>
+                                    <td><strong>{{opponent.name}}</strong></td>
+                                    <td>
+                                        {{#if goals}}
+                                            <span class="badge bg-primary"><strong>{{goals.[0]}}</strong> : {{goals.[1]}}</span>
+                                        {{else}}
+                                            <span class="text-muted">-</span>
+                                        {{/if}}
+                                    </td>
+                                    <td class="d-none d-sm-table-cell">
+                                        <span class="badge 
+                                            {{#if (eq winner.name 'Unentschieden')}}bg-secondary
+                                            {{else}}{{#if winner.id}}bg-success
+                                            {{else}}bg-danger{{/if}}{{/if}}">
+                                            {{#if (eq winner.name 'Unentschieden')}}Unentschieden
+                                            {{else}}{{#if winner.id}}{{winner.name}}
+                                            {{else}}Verloren{{/if}}{{/if}}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                {{else}}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p class="mb-0">Keine bisherigen Spiele</p>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer Section -->
+    <div class="text-center my-4">
+        <a href="/myteam/logout" class="btn btn-outline-secondary">
+            <i class="fas fa-sign-out-alt me-1"></i>Abmelden
+        </a>
+    </div>
+</div>
+
+<style>
+    /* Logo Container - Responsive & Container-Size Independent */
+    .logo-container-responsive {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #17a2b8;
+        margin: 0 auto;
+        background: var(--logo-bg, #f8f9fa);
+        /* Container can be resized by changing width/height while keeping logo proportions */
+    }
+    
+    .logo-img-responsive {
+        position: absolute;
+        left: var(--logo-x, 50%);
+        top: var(--logo-y, 50%);
+        transform: translate(-50%, -50%) scale(var(--logo-scale, 0.5));
+        transform-origin: center center;
+        max-width: none;
+        height: auto;
+        /* Logo scales relative to container size automatically */
+    }
+    
+    /* Alternative container sizes for different use cases */
+    .logo-container-responsive.size-small {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .logo-container-responsive.size-large {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .logo-container-responsive.size-xlarge {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .page-divider {
+        margin-bottom: 2rem;
+    }
+    
+    /* Statistics Cards */
+    .stat-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: var(--bs-primary);
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Specialized stat card colors */
+    .group-stat:hover { border-color: #0d6efd; }
+    .group-stat .stat-icon { color: #0d6efd; }
+    
+    .games-stat:hover { border-color: #0dcaf0; }
+    .games-stat .stat-icon { color: #0dcaf0; }
+    
+    .goals-stat:hover { border-color: #198754; }
+    .goals-stat .stat-icon { color: #198754; }
+    
+    .sekt-stat:hover { border-color: #6f42c1; }
+    .sekt-stat .stat-icon { color: #6f42c1; }
+    
+    /* Result Cards */
+    .result-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.25rem 0.75rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid #f1f3f4;
+        height: 100%;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    
+    .result-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-number {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .result-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .result-progress .progress {
+        height: 4px;
+        border-radius: 2px;
+        background-color: #f1f3f4;
+    }
+    
+    /* Win/Draw/Loss specific styling */
+    .win-card:hover { border-color: #198754; }
+    .win-card .result-icon { color: #198754; }
+    .win-card .result-number { color: #198754; }
+    .win-card .result-label { color: #198754; }
+    
+    .draw-card:hover { border-color: #ffc107; }
+    .draw-card .result-icon { color: #ffc107; }
+    .draw-card .result-number { color: #ffc107; }
+    .draw-card .result-label { color: #ffc107; }
+    
+    .loss-card:hover { border-color: #dc3545; }
+    .loss-card .result-icon { color: #dc3545; }
+    .loss-card .result-number { color: #dc3545; }
+    .loss-card .result-label { color: #dc3545; }
+    
+    .info-item {
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        border-left: 4px solid var(--bs-primary);
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .info-item:hover {
+        background-color: #e9ecef;
+        transform: translateX(2px);
+    }
+    
+    .card {
+        border: none;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .badge {
+        font-size: 0.875rem;
+    }
+    
+    .card-header {
+        border-bottom: none;
+    }
+    
+    @media (max-width: 576px) {
+        .container {
+            padding: 0.5rem;
+        }
+        
+        .card-header h2, .card-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .stat-card {
+            padding: 1rem 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+        
+        .stat-value {
+            font-size: 1.4rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+        }
+        
+        .result-card {
+            padding: 1rem 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .result-icon {
+            font-size: 1.2rem;
+        }
+        
+        .result-number {
+            font-size: 1.3rem;
+        }
+        
+        .result-label {
+            font-size: 0.7rem;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.5rem 0.25rem;
+            font-size: 0.85rem;
+        }
+        
+        .page-divider {
+            margin-bottom: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-divider {
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card, .result-card {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    @media (min-width: 769px) and (max-width: 991px) {
+        .stat-value {
+            font-size: 1.6rem;
+        }
+        
+        .result-number {
+            font-size: 1.4rem;
+        }
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    .text-muted i {
+        opacity: 0.6;
+    }
+    
+    /* Mobile-first responsive design */
+    @media (min-width: 576px) {
+        .container {
+            padding: 1rem;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .container {
+            padding: 1.5rem;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .container {
+            padding: 2rem 1rem;
+        }
+    }
+    
+    /* Enhanced visual hierarchy */
+    .card-title {
+        font-weight: 600;
+        letter-spacing: -0.025em;
+    }
+    
+    .info-item strong {
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    /* Smooth scrolling for better UX on mobile */
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Loading animation for better perceived performance */
+    .card {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Progress bar animations */
+    .progress-bar {
+        transition: width 1s ease-in-out;
+    }
+    
+    /* Card spacing improvements */
+    .card + .card {
+        margin-top: 1rem;
+    }
+</style>
