@@ -37,12 +37,14 @@ const upload = multer({ storage: storage });
 
 router.get('/', async (req, res) => {
     const teams = await Team.find({});
-    //ad the rank to the team object
-    for (let i = 0; i < teams.length; i++) {
-        teams[i].rank = await getRank(teams[i]);
-    }
-    //sort the teams by rank
-    teams.sort((a, b) => a.rank - b.rank);
+    
+    // sort teams by finalPlacement parameter
+    teams.sort((a, b) => {
+        if (a.finalPlacement === null) return 1;
+        if (b.finalPlacement === null) return -1;
+        return a.finalPlacement - b.finalPlacement;
+    });
+
     const templateExists = fs.existsSync(path.join(__dirname, '../../public/templates/template.docx'));
     res.render('layouts/certificate', { teams, templateExists });
 });

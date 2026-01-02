@@ -591,12 +591,18 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
 
           console.log("Auto-playing game: ", game.number);
 
-          // Generate random goals ensuring the game does not end 0:0
-          let goalsTeam1 = Math.floor(Math.random() * 11); // Random number between 0 and 10
-          let goalsTeam2 = Math.floor(Math.random() * 11);
-          if (goalsTeam1 === 0 && goalsTeam2 === 0) {
-              goalsTeam1 = 1; // Ensure at least one goal is scored
+          let goalsTeam1 = Math.floor(Math.random() * 8); // Random number between 0 and 7
+          let goalsTeam2 = Math.floor(Math.random() * 8);
+
+          // if the game is not a group stage game, avoid draws
+          if (game.gamePhase !== "Group_Stage" && goalsTeam1 === goalsTeam2) {
+              if (Math.random() < 0.5) {
+                  goalsTeam1 += 1;
+              } else {
+                  goalsTeam2 += 1;
+              }
           }
+
           game.goals = [goalsTeam1, goalsTeam2];
 
           // Generate random goal timestamps

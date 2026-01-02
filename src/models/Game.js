@@ -35,6 +35,9 @@ var GameSchema = new mongoose.Schema({
     gameDisplayName: {
       type: String,
     },
+    finalPlacement:{
+      type: Number, default: null
+    }
 
 });
 
