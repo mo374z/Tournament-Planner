@@ -13,6 +13,7 @@ const socketIo = require("socket.io");
 const app = express();
 
 const { updateSocketConfig } = require("../config/socketConfig");
+const { updateFinalRanks } = require("./Team");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -381,6 +382,7 @@ router.get("/:id/endGame", async (req, res) => {
       } else {
         await scheduleGenerator.updateGeneralKnockout("Semifinals");
         await scheduleGenerator.updateGeneralKnockout("Finals");
+        await updateFinalRanks();
       }
 
       resetTimer(0); // Reset the timer to the value 0 in seconds
@@ -671,6 +673,7 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
             console.log("updating Semifinals and Finals");
             await scheduleGenerator.updateGeneralKnockout("Semifinals");
             await scheduleGenerator.updateGeneralKnockout("Finals");
+            await update
             break;      //Break the loop to fetch the new games
           }
       }

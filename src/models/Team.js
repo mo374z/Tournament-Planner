@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 var TeamSchema = new mongoose.Schema({
-    name:{
+    name: {
         type: String,
         required: 'This field is required'
     },
@@ -24,7 +24,7 @@ var TeamSchema = new mongoose.Schema({
     goals: { // Tore (geschossene Tore [0] - erhaltene Tore[1])
         type: Array,
     },
-    goalsGroupStage:{
+    goalsGroupStage: {
         type: Array,
     },
     sektWon: {
@@ -154,7 +154,7 @@ function rankTeams(teams, groupRank = false) {
 
 async function getRank(team, groupRank = false) {
     if (groupRank) {
-        allTeams = await Team.find({group: team.group}).exec();
+        allTeams = await Team.find({ group: team.group }).exec();
     } else {
         allTeams = await Team.find({}).exec();
     }
@@ -165,33 +165,31 @@ async function getRank(team, groupRank = false) {
 
 async function updateFinalRanks() {
     const Game = mongoose.model('Game');
-    
+
     // Find all placement games that have ended
     const placementGames = await Game.find({
         finalPlacement: { $ne: null },
         status: 'Ended'
     }).exec();
-    
+
     // Update finalPlacement for each team that participated in a placement game
     for (const game of placementGames) {
         // Determine winner and loser
         const isTeam0Winner = game.goals[0] > game.goals[1];
         const winnerId = isTeam0Winner ? game.opponents[0] : game.opponents[1];
         const loserId = isTeam0Winner ? game.opponents[1] : game.opponents[0];
-        
+
         // Winner gets finalPlacement, loser gets finalPlacement + 1
         await Team.findByIdAndUpdate(winnerId, { finalPlacement: game.finalPlacement });
         await Team.findByIdAndUpdate(loserId, { finalPlacement: game.finalPlacement + 1 });
     }
-
-    // TODO: call the function at all relevant points
 }
 
 async function getRankedTeams() {
     let allTeams = await Team.find({}).exec();
     allTeams.forEach(team => {
         team.goalDifference = team.goals[0] - team.goals[1];
-    }); 
+    });
     allTeams = await rankTeams(allTeams, false);
     // Add index to each team
     allTeams.forEach((team, index) => {
@@ -200,7 +198,7 @@ async function getRankedTeams() {
     return allTeams;
 }
 
-function getAllGroupNames(teams){
+function getAllGroupNames(teams) {
     groupNames = [];
     for (const team of teams) {
         if (!groupNames.includes(team.group)) {
@@ -211,11 +209,11 @@ function getAllGroupNames(teams){
 }
 
 
-function getAllTeamsInGroup(teams, group){
-    return teams.filter(team => team.group === group); 
+function getAllTeamsInGroup(teams, group) {
+    return teams.filter(team => team.group === group);
 }
 
-module.exports =  {
+module.exports = {
     getRank,
     updateFinalRanks,
     rankTeams,

@@ -192,7 +192,6 @@ class ScheduleGenerator {
                 gamePhase: "Finals Last",
                 displayName: this.config.display.game_phase_names.last_position_match,
                 duration: this.settings.gameDurationFinal / (1000 * 60),
-                //TODO: maybe change finalPlacement to 16 since the last place has to be won in our tournament setting
                 finalPlacement: 15
             });
         }
