@@ -43,7 +43,7 @@
 
  
     <div class="container-fluid bg-dark text-light p-3 mb-3">
-        <nav class="navbar navbar-expand-xl navbar-dark">
+        <nav class="navbar navbar-expand-xxl navbar-dark">
         <a class="navbar-brand d-flex align-items-center" href="/">
         
             <img src="/images/LogoSE.png" alt="LogoSE" class="align-middle zoom">
@@ -66,8 +66,14 @@
 
                     {{#unless (eqref userrole "beamer")}}
 
-                        <li class="nav-item">
-                            <a class="nav-link ms-5" href="/TV">TV Anzeige</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle ms-5" href="#" id="anzeigeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Anzeigen
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="anzeigeDropdown">
+                                <li><a class="dropdown-item" href="/TV">TV Anzeige</a></li>
+                                <li><a class="dropdown-item" href="/game/live">Live Game</a></li>
+                            </ul>
                         </li>                    
 
                         {{#unless (eqref userrole "TV")}}                        
@@ -80,14 +86,14 @@
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
                             </li>                     
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/game/live">Live Game</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/scorer">Torschützen</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/player">Spieler</a>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle ms-5" href="#" id="spielerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Spieler
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="spielerDropdown">
+                                    <li><a class="dropdown-item" href="/player">Spielerverwaltung</a></li>
+                                    <li><a class="dropdown-item" href="/scorer">Torschützen</a></li>
+                                </ul>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link ms-5" href="/certificate">Urkunden</a>
