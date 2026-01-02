@@ -122,7 +122,23 @@
             
             <div class="col-lg-4">
                 <div class="row g-3">
-                    <!-- Team Image -->
+                    <!-- Team Logo (jetzt zuerst) -->
+                    {{#if team.logo.path}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h2 class="card-title mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>Team Logo
+                                </h2>
+                            </div>
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                                {{{logoDiv team.logo team.name 150 150}}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    <!-- Team Image (jetzt nach dem Logo) -->
                     {{#if team.imagePath}}
                     <div class="col-12">
                         <div class="card h-100 shadow-sm">
@@ -138,36 +154,14 @@
                     </div>
                     {{/if}}
                     
-                    <!-- Team Logo -->
-                    {{#if team.logo.path}}
-                    <div class="col-12">
-                        <div class="card h-100 shadow-sm">
-                            <div class="card-header bg-info text-white">
-                                <h2 class="card-title mb-0">
-                                    <i class="fas fa-shield-alt me-2"></i>Team Logo
-                                </h2>
-                            </div>
-                            <div class="card-body text-center d-flex align-items-center justify-content-center">
-                               <div class="logo-container-responsive  size-small" 
-                                    style="--logo-bg: {{#if team.logo.backgroundColor}}{{team.logo.backgroundColor}}{{else}}#f8f9fa{{/if}}; 
-                                           --logo-x: {{#if team.logo.position.x}}{{team.logo.position.x}}{{else}}50{{/if}}%; 
-                                           --logo-y: {{#if team.logo.position.y}}{{team.logo.position.y}}{{else}}50{{/if}}%; 
-                                           --logo-scale: {{#if team.logo.scale}}{{team.logo.scale}}{{else}}0.5{{/if}};">
-                                    <img src="{{team.logo.path}}" alt="{{team.name}} Logo" class="logo-img-responsive" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {{/if}}
-                    
-                    <!-- Fallback wenn weder Bild noch Logo vorhanden -->
-                    {{#unless (or team.imagePath team.logo.path)}}
+                    <!-- Fallback wenn weder Logo noch Bild vorhanden -->
+                    {{#unless (or team.logo.path team.imagePath)}}
                     <div class="col-12">
                         <div class="card h-100 shadow-sm">
                             <div class="card-body text-center d-flex align-items-center justify-content-center">
                                 <div class="text-muted">
                                     <i class="fas fa-image fa-3x mb-3"></i>
-                                    <p>Kein Team-Bild oder Logo verfügbar</p>
+                                    <p>Kein Team-Logo oder Bild verfügbar</p>
                                 </div>
                             </div>
                         </div>
@@ -281,6 +275,60 @@
         </div>
     </div>
     
+    <!-- Team Players Section -->
+    <div class="page-divider">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>Unsere Spieler
+                </h2>
+            </div>
+            <div class="card-body">
+                {{#if players.length}}
+                    <div class="row g-3">
+                        {{#each players}}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="player-card p-3 border rounded">
+                                <div class="d-flex align-items-center">
+                                    <div class="player-number me-3">
+                                        {{#if number}}
+                                        <div class="number-badge">
+                                            {{number}}
+                                        </div>
+                                        {{else}}
+                                        <div class="number-badge no-number">
+                                            ?
+                                        </div>
+                                        {{/if}}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-1">{{name}}</h5>
+                                        {{#if position}}
+                                        <small class="text-muted">{{position}}</small>
+                                        {{/if}}
+                                        {{#if total_goals}}
+                                        <div class="player-stats">
+                                            <small class="text-success">
+                                                <i class="fas fa-futbol me-1"></i>{{total_goals}} Tore
+                                            </small>
+                                        </div>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                {{else}}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-user-friends fa-3x mb-3"></i>
+                        <p class="mb-0">Noch keine Spieler hinzugefügt</p>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
     <!-- Footer Section -->
     <div class="text-center my-4">
         <a href="/myteam/logout" class="btn btn-outline-secondary">
@@ -290,46 +338,6 @@
 </div>
 
 <style>
-    /* Logo Container - Responsive & Container-Size Independent */
-    .logo-container-responsive {
-        position: relative;
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 3px solid #17a2b8;
-        margin: 0 auto;
-        background: var(--logo-bg, #f8f9fa);
-        /* Container can be resized by changing width/height while keeping logo proportions */
-    }
-    
-    .logo-img-responsive {
-        position: absolute;
-        left: var(--logo-x, 50%);
-        top: var(--logo-y, 50%);
-        transform: translate(-50%, -50%) scale(var(--logo-scale, 0.5));
-        transform-origin: center center;
-        max-width: none;
-        height: auto;
-        /* Logo scales relative to container size automatically */
-    }
-    
-    /* Alternative container sizes for different use cases */
-    .logo-container-responsive.size-small {
-        width: 100px;
-        height: 100px;
-    }
-    
-    .logo-container-responsive.size-large {
-        width: 200px;
-        height: 200px;
-    }
-    
-    .logo-container-responsive.size-xlarge {
-        width: 300px;
-        height: 300px;
-    }
-    
     .page-divider {
         margin-bottom: 2rem;
     }
@@ -615,5 +623,71 @@
     /* Card spacing improvements */
     .card + .card {
         margin-top: 1rem;
+    }
+    
+    /* Player card styles */
+    .player-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .player-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-color: var(--bs-primary);
+    }
+    
+    .player-avatar i {
+        transition: color 0.3s ease;
+    }
+    
+    .player-card:hover .player-avatar i {
+        color: var(--bs-primary) !important;
+    }
+    
+    /* Player number badge styles */
+    .number-badge {
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+    
+    .number-badge.no-number {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+        min-width: 40px;
+        padding: 0;
+    }
+    
+    .player-card:hover .number-badge {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+    }
+    
+    .player-card:hover .number-badge.no-number {
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+    }
+    
+    .player-stats {
+        margin-top: 0.25rem;
+    }
+    
+    .player-stats .fas {
+        font-size: 0.8rem;
     }
 </style>

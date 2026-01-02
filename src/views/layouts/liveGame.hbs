@@ -1,37 +1,37 @@
-<div class="container text-center">
+<div class="container text-center" style="width: max-content; max-width: 95vw; min-width: 1200px; margin: 0 auto;">
     <div class="page-divider border border-dark top-row border-2">
         {{#if mainSettings.liveGamePageOptions.showTeamLogos}}
         <!-- Layout mit Logos: Logo oben, Name unten, Score in der Mitte -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; align-items: center; height: 200px; gap: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr auto auto auto 1fr; align-items: center; height: 220px; gap: 15px; justify-items: center;" class="grid-debug">
             <!-- Team 1 Logo + Name -->
-            <div class="text-center">
+            <div class="text-center" style="min-width: 0; width: 100%; justify-self: end;">
                 <div id="team1-logo-live" class="team-logo-live" style="margin-bottom: 10px; display: flex; justify-content: center;">
                     {{{logoDiv teamData.team1.logo teamData.team1.name 150 150}}}
                 </div>
-                <h3 id="team1Name" style="font-size: 28pt; margin-bottom: 0;">{{ game.opponents.[0] }}</h3>
+                <h3 id="team1Name" style="font-size: 32pt; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{ game.opponents.[0] }}</h3>
             </div>
             
             <!-- Team 1 Score -->
-            <div class="text-center">
+            <div class="text-center" style="min-width: 200px;">
                 <h1 id="team1Score" style="font-weight: bold; font-size: 90pt; margin: 0;">{{ game.goals.[0] }}</h1>
             </div>
             
-            <!-- Timer -->
-            <div class="text-center">
-                <h2><span id="liveCountdownTimer" style="font-weight: bold; font-size: 90pt;"> 00:00</span></h2>
+            <!-- Timer (immer mittig) -->
+            <div class="text-center" style="min-width: 220px;">
+                <h2><span id="liveCountdownTimer" class="live-countdown-timer"> 00:00</span></h2>
             </div>
             
             <!-- Team 2 Score -->
-            <div class="text-center">
+            <div class="text-center" style="min-width: 200px;">
                 <h1 id="team2Score" style="font-weight: bold; font-size: 90pt; margin: 0;">{{ game.goals.[1] }}</h1>
             </div>
             
             <!-- Team 2 Logo + Name -->
-            <div class="text-center">
+            <div class="text-center" style="min-width: 0; width: 100%; justify-self: start;">
                 <div id="team2-logo-live" class="team-logo-live" style="margin-bottom: 10px; display: flex; justify-content: center;">
                     {{{logoDiv teamData.team2.logo teamData.team2.name 150 150}}}
                 </div>
-                <h3 id="team2Name" style="font-size: 28pt; margin-bottom: 0;">{{ game.opponents.[1] }}</h3>
+                <h3 id="team2Name" style="font-size: 32pt; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{ game.opponents.[1] }}</h3>
             </div>
         </div>
         {{else}}
@@ -44,7 +44,7 @@
                 </div>
             </div>
             <div>
-                <h2><span id="liveCountdownTimer" style="font-weight: bold; font-size: 90pt;"> 00:00</span></h2>
+                <h2><span id="liveCountdownTimer" class="live-countdown-timer"> 00:00</span></h2>
             </div>
             <div class="text-center d-flex align-items-center justify-content-center" style="width: 30%;">
                 <div>
@@ -69,7 +69,13 @@
         <span id="timerStatus" class="ml-2 d-none"></span> 
     </div>
 
-    <!-- Carousel Section -->
+    <div id="connectionIndicator" class="text-center mt-3">
+        <span id="connectionStatusText" class="text-danger">Verbinde...</span>
+    </div>
+</div>
+
+<!-- Carousel Section - gleiche Breite wie Spielstandsanzeige -->
+<div class="container text-center" style="width: 1200px; max-width: 95vw; margin: 0 auto; overflow: hidden;">
     <div id="carouselSlidesOnly" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner d-flex align-items-center page-divider" style="height: 400px; overflow: hidden;" id="carouselImages">
             {{#each carouselImages}}
@@ -88,15 +94,6 @@
             <span class="visually-hidden">Next</span>
         </button>
     </div>
-
-    <div id="connectionIndicator" class="text-center mt-3">
-        <span id="connectionStatusText" class="text-danger">Verbinde...</span>
-    </div>
-
-    {{!-- <div class="text-center">
-        <p><strong>Game Time:</strong> {{ formatTime game.time }}</p>
-        <p><strong>Status:</strong> {{ game.status }}</p>
-    </div> --}}
 </div>
 
     <style>
@@ -118,6 +115,30 @@
             border-width: 4px;
             animation: fadeInOut 20s ease-in-out, borderBlink 1s infinite;
         }
+        
+        /* Live Countdown Timer Styles */
+        .live-countdown-timer {
+            font-weight: bold;
+            font-size: 90pt;
+            color: #757575;
+            transition: color 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .live-countdown-timer.last-minute {
+            color: #dc3545 !important;
+        }
+        
+        {{!-- /* Grid Debug Styles - für Testzwecke */
+        .grid-debug {
+            border: 2px solid red !important;
+            background-color: rgba(255, 0, 0, 0.1) !important;
+        }
+        
+        .grid-debug > div {
+            border: 1px solid blue !important;
+            background-color: rgba(0, 0, 255, 0.05) !important;
+        } --}}
 
         @keyframes fadeInOut {
             0%, 100% { opacity: 0; }
@@ -159,9 +180,9 @@
         liveCountdownTimer.innerText = formattedTime;
         document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
         if (lastMin) {
-            liveCountdownTimer.classList.add('text-danger');
+            liveCountdownTimer.classList.add('last-minute');
         } else {
-            liveCountdownTimer.classList.remove('text-danger');
+            liveCountdownTimer.classList.remove('last-minute');
         }
     });
 
@@ -279,10 +300,16 @@
                         const leftPercent = (normalizedX * 100).toFixed(1) + '%';
                         const topPercent = (normalizedY * 100).toFixed(1) + '%';
                         
+                        // Temporär das Flexbox-Styling entfernen, um Positionierungskonflikt zu vermeiden
+                        const originalDisplay = logoContainer.style.display;
+                        const originalJustifyContent = logoContainer.style.justifyContent;
+                        logoContainer.style.display = 'block';
+                        logoContainer.style.justifyContent = 'unset';
+                        
                         // Erzeuge neuen Logo-HTML mit dem gleichen Format wie logoDiv Helper
                         logoContainer.innerHTML = `
                             <div style="width: 150px; height: 150px; position: relative; 
-                                        background: ${backgroundColor}; border-radius: 50%; border: none; overflow: hidden;">
+                                        background: ${backgroundColor}; border-radius: 50%; border: none; overflow: hidden; margin: 0 auto;">
                                 <img src="${logoData.logo.path}" alt="Team Logo" 
                                      style="position: absolute;
                                             left: ${leftPercent};
@@ -293,18 +320,17 @@
                             </div>
                         `;
                         
-                        // Show logo container
-                        logoContainer.style.display = 'block';
                         console.log(`Updated logo for ${teamPrefix} using normalized positioning: (${normalizedX}, ${normalizedY})`);
                     } else {
                         // Hide logo container if no logo - zeige Fallback
+                        logoContainer.style.display = 'block';
+                        logoContainer.style.justifyContent = 'unset';
                         logoContainer.innerHTML = `
                             <div style="width: 150px; height: 150px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 50%; 
-                                        display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                        display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
                                 <small class="text-muted">Logo</small>
                             </div>
                         `;
-                        logoContainer.style.display = 'block';
                         console.log(`No logo found for ${teamPrefix}, showing fallback`);
                     }
                 } else {
