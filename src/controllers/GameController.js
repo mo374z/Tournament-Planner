@@ -13,7 +13,7 @@ const socketIo = require("socket.io");
 const app = express();
 
 const { updateSocketConfig } = require("../config/socketConfig");
-const { updateFinalRanks } = require("./Team");
+const { updateFinalRanks } = require("../models/Team");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -673,7 +673,7 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
             console.log("updating Semifinals and Finals");
             await scheduleGenerator.updateGeneralKnockout("Semifinals");
             await scheduleGenerator.updateGeneralKnockout("Finals");
-            await update
+            await updateFinalRanks();
             break;      //Break the loop to fetch the new games
           }
       }
