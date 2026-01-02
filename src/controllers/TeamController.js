@@ -12,6 +12,30 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Return team logo data for MyTeam users (no auth required) - MUST BE BEFORE commonMiddleware
+router.get("/:id/logoData", async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id).exec();
+
+    if (team) {
+      const logoData = {
+        success: true,
+        logo: team.logo || {
+          position: { x: 0.5, y: 0.5 },
+          scale: 0.5,
+          backgroundColor: '#f8f9fa'
+        }
+      };
+      res.status(200).json(logoData);
+    } else {
+      res.status(404).json({ success: false, error: "Team not found" });
+    }
+  } catch (err) {
+    console.log("Error loading logo data: " + err);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+});
+
 commonMiddleware(router, ['admin']); // Only admins have access to the team management page
 
 // Generate unique access code for teams
@@ -650,12 +674,29 @@ async function getPastGamesForTeam(teamId) {
       const opponent = opponents.find(
         opponent => opponent.id.toString() !== teamId.toString()
       );
-      const winner =
-        game.goals[0] > game.goals[1]
-          ? opponents[0]
-          : game.goals[0] < game.goals[1]
-            ? opponents[1]
-            : { name: "Unentschieden" };
+      
+      // Determine winner based on actual team positions
+      let winner;
+      if (game.goals[0] === game.goals[1]) {
+        winner = { name: "Unentschieden" };
+      } else {
+        // Find which index the current team is at
+        const currentTeamIndex = game.opponents.findIndex(opponentId => 
+          opponentId.toString() === teamId.toString()
+        );
+        const opponentIndex = currentTeamIndex === 0 ? 1 : 0;
+        
+        // Determine winner based on goals
+        if (game.goals[currentTeamIndex] > game.goals[opponentIndex]) {
+          winner = opponents.find(opp => opp.id.toString() === teamId.toString());
+          //ad the index to the winner object
+          winner.index = currentTeamIndex;
+        } else {
+          winner = opponents.find(opp => opp.id.toString() !== teamId.toString());
+          //add the index to the winner object
+          winner.index = opponentIndex;
+        }
+      }      
       return {
         ...game._doc,
         opponent: opponent,

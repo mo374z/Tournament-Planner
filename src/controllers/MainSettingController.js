@@ -5,6 +5,7 @@ const MainSettings = mongoose.model('MainSettings');
 const genCounters = mongoose.model('generalCounters');
 const { commonMiddleware } = require('../middleware/auth');
 const path = require('path');
+const fs = require('fs');
 
 commonMiddleware(router, ['admin']); // Only admins can access the main settings page
 
@@ -41,7 +42,11 @@ function createDefaultMainSettings() {
         feedbackOptions: {
             enableFeedback: true
         },
-        myTeamEnabled: false
+        myTeamPageOptions: {
+            myTeamEnabled: false,
+            allowImageUpload: false,
+            allowLogoUpload: false
+        }
     });
 }
 
@@ -289,7 +294,7 @@ router.post('/liveGamePageSettings', async (req, res) => {
 // POST route to handle MyTeam Settings
 router.post('/myTeamSettings', async (req, res) => {
     try {
-        const { myTeamEnabled } = req.body;
+        const { myTeamEnabled, allowImageUpload, allowLogoUpload, allowPlayerAdd } = req.body;
 
         // Find the MainSettings document and update its values
         let mainSettings = await MainSettings.findOne({});
@@ -299,7 +304,15 @@ router.post('/myTeamSettings', async (req, res) => {
             mainSettings = createDefaultMainSettings();
         }
 
-        mainSettings.myTeamEnabled = myTeamEnabled === 'on';
+        // Ensure myTeamPageOptions exists
+        if (!mainSettings.myTeamPageOptions) {
+            mainSettings.myTeamPageOptions = {};
+        }
+
+        mainSettings.myTeamPageOptions.myTeamEnabled = myTeamEnabled === 'on';
+        mainSettings.myTeamPageOptions.allowImageUpload = allowImageUpload === 'on';
+        mainSettings.myTeamPageOptions.allowLogoUpload = allowLogoUpload === 'on';
+        mainSettings.myTeamPageOptions.allowPlayerAdd = allowPlayerAdd === 'on';
 
         // Save the updated MainSettings
         await mainSettings.save();
@@ -395,6 +408,101 @@ router.post('/deleteGroup', async (req, res) => {
     }
 });
 
+
+// Route to cleanup unused team files
+router.get('/cleanupTeamFiles', async (req, res) => {
+    try {
+        const Team = mongoose.model('Team');
+        const teams = await Team.find({});
+        
+        // Directories to clean
+        const teamPicturesDir = path.join(__dirname, '../../public/teampictures');
+        const teamLogosDir = path.join(__dirname, '../../public/teamlogos');
+        
+        let deletedFiles = [];
+        let totalFiles = 0;
+        
+        // Helper function to get used filenames from teams
+        const getUsedFiles = (teams) => {
+            const usedFiles = new Set();
+            teams.forEach(team => {
+                // Add team image filename if exists
+                if (team.imagePath) {
+                    const filename = path.basename(team.imagePath);
+                    usedFiles.add(filename);
+                }
+                // Add team logo filename if exists
+                if (team.logo && team.logo.path) {
+                    const filename = path.basename(team.logo.path);
+                    usedFiles.add(filename);
+                }
+            });
+            return usedFiles;
+        };
+        
+        const usedFiles = getUsedFiles(teams);
+        
+        // Clean team pictures directory
+        if (fs.existsSync(teamPicturesDir)) {
+            const files = fs.readdirSync(teamPicturesDir);
+            totalFiles += files.length;
+            
+            files.forEach(file => {
+                // Skip default files and hidden files
+                if (file.startsWith('.') || file.toLowerCase().includes('default') || file.toLowerCase().includes('placeholder')) {
+                    return;
+                }
+                
+                // If file is not used by any team, delete it
+                if (!usedFiles.has(file)) {
+                    const filePath = path.join(teamPicturesDir, file);
+                    try {
+                        fs.unlinkSync(filePath);
+                        deletedFiles.push(`teampictures/${file}`);
+                    } catch (err) {
+                        console.error(`Error deleting file ${filePath}:`, err);
+                    }
+                }
+            });
+        }
+        
+        // Clean team logos directory
+        if (fs.existsSync(teamLogosDir)) {
+            const files = fs.readdirSync(teamLogosDir);
+            totalFiles += files.length;
+            
+            files.forEach(file => {
+                // Skip default files and hidden files
+                if (file.startsWith('.') || file.toLowerCase().includes('default') || file.toLowerCase().includes('placeholder')) {
+                    return;
+                }
+                
+                // If file is not used by any team, delete it
+                if (!usedFiles.has(file)) {
+                    const filePath = path.join(teamLogosDir, file);
+                    try {
+                        fs.unlinkSync(filePath);
+                        deletedFiles.push(`teamlogos/${file}`);
+                    } catch (err) {
+                        console.error(`Error deleting file ${filePath}:`, err);
+                    }
+                }
+            });
+        }
+        
+        console.log(`Team files cleanup completed:`);
+        console.log(`- Total files checked: ${totalFiles}`);
+        console.log(`- Files deleted: ${deletedFiles.length}`);
+        console.log(`- Deleted files:`, deletedFiles);
+        
+        // Redirect back with success message
+        res.redirect('/mainSettings?cleanup=success&deleted=' + deletedFiles.length);
+        
+    } catch (err) {
+        console.error('Error cleaning up team files:', err);
+        res.redirect('/mainSettings?cleanup=error');
+    }
+});
 
 async function checkForMainSettings() {
     try {

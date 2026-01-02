@@ -75,7 +75,7 @@ app.engine('hbs', exphbs.engine({
     milliToMin: function (milliseconds) {
       return milliseconds / (1000 * 60);
     },
-    streq: function (a, b, options) {
+    streq: function (a, b, options) { // String equality check with block helpers
       return a === b ? options.fn(this) : options.inverse(this);
     },
     gt: function (a, b) {      
@@ -181,15 +181,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Global middleware to load MainSettings for all views
+// Global middleware to load only necessary MainSettings fields for navigation
 app.use(async (req, res, next) => {
   try {
     const MainSettings = mongoose.model('MainSettings');
-    const mainSettings = await MainSettings.findOne({});
-    res.locals.mainSettings = mainSettings;
+    const mainSettings = await MainSettings.findOne({}, {
+      'myTeamPageOptions.myTeamEnabled': 1
+    });
+    res.locals.myTeamEnabled = mainSettings?.myTeamPageOptions?.myTeamEnabled || false;
   } catch (err) {
     console.log('Error loading MainSettings for navigation:', err);
-    res.locals.mainSettings = null;
+    res.locals.myTeamEnabled = false;
   }
   next();
 });

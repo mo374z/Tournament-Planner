@@ -67,9 +67,23 @@ var MainSettingsSchema = new mongoose.Schema({
             default: true
         }
     },
-    myTeamEnabled: {
-        type: Boolean,
-        default: false
+    myTeamPageOptions: {
+        myTeamEnabled: {
+            type: Boolean,
+            default: false
+        },
+        allowImageUpload: {
+            type: Boolean,
+            default: false
+        },
+        allowLogoUpload: {
+            type: Boolean,
+            default: false
+        },
+        allowPlayerAdd: {
+            type: Boolean,
+            default: false
+        }
     }
 });
 
