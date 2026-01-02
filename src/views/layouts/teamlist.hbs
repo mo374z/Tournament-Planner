@@ -123,7 +123,15 @@ function sortTable(columnIndex) {
         const cellA = isNumericColumn ? parseFloat(a.cells[columnIndex].innerText) : a.cells[columnIndex].innerText.toLowerCase();
         const cellB = isNumericColumn ? parseFloat(b.cells[columnIndex].innerText) : b.cells[columnIndex].innerText.toLowerCase();
         if (isNumericColumn) {
-            return direction * (parseFloat(cellA) - parseFloat(cellB));
+            // Handle NaN values (null or empty cells)
+            const isNaNA = isNaN(cellA);
+            const isNaNB = isNaN(cellB);
+            
+            if (isNaNA && isNaNB) return 0; // Both are NaN, treat as equal
+            if (isNaNA) return 1; // A is NaN, put it after B
+            if (isNaNB) return -1; // B is NaN, put it after A
+            
+            return direction * (cellA - cellB);
         } else {
             if (cellA < cellB) return -1 * direction;
             if (cellA > cellB) return 1 * direction;

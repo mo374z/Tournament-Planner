@@ -17,7 +17,7 @@
             <input type="text" class="form-control" id="teamSearch" placeholder="Mannschaft suchen...">
             <select class="form-control mt-2" id="team" name="teamId" required>
                 {{#each teams}}
-                    <option value="{{this._id}}">{{this.name}} (Platz: {{this.rank}})</option>
+                    <option value="{{this._id}}">{{this.name}} (Platz: {{this.finalPlacement}})</option>
                 {{/each}}
             </select>
         </div>

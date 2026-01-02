@@ -5,8 +5,8 @@ const Team = mongoose.model('Team');
 const Game = mongoose.model('Game');
 const Player = mongoose.model('Player');
 const MainSettings = mongoose.model('MainSettings');
-const { commonMiddleware, authorizeRoles} = require('../middleware/auth');
-const { getRank } = require('../models/Team');
+const { commonMiddleware, authorizeRoles } = require('../middleware/auth');
+const { getRank, updateFinalRanks } = require('../models/Team');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -14,19 +14,19 @@ const fs = require('fs');
 commonMiddleware(router, ['admin']); // Only admins have access to the team management page
 
 const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: function (req, file, cb) {
     cb(null, "public/teampictures/");
   },
-  filename: function(req, file, cb) {
+  filename: function (req, file, cb) {
     cb(null, req.body._id + path.extname(file.originalname));
   },
 });
 
 const logoStorage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: function (req, file, cb) {
     cb(null, "public/teamlogos/");
   },
-  filename: function(req, file, cb) {
+  filename: function (req, file, cb) {
     cb(null, req.body._id + "_logo" + path.extname(file.originalname));
   },
 });
@@ -78,123 +78,126 @@ router.post("/uploadLogo", uploadLogo.single("teamLogo"), async (req, res) => {
 });
 
 async function deleteImage(team) {
-    if (team && team.imagePath) {
-        const imagePath = path.join(__dirname, '../../public', team.imagePath);
-        return new Promise((resolve, reject) => {
-            fs.unlink(imagePath, async (err) => {
-                if (err) {
-                    console.log('Error deleting image:', err);
-                    reject(err);
-                } else {
-                    team.imagePath = null;
-                    await team.save();
-                    console.log('Image deleted successfully');
-                    resolve();
-                }
-            });
-        });
-    }
+  if (team && team.imagePath) {
+    const imagePath = path.join(__dirname, '../../public', team.imagePath);
+    return new Promise((resolve, reject) => {
+      fs.unlink(imagePath, async (err) => {
+        if (err) {
+          console.log('Error deleting image:', err);
+          reject(err);
+        } else {
+          team.imagePath = null;
+          await team.save();
+          console.log('Image deleted successfully');
+          resolve();
+        }
+      });
+    });
+  }
 }
 
 async function deleteLogo(team) {
-    if (team && team.logo && team.logo.path) {
-        const logoPath = path.join(__dirname, '../../public', team.logo.path);
-        return new Promise((resolve, reject) => {
-            fs.unlink(logoPath, async (err) => {
-                if (err) {
-                    console.log('Error deleting logo:', err);
-                    reject(err);
-                } else {
-                    team.logo.path = '/teamlogos/default_logo.png';
-                    //reset logo settings to normalized defaults
-                    team.logo.position = { x: 0.5, y: 0.5 };
-                    team.logo.scale = 0.5;
-                    team.logo.backgroundColor = '#f8f9fa';
-                    await team.save();
-                    console.log('Logo deleted successfully with normalized defaults');
-                    resolve();
-                }
-            });
-        });
-    }
+  if (team && team.logo && team.logo.path) {
+    const logoPath = path.join(__dirname, '../../public', team.logo.path);
+    return new Promise((resolve, reject) => {
+      fs.unlink(logoPath, async (err) => {
+        if (err) {
+          console.log('Error deleting logo:', err);
+          reject(err);
+        } else {
+          team.logo.path = '/teamlogos/default_logo.png';
+          //reset logo settings to normalized defaults
+          team.logo.position = { x: 0.5, y: 0.5 };
+          team.logo.scale = 0.5;
+          team.logo.backgroundColor = '#f8f9fa';
+          await team.save();
+          console.log('Logo deleted successfully with normalized defaults');
+          resolve();
+        }
+      });
+    });
+  }
 }
 
 router.post('/deleteImage', async (req, res) => {
-    try {
-        console.log('Deleting image for team ID:', req.body._id);
-        const team = await Team.findById(req.body._id).exec();
-        if (team) {
-            await deleteImage(team);
-            res.redirect('/team/details/' + req.body._id);
-        } else {
-            console.log('Team or image not found for ID:', req.body._id);
-            res.status(404).send('Team or image not found');
-        }
-    } catch (err) {
-        console.log('Error during image deletion:', err);
-        res.status(500).send('Internal Server Error');
+  try {
+    console.log('Deleting image for team ID:', req.body._id);
+    const team = await Team.findById(req.body._id).exec();
+    if (team) {
+      await deleteImage(team);
+      res.redirect('/team/details/' + req.body._id);
+    } else {
+      console.log('Team or image not found for ID:', req.body._id);
+      res.status(404).send('Team or image not found');
     }
+  } catch (err) {
+    console.log('Error during image deletion:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 router.post('/deleteLogo', async (req, res) => {
-    try {
-        console.log('Deleting logo for team ID:', req.body._id);
-        const team = await Team.findById(req.body._id).exec();
-        if (team) {
-            await deleteLogo(team);
-            res.redirect('/team/details/' + req.body._id);
-        } else {
-            console.log('Team or logo not found for ID:', req.body._id);
-            res.status(404).send('Team or logo not found');
-        }
-    } catch (err) {
-        console.log('Error during logo deletion:', err);
-        res.status(500).send('Internal Server Error');
+  try {
+    console.log('Deleting logo for team ID:', req.body._id);
+    const team = await Team.findById(req.body._id).exec();
+    if (team) {
+      await deleteLogo(team);
+      res.redirect('/team/details/' + req.body._id);
+    } else {
+      console.log('Team or logo not found for ID:', req.body._id);
+      res.status(404).send('Team or logo not found');
     }
+  } catch (err) {
+    console.log('Error during logo deletion:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 router.post('/saveLogoPosition', async (req, res) => {
-    try {
-        const { teamId, x, y, scale, backgroundColor } = req.body;
-        
-        // Inline Validierung für normalisierte Positionswerte
-        if (typeof x !== 'number' || x < 0 || x > 1) {
-            return res.status(400).json({ success: false, message: 'X-Position muss zwischen 0 und 1 liegen' });
-        }
-        if (typeof y !== 'number' || y < 0 || y > 1) {
-            return res.status(400).json({ success: false, message: 'Y-Position muss zwischen 0 und 1 liegen' });
-        }
-        
-        console.log('Saving normalized logo settings for team ID:', teamId, 'Position:', x, y, 'Scale:', scale, 'Background:', backgroundColor);
-        
-        const team = await Team.findById(teamId).exec();
-        if (team) {
-            if (!team.logo) {
-                team.logo = {};
-            }
-            
-            // Speichere normalisierte Werte direkt
-            team.logo.position = { x: x, y: y };
-            team.logo.scale = scale;
-            if (backgroundColor) {
-                team.logo.backgroundColor = backgroundColor;
-            }
-            
-            await team.save();
-            console.log('Normalized logo settings saved successfully');
-            res.json({ success: true });
-        } else {
-            console.log('Team not found for ID:', teamId);
-            res.status(404).json({ success: false, message: 'Team not found' });
-        }
-    } catch (err) {
-        console.log('Error during logo settings save:', err);
-        res.status(500).json({ success: false, message: 'Internal Server Error' });
+  try {
+    const { teamId, x, y, scale, backgroundColor } = req.body;
+
+    // Inline Validierung für normalisierte Positionswerte
+    if (typeof x !== 'number' || x < 0 || x > 1) {
+      return res.status(400).json({ success: false, message: 'X-Position muss zwischen 0 und 1 liegen' });
     }
+    if (typeof y !== 'number' || y < 0 || y > 1) {
+      return res.status(400).json({ success: false, message: 'Y-Position muss zwischen 0 und 1 liegen' });
+    }
+
+    console.log('Saving normalized logo settings for team ID:', teamId, 'Position:', x, y, 'Scale:', scale, 'Background:', backgroundColor);
+
+    const team = await Team.findById(teamId).exec();
+    if (team) {
+      if (!team.logo) {
+        team.logo = {};
+      }
+
+      // Speichere normalisierte Werte direkt
+      team.logo.position = { x: x, y: y };
+      team.logo.scale = scale;
+      if (backgroundColor) {
+        team.logo.backgroundColor = backgroundColor;
+      }
+
+      await team.save();
+      console.log('Normalized logo settings saved successfully');
+      res.json({ success: true });
+    } else {
+      console.log('Team not found for ID:', teamId);
+      res.status(404).json({ success: false, message: 'Team not found' });
+    }
+  } catch (err) {
+    console.log('Error during logo settings save:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
 });
 
 router.get("/list", async (req, res) => {
   try {
+    // Update final placements based on completed placement games
+    await updateFinalRanks();
+
     const Teams = await Team.find({});
     const mainSettings = await MainSettings.findOne({});
     const groups = mainSettings ? mainSettings.groups : [];
@@ -203,7 +206,7 @@ router.get("/list", async (req, res) => {
       team.index = Teams.indexOf(team) + 1;
       team.goalsDifference = team.goals[0] - team.goals[1];
       team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
-      team.rank = await getRank(team);
+      team.rank = team.finalPlacement;
     }));
 
     res.render("layouts/teamlist", {
@@ -323,7 +326,7 @@ router.get("/grouplist", async (req, res) => {
 
     // Sort groups by alphabetical order
     teamsByGroup.sort((a, b) => {
-        return a.groupName.localeCompare(b.groupName);
+      return a.groupName.localeCompare(b.groupName);
     });
 
     res.render("layouts/grouplist", {
@@ -383,7 +386,14 @@ function getTeamsByGroup() {
         },
       ]);
 
-      await updateRanks(teamsByGroup);
+      for (const group of teamsByGroup) {
+        for (const team of group.teams) {
+          team.rank = await getRank(team, true); // Get rank within the group
+        }
+
+        // Sort teams within the group based on rank
+        group.teams.sort((a, b) => a.rank - b.rank);
+      }
 
       // Sort groups based on the first team's rank in each group
       teamsByGroup.sort((a, b) => {
@@ -392,10 +402,10 @@ function getTeamsByGroup() {
         }
         return 0;
       });
-      
+
       //Sort the Groups by Group Name
       teamsByGroup.sort((a, b) => {
-         return a.groupName.localeCompare(b.groupName);
+        return a.groupName.localeCompare(b.groupName);
       });
       resolve(teamsByGroup);
     } catch (err) {
@@ -406,47 +416,48 @@ function getTeamsByGroup() {
 
 
 
-  
+
 
 
 router.get('/clearTeamCounters', authorizeRoles('admin'), async (req, res) => {   //Clear Team Counters only for Admins
-    try {
-        const teams = await Team.find({}).exec();
-        teams.forEach(async team => {
-            team.gamesPlayed = 0;
-            team.gamesWon = 0;
-            team.gamesLost = 0;
-            team.gamesDraw = 0;
-            team.goals = [0,0];  
-            team.goalsGroupStage = [0,0];   
-            team.sektWon = 0;
-            team.points_Group_Stage = 0;
-            team.points_General = 0;
-            team.gamesPlayed_Group_Stage = 0;
-            await team.save();
-        });
-        res.redirect('/team/list');
-    } catch (err) {
-        console.log('Error in deletion: ' + err);
-        res.status(500).send('Internal Server Error');
-    }
+  try {
+    const teams = await Team.find({}).exec();
+    teams.forEach(async team => {
+      team.gamesPlayed = 0;
+      team.gamesWon = 0;
+      team.gamesLost = 0;
+      team.gamesDraw = 0;
+      team.goals = [0, 0];
+      team.goalsGroupStage = [0, 0];
+      team.sektWon = 0;
+      team.points_Group_Stage = 0;
+      team.points_General = 0;
+      team.gamesPlayed_Group_Stage = 0;
+      team.finalPlacement = null;
+      await team.save();
+    });
+    res.redirect('/team/list');
+  } catch (err) {
+    console.log('Error in deletion: ' + err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 
-router.get('/delete/:id' , authorizeRoles('admin'), async (req, res) => {   //Delete Team only for Admins
-    try {
-        const team = await Team.findById(req.params.id).exec();
-        if (team) {
-            await deleteImage(team); // Delete image before deleting team
-            await Team.findByIdAndDelete(req.params.id).exec();
-            res.redirect('/team/list');
-        } else {
-            res.status(404).send('Team not found');
-        }
-    } catch (err) {
-        console.log('Error in deletion: ' + err);
-        res.status(500).send('Internal Server Error');
+router.get('/delete/:id', authorizeRoles('admin'), async (req, res) => {   //Delete Team only for Admins
+  try {
+    const team = await Team.findById(req.params.id).exec();
+    if (team) {
+      await deleteImage(team); // Delete image before deleting team
+      await Team.findByIdAndDelete(req.params.id).exec();
+      res.redirect('/team/list');
+    } else {
+      res.status(404).send('Team not found');
     }
+  } catch (err) {
+    console.log('Error in deletion: ' + err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 router.get("/deleteAll", authorizeRoles('admin'), async (req, res) => {
@@ -527,7 +538,6 @@ router.get("/details/:id", async (req, res) => {
       const goals = await getGoalsForTeam(team._id);
       const upcomingGames = await getUpcomingGamesForTeam(team._id);
       const pastGames = await getPastGamesForTeam(team._id);
-      const tournamentRank = await getRank(team);
       const groupRank = await getRank(team, true);
       res.render("layouts/teamDetails", {
         viewTitle: "Team Details: " + team.name,
@@ -536,7 +546,7 @@ router.get("/details/:id", async (req, res) => {
         goals: goals,
         upcomingGames: upcomingGames,
         pastGames: pastGames,
-        tournamentRank: tournamentRank,
+        tournamentRank: team.finalPlacement,
         groupRank: groupRank,
         imagePath: team.imagePath || "/teampictures/default.jpg",
         logoPath: (team.logo && team.logo.path) ? team.logo.path : "/teamlogos/default_logo.png"
@@ -681,17 +691,6 @@ async function getGoalsForTeam(teamId) {
   // Sort goals by timestamp in descending order
   goals.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   return goals;
-}
-
-async function updateRanks(teamsByGroup) {
-  for (const group of teamsByGroup) {
-    for (const team of group.teams) {
-      team.rank = await getRank(team, true); // Get rank within the group
-    }
-
-    // Sort teams within the group based on rank
-    group.teams.sort((a, b) => a.rank - b.rank);
-  }
 }
 
 module.exports = {

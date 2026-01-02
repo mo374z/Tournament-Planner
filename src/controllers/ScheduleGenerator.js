@@ -161,7 +161,8 @@ class ScheduleGenerator {
                     ],
                     gamePhase: `Finals ${matchNumber}`,
                     displayName: `${this.config.display.game_phase_names.placement} ${position}-${position + 1}`,
-                    duration: this.settings.gameDurationFinal / (1000 * 60)
+                    duration: this.settings.gameDurationFinal / (1000 * 60),
+                    finalPlacement: position
                 });
                 matchNumber--;
             }
@@ -176,7 +177,8 @@ class ScheduleGenerator {
                 ],
                 gamePhase: "Finals 2",
                 displayName: this.config.display.game_phase_names.bronze_medal,
-                duration: this.settings.gameDurationFinal / (1000 * 60)
+                duration: this.settings.gameDurationFinal / (1000 * 60),
+                finalPlacement: 3
             });
         }
         
@@ -189,7 +191,8 @@ class ScheduleGenerator {
                 ],
                 gamePhase: "Finals Last",
                 displayName: this.config.display.game_phase_names.last_position_match,
-                duration: this.settings.gameDurationFinal / (1000 * 60)
+                duration: this.settings.gameDurationFinal / (1000 * 60),
+                finalPlacement: 15
             });
         }
 
@@ -201,13 +204,14 @@ class ScheduleGenerator {
             ],
             gamePhase: "Finals 1",
             displayName: this.config.display.game_phase_names.finals,
-            duration: this.settings.gameDurationFinal / (1000 * 60)
+            duration: this.settings.gameDurationFinal / (1000 * 60),
+            finalPlacement: 1
         });
     
         return this.getCurrentEndTime();
     }
 
-    async createGame({ opponents, gamePhase, displayName, duration }) {
+    async createGame({ opponents, gamePhase, displayName, duration, finalPlacement = null }) {
         const gameStartTime = new Date(this.currentTime);
         
         if (this.gameNumber > 1) {
@@ -226,7 +230,8 @@ class ScheduleGenerator {
             opponents: opponents,
             goals: [0, 0],
             gamePhase: gamePhase,
-            gameDisplayName: displayName
+            gameDisplayName: displayName,
+            finalPlacement: finalPlacement
         });
 
         await newGame.save();
