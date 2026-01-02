@@ -190,7 +190,7 @@ async function getRankedTeams() {
     allTeams.forEach(team => {
         team.goalDifference = team.goals[0] - team.goals[1];
     });
-    allTeams = await rankTeams(allTeams, false);
+    allTeams = rankTeams(allTeams, false);
     // Add index to each team
     allTeams.forEach((team, index) => {
         team.index = index + 1;
