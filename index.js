@@ -22,6 +22,7 @@ const ScorerController = require("./src/controllers/ScorerController").router;
 const PlayerController = require("./src/controllers/PlayerController");
 const CertificateController = require("./src/controllers/CertificateController");
 const FeedbackController = require("./src/controllers/FeedbackController");
+const MyTeamController = require("./src/controllers/MyTeamController");
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -74,7 +75,7 @@ app.engine('hbs', exphbs.engine({
     milliToMin: function (milliseconds) {
       return milliseconds / (1000 * 60);
     },
-    streq: function (a, b, options) {
+    streq: function (a, b, options) { // String equality check with block helpers
       return a === b ? options.fn(this) : options.inverse(this);
     },
     gt: function (a, b) {      
@@ -148,7 +149,26 @@ app.engine('hbs', exphbs.engine({
                     max-width: none;
                     pointer-events: none;">
       </div>`;
-    }
+    },
+    math: function(lvalue, operator, rvalue) {
+      lvalue = parseFloat(lvalue);
+      rvalue = parseFloat(rvalue);
+      
+      return {
+        "+": lvalue + rvalue,
+        "-": lvalue - rvalue,
+        "*": lvalue * rvalue,
+        "/": rvalue !== 0 ? lvalue / rvalue : 0,
+        "%": lvalue % rvalue
+      }[operator];
+    },
+    percentage: function(numerator, denominator) {
+      numerator = parseFloat(numerator) || 0;
+      denominator = parseFloat(denominator) || 0;
+      
+      if (denominator === 0) return 0;
+      return Math.round((numerator / denominator) * 100 * 100) / 100; // Runde auf 2 Dezimalstellen
+    },
   }
 }));
 
@@ -161,6 +181,62 @@ app.use((req, res, next) => {
   next();
 });
 
+// Use a simple in-memory cache to avoid hitting the database on every request.
+let mainSettingsCache = { myTeamEnabled: false };
+let mainSettingsCacheLoaded = false;
+let mainSettingsCacheLastFetch = 0;
+const MAIN_SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Function to invalidate MainSettings cache (can be called from other modules)
+function invalidateMainSettingsCache() {
+  mainSettingsCacheLoaded = false;
+  mainSettingsCacheLastFetch = 0;
+  console.log('MainSettings cache invalidated');
+}
+
+// Export cache invalidation function for use by controllers
+global.invalidateMainSettingsCache = invalidateMainSettingsCache;
+
+// Global middleware to load only necessary MainSettings fields for navigation
+app.use(async (req, res, next) => {
+  const now = Date.now();
+  
+  // If cache is fresh, use it and skip the database query.
+  if (
+    mainSettingsCacheLoaded &&
+    now - mainSettingsCacheLastFetch < MAIN_SETTINGS_CACHE_TTL_MS
+  ) {
+    res.locals.myTeamEnabled = mainSettingsCache.myTeamEnabled;
+    return next();
+  }
+  
+  try {
+    const MainSettings = mongoose.model('MainSettings');
+    const mainSettings = await MainSettings.findOne(
+      {},
+      { 'myTeamPageOptions.myTeamEnabled': 1 }
+    );
+    const myTeamEnabled =
+      (mainSettings &&
+        mainSettings.myTeamPageOptions &&
+        mainSettings.myTeamPageOptions.myTeamEnabled) ||
+      false;
+    
+    // Update cache
+    mainSettingsCache = { myTeamEnabled };
+    mainSettingsCacheLoaded = true;
+    mainSettingsCacheLastFetch = now;
+    res.locals.myTeamEnabled = myTeamEnabled;
+  } catch (err) {
+    console.log('Error loading MainSettings for navigation:', err);
+    // On error, fall back to cached value if available, otherwise false.
+    res.locals.myTeamEnabled = mainSettingsCacheLoaded
+      ? mainSettingsCache.myTeamEnabled
+      : false;
+  }
+  next();
+});
+
 app.use("/", PublicPageController);
 app.use("/team", TeamController);
 app.use("/schedule", ScheduleController);
@@ -170,6 +246,7 @@ app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
 app.use("/certificate", CertificateController);
 app.use("/feedback", FeedbackController);
+app.use("/myteam", MyTeamController);
 
 app.use("/user", AuthenticationController);
 

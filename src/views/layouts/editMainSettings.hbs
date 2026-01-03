@@ -1,308 +1,598 @@
-<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-    <div class="row" style="display: flex; gap: 20px;">
-        <!-- Left Column -->
-        <div class="col" style="flex: 1;">
-            <!-- Tournament Settings -->
-            <div class="page-divider"
-                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>Tournament Settings</h3>
-                <form action="/mainSettings" method="POST" autocomplete="off" style="width: 100%;">
-                    <label for="scheduleTemplate">Schedule Template:</label><br>
-                    <select id="scheduleTemplate" name="scheduleTemplate" required
-                        style="width: 100%; padding: 5px; margin-bottom: 10px;">
-                        <option value="4groups_4teams.yaml" {{#if (eqref
-                            mainSettings.scheduleTemplate "4groups_4teams.yaml" )}}selected{{/if}}>4groups_4teams</option>
-                    </select><br>
-                    <label for="TornamentStartTime">Tournament Start Time:</label><br>
-                    <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime"
-                        value="{{#if mainSettings.TornamentStartTime}}{{ formatDateTime mainSettings.TornamentStartTime }}{{/if}}"
-                        required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+<div class="container-fluid" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-6 mb-3">
+                <i class="fas fa-cogs text-primary me-3"></i>Tournament Settings
+            </h1>
+            <p class="text-muted lead">Verwalten Sie alle Einstellungen für das Turnier</p>
+        </div>
+    </div>
 
-                    <label for="timeBetweenGames">Time Between Games (minutes):</label><br>
-                    <input type="number" id="timeBetweenGames" name="timeBetweenGamesInMin"
-                        value="{{ milliToMin mainSettings.timeBetweenGames }}" required
-                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+    <!-- Custom CSS for tabs -->
+    <style>
+        .tab-content {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            padding: 1.5rem;
+            background: #fff;
+        }
+        .tab-pane {
+            padding-top: 0;
+        }
+        .card {
+            margin-bottom: 1rem;
+        }
+    </style>
 
-                    <label for="gameDurationGroupStage">Game Duration - Group Stage (minutes):</label><br>
-                    <input type="number" id="gameDurationGroupStage" name="gameDurationGroupStageInMin"
-                        value="{{ milliToMin mainSettings.gameDurationGroupStage }}" required
-                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
+    <!-- Main Content Tabs -->
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tournament-tab" data-bs-toggle="tab" data-bs-target="#tournament-tab-pane" type="button" role="tab" aria-controls="tournament-tab-pane" aria-selected="true">
+                <i class="fas fa-trophy me-2"></i>Turnier
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database-tab-pane" type="button" role="tab" aria-controls="database-tab-pane" aria-selected="false">
+                <i class="fas fa-database me-2"></i>Datenbank
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="display-tab" data-bs-toggle="tab" data-bs-target="#display-tab-pane" type="button" role="tab" aria-controls="display-tab-pane" aria-selected="false">
+                <i class="fas fa-desktop me-2"></i>Anzeige
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-tab-pane" type="button" role="tab" aria-controls="users-tab-pane" aria-selected="false">
+                <i class="fas fa-users me-2"></i>Benutzer & MyTeam
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats-tab-pane" type="button" role="tab" aria-controls="stats-tab-pane" aria-selected="false">
+                <i class="fas fa-chart-bar me-2"></i>Statistiken
+            </button>
+        </li>
+    </ul>
 
-                    <label for="gameDurationQuarterfinals">Game Duration - Quarterfinals (minutes):</label><br>
-                    <input type="number" id="gameDurationQuarterfinals" name="gameDurationQuarterfinalsInMin"
-                        value="{{ milliToMin mainSettings.gameDurationQuarterfinals }}" required
-                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-                    <label for="gameDurationSemifinals">Game Duration - Semifinals (minutes):</label><br>
-                    <input type="number" id="gameDurationSemifinals" name="gameDurationSemifinalsInMin"
-                        value="{{ milliToMin mainSettings.gameDurationSemifinals }}" required
-                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-                    <label for="gameDurationFinal">Game Duration - Final (minutes):</label><br>
-                    <input type="number" id="gameDurationFinal" name="gameDurationFinalInMin"
-                        value="{{ milliToMin mainSettings.gameDurationFinal }}" required
-                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-                    <label for="timeBetweenGamePhases">Time Between Game Phases (minutes):</label><br>
-                    <input type="number" id="timeBetweenGamePhases" name="timeBetweenGamePhasesInMin"
-                        value="{{ milliToMin mainSettings.timeBetweenGamePhases }}" required
-                        style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-                    <label for="goalsforSekt">Nr. Goals for Flasche Sekt:</label><br>
-                    <input type="number" id="goalsforSekt" name="goalsforSekt" value="{{ mainSettings.goalsforSekt }}"
-                        required style="width: 100%; padding: 5px; margin-bottom: 10px;"><br>
-
-                    <div>
-                        <button id="saveSettings" type="submit" class="btn btn-primary">Save Tournament
-                            Settings</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Database Settings -->
-            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <h3>Database Settings</h3>
-
-                <!-- Current Database -->
-                <div
-                    style="margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 6px; border-left: 4px solid red;">
-                    <h4 style="margin: 0;">Current Database</h4>
-                    <p style="font-size: 1.2em; margin: 10px 0 0 0;"><strong>{{dbName}}</strong></p>
-                </div>
-
-                <!-- Database Operations -->
-                <div class="database-actions" style="display: flex; flex-direction: column; gap: 20px;">
-                    <!-- Create New Database -->
-                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
-                        <h4>Create New Database</h4>
-                        <form action="/mainSettings/createDb" method="post">
-                            <div style="margin-bottom: 15px;">
-                                <label for="dbName"><strong>Database Name:</strong></label>
-                                <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required
-                                    autocomplete="off" maxlength="20" class="form-control" style="margin-top: 5px;">
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="width: 200px;"
-                                onclick="return confirm('Are you sure you want to create a new database?\nEin Benutzer wird angelegt admin, admin')">
-                                Create Database
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Switch Database -->
-                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
-                        <h4>Switch Database</h4>
-                        <form action="/mainSettings/switchDb" method="post">
-                            <div style="margin-bottom: 15px;">
-                                <select id="dbName" name="dbName" required class="form-control"
-                                    style="margin-top: 5px;">
-                                    {{#each dbs}}
-                                    <option value="{{this.name}}">{{this.name}}</option>
-                                    {{/each}}
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="width: 200px;"
-                                onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
-                                Switch Database
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Backup Operations -->
-                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
-                        <h4>Backup & Restore</h4>
-                        <div style="display: flex; flex-direction: column; gap: 15px;">
-                            <!-- Backup Button -->
-                            <div>
-                                <a href="/mainSettings/backupDB" class="btn btn-primary" style="width: 200px;">
-                                    Create Backup
-                                </a>
-                            </div>
-
-                            <!-- Restore Form -->
-                            <form action="/mainSettings/restoreDB" method="post">
-                                <div style="margin-bottom: 15px;">
-                                    <label for="dbRestoreName"><strong>Select Backup:</strong></label>
-                                    <select id="dbRestoreName" name="dbRestoreName" required class="form-control"
-                                        style="margin-top: 5px;">
-                                        {{#each backupDbs}}
-                                        <option value="{{this}}">{{this}}</option>
-                                        {{/each}}
-                                    </select>
+    <div class="tab-content" id="myTabContent">
+        <!-- Tournament Tab -->
+        <div class="tab-pane fade show active" id="tournament-tab-pane" role="tabpanel" aria-labelledby="tournament-tab" tabindex="0">
+            <div class="row g-4">
+                <!-- Tournament Settings -->
+                <div class="col-lg-6">
+                    <div class="card h-100 border border-secondary shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Turnier-Einstellungen</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/mainSettings" method="POST" autocomplete="off">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="scheduleTemplate" class="form-label">Schedule Template:</label>
+                                        <select id="scheduleTemplate" name="scheduleTemplate" required class="form-select">
+                                            <option value="4groups_4teams.yaml" {{#if (eqref mainSettings.scheduleTemplate "4groups_4teams.yaml" )}}selected{{/if}}>4groups_4teams</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="TornamentStartTime" class="form-label">Tournament Start Time:</label>
+                                        <input type="datetime-local" id="TornamentStartTime" name="TornamentStartTime"
+                                            value="{{#if mainSettings.TornamentStartTime}}{{ formatDateTime mainSettings.TornamentStartTime }}{{/if}}"
+                                            required class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="timeBetweenGames" class="form-label">Zeit zwischen Spielen (min):</label>
+                                        <input type="number" id="timeBetweenGames" name="timeBetweenGamesInMin"
+                                            value="{{ milliToMin mainSettings.timeBetweenGames }}" required class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="goalsforSekt" class="form-label">Tore für Sekt-Flasche:</label>
+                                        <input type="number" id="goalsforSekt" name="goalsforSekt" value="{{ mainSettings.goalsforSekt }}"
+                                            required class="form-control">
+                                    </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="width: 200px;"
-                                    onclick="return confirmRestore()">
-                                    Restore Backup
-                                </button>
+                                
+                                <hr class="my-4">
+                                <h6 class="text-muted mb-3"><i class="fas fa-clock me-2"></i>Spieldauer pro Phase</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="gameDurationGroupStage" class="form-label">Gruppenphase (min):</label>
+                                        <input type="number" id="gameDurationGroupStage" name="gameDurationGroupStageInMin"
+                                            value="{{ milliToMin mainSettings.gameDurationGroupStage }}" required class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="gameDurationQuarterfinals" class="form-label">Viertelfinale (min):</label>
+                                        <input type="number" id="gameDurationQuarterfinals" name="gameDurationQuarterfinalsInMin"
+                                            value="{{ milliToMin mainSettings.gameDurationQuarterfinals }}" required class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="gameDurationSemifinals" class="form-label">Halbfinale (min):</label>
+                                        <input type="number" id="gameDurationSemifinals" name="gameDurationSemifinalsInMin"
+                                            value="{{ milliToMin mainSettings.gameDurationSemifinals }}" required class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="gameDurationFinal" class="form-label">Finale (min):</label>
+                                        <input type="number" id="gameDurationFinal" name="gameDurationFinalInMin"
+                                            value="{{ milliToMin mainSettings.gameDurationFinal }}" required class="form-control">
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="timeBetweenGamePhases" class="form-label">Zeit zwischen Phasen (min):</label>
+                                        <input type="number" id="timeBetweenGamePhases" name="timeBetweenGamePhasesInMin"
+                                            value="{{ milliToMin mainSettings.timeBetweenGamePhases }}" required class="form-control">
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid mt-4">
+                                    <button id="saveSettings" type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-save me-2"></i>Turnier-Einstellungen speichern
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Available Databases Table -->
-                    <div style="background: #fff; padding: 15px; border-radius: 6px;">
-                        <h4>Available Databases</h4>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover" style="margin: 0;">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 80px;">Index</th>
-                                        <th>Database Name</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{#each dbs}}
-                                    <tr>
-                                        <td>{{@index}}</td>
-                                        <td>{{this.name}}</td>
-                                    </tr>
-                                    {{/each}}
-                                </tbody>
-                            </table>
+                <!-- Schedule & Groups -->
+                <div class="col-lg-6">
+                    <div class="row g-4">
+                        <!-- Schedule Generation -->
+                        <div class="col-12">
+                            <div class="card border border-secondary shadow-sm">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Spielplan generieren</h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <p class="text-muted">Erstellt einen komplett neuen Spielplan</p>
+                                    <a href="/schedule/generate" class="btn btn-success btn-lg" role="button"
+                                        onclick="return confirm('Bist du sicher, dass du einen neuen Spielplan generieren möchtest? (Davor am besten alle Zähler löschen !)');">
+                                        <i class="fas fa-magic me-2"></i>Neuen Spielplan generieren
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group Management -->
+                        <div class="col-12">
+                            <div class="card border border-secondary shadow-sm">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Gruppen-Verwaltung</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form action="/mainSettings/addGroups" method="POST" class="mb-3">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="nGroups" name="nGroups" required placeholder="Anzahl Gruppen zum hinzufügen" min="1" max="16" autocomplete="off">
+                                            <button type="submit" class="btn btn-info">
+                                                <i class="fas fa-plus me-2"></i>Hinzufügen
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    <h6 class="text-muted mb-3">Vorhandene Gruppen:</h6>
+                                    <div class="d-grid gap-2">
+                                        {{#each mainSettings.groups}}
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light border rounded">
+                                            <h5 class="mb-0 text-primary">
+                                                <i class="fas fa-layer-group me-2"></i>
+                                                <strong>Gruppe {{this}}</strong>
+                                            </h5>
+                                            <form action="/mainSettings/deleteGroup" method="POST" style="display:inline;">
+                                                <input type="hidden" name="groupName" value="{{this}}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                    onclick="return confirm('Sind Sie sicher, dass Sie Gruppe {{this}} löschen möchten?')"
+                                                    title="Gruppe {{this}} löschen">
+                                                    <i class="fas fa-trash me-1"></i>Löschen
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {{/each}}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column -->
-        <div class="col" style="flex: 1;">
-            <!-- Schedule Generation -->
-            <div class="page-divider"
-                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>Schedule Generation</h3>
-                <a href="/schedule/generate" class="btn btn-primary" role="button" style="width: 200px;"
-                    onclick="return confirm('Bist du sicher, dass du einen neuen Spielplan generieren möchtest? (Davor am besten alle Zähler löschen !)');">
-                    Generate New Schedule
-                </a>
-            </div>
-
-            <!-- Group Management -->
-            <div class="page-divider"
-                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>Group Management</h3>
-                <form action="/mainSettings/addGroups" method="POST" style="margin-bottom: 20px;">
-                    <div class="form-group">
-                        <label for="nGroups">How many groups compete?</label>
-                        <input type="text" class="form-control" id="nGroups" name="nGroups" required
-                            style="margin-bottom: 10px;">
-                        <button type="submit" class="btn btn-primary" style="width: 200px;">Add Groups</button>
-                    </div>
-                </form>
-
-                <h4>Existing Groups:</h4>
-                <div class="groups-list">
-                    {{#each mainSettings.groups}}
-                    <div class="group-item" style="margin-bottom: 10px;">
-                        <strong>{{this}}</strong>
-                        <form action="/mainSettings/deleteGroup" method="POST" style="display:inline;">
-                            <input type="hidden" name="groupName" value="{{this}}">
-                            <button type="submit" class="btn btn-danger"
-                                style="width: 100px; margin-left: 10px;">Delete</button>
-                        </form>
-                    </div>
-                    {{/each}}
-                </div>
-            </div>
-
-            <!-- Counters -->
-            <div class="page-divider"
-                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>General Counters</h3>
-                <div style="margin-bottom: 20px;">
-                    <p>All Goals: {{ generalCounters.allGoals }}</p>
-                    <p>Games Played: {{ generalCounters.gamesPlayed }}</p>
-                    <p>Goal Sekt Counter: {{ generalCounters.goalSektCounter }}</p>
-                    <p>Gewonnene Sektflaschen: {{ generalCounters.wonSektBottles }}</p>
-                </div>
-
-                <div class="d-flex flex-column" style="gap: 10px;">
-                    <a href="mainSettings/resetCounters" class="btn btn-danger" style="width: 200px;"
-                        onclick="return confirm('Willst du wirklich alle Zähler löschen ?');">Clear General Counters</a>
-
-                    <a href="/team/clearTeamCounters" class="btn btn-danger" style="width: 200px;"
-                        onclick="return confirm('Are you sure you want to clear all team counters?');">Clear Team
-                        Counters</a>
-
-                    <a href="#" onclick="resetPlayers()" class="btn btn-danger" style="width: 200px;">Clear Player
-                        Stats</a>
-                </div>
-            </div>
-
-            <!-- Visitor Statistics Main Page -->
-            <div class="page-divider"
-                style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>Visitor Statistics Main Page</h3>
-                <div style="margin-bottom: 20px; padding: 15px; background: #fff; border-radius: 6px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span><strong>Total Page Views:</strong></span>
-                        <span class="badge bg-primary" style="font-size: 1.1em;">{{ generalCounters.totalPageViews }}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <strong>Unique Visitors:</strong>
-                        <span class="badge bg-success" style="font-size: 1.1em;">{{ generalCounters.uniqueVisitors }}</span>
+        <!-- Database Tab -->
+        <div class="tab-pane fade" id="database-tab-pane" role="tabpanel" aria-labelledby="database-tab" tabindex="0">
+            <div class="row g-4">
+                <!-- Current Database -->
+                <div class="col-lg-4">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="fas fa-server me-2"></i>Aktuelle Datenbank</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <h3 class="text-danger mb-0">{{dbName}}</h3>
+                            <p class="text-muted mt-2">Derzeit aktive Datenbank</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-center">
-                    <a href="/mainSettings/resetVisitorCounters" class="btn btn-warning" style="width: 200px;"
-                        onclick="return confirm('Are you sure you want to reset all visitor counters?');">
-                        <i class="fas fa-chart-bar me-2"></i>Reset Visitor Counters
-                    </a>
+                <!-- Database Operations -->
+                <div class="col-lg-8">
+                    <div class="row g-3">
+                        <!-- Create Database -->
+                        <div class="col-md-6">
+                            <div class="card border border-secondary shadow-sm h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Neue Datenbank erstellen</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form action="/mainSettings/createDb" method="post">
+                                        <div class="mb-3">
+                                            <label for="dbName" class="form-label">Datenbankname:</label>
+                                            <input type="text" id="dbName" name="dbName" pattern="^[^\s]+$" required
+                                                autocomplete="off" maxlength="20" class="form-control">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100"
+                                            onclick="return confirm('Are you sure you want to create a new database?\nEin Benutzer wird angelegt admin, admin')">
+                                            <i class="fas fa-database me-2"></i>Erstellen
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Switch Database -->
+                        <div class="col-md-6">
+                            <div class="card border border-secondary shadow-sm h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Datenbank wechseln</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form action="/mainSettings/switchDb" method="post">
+                                        <div class="mb-3">
+                                            <label for="dbSwitchName" class="form-label">Verfügbare Datenbanken:</label>
+                                            <select id="dbSwitchName" name="dbName" required class="form-select">
+                                                {{#each dbs}}
+                                                <option value="{{this.name}}">{{this.name}}</option>
+                                                {{/each}}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-warning w-100"
+                                            onclick="return confirm('Are you sure you want to switch the database?\nEs kann nur zu einer DB gewechselt werden, die entsprechende collections enthält!')">
+                                            <i class="fas fa-sync me-2"></i>Wechseln
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup Operations -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Backup & Restore</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-3">
+                                <a href="/mainSettings/backupDB" class="btn btn-success">
+                                    <i class="fas fa-download me-2"></i>Backup erstellen
+                                </a>
+                                
+                                <hr class="my-2">
+                                
+                                <form action="/mainSettings/restoreDB" method="post">
+                                    <div class="mb-3">
+                                        <label for="dbRestoreName" class="form-label">Backup auswählen:</label>
+                                        <select id="dbRestoreName" name="dbRestoreName" required class="form-select">
+                                            {{#each backupDbs}}
+                                            <option value="{{this}}">{{this}}</option>
+                                            {{/each}}
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-outline-success w-100"
+                                        onclick="return confirmRestore()">
+                                        <i class="fas fa-upload me-2"></i>Backup wiederherstellen
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Databases -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Verfügbare Datenbanken</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Datenbankname</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#each dbs}}
+                                        <tr>
+                                            <td>{{@index}}</td>
+                                            <td>{{this.name}}</td>
+                                        </tr>
+                                        {{/each}}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Public Page Settings -->
-            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>Public Page Settings</h3>
-                <form action="/mainSettings/publicPageSettings" method="POST" autocomplete="off" style="width: 100%;">
-                    <div class="form-check form-switch" style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <input class="form-check-input" type="checkbox" id="showAdvertisingPosters" name="showAdvertisingPosters" {{#if mainSettings.publicPageOptions.showAdvertisingPosters}}checked{{/if}}>
-                        <label class="form-check-label" for="showAdvertisingPosters" style="margin-left: 10px;">Show Advertising Posters</label>
+        <!-- Display Tab -->
+        <div class="tab-pane fade" id="display-tab-pane" role="tabpanel" aria-labelledby="display-tab" tabindex="0">
+            <div class="row g-4">
+                <!-- Public Page Settings -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Öffentliche Hauptseite</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/mainSettings/publicPageSettings" method="POST" autocomplete="off">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="showAdvertisingPosters" name="showAdvertisingPosters" {{#if mainSettings.publicPageOptions.showAdvertisingPosters}}checked{{/if}}>
+                                    <label class="form-check-label" for="showAdvertisingPosters">
+                                        <i class="fas fa-image me-2"></i>Werbeplakate anzeigen
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="showRankingTable" name="showRankingTable" {{#if mainSettings.publicPageOptions.showRankingTable}}checked{{/if}}>
+                                    <label class="form-check-label" for="showRankingTable">
+                                        <i class="fas fa-trophy me-2"></i>Rangliste anzeigen
+                                    </label>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Speichern
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <div class="form-check form-switch" style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <input class="form-check-input" type="checkbox" id="showRankingTable" name="showRankingTable" {{#if mainSettings.publicPageOptions.showRankingTable}}checked{{/if}}>
-                        <label class="form-check-label" for="showRankingTable" style="margin-left: 10px;">Show Ranking Table</label>
-                    </div>
-                    <button id="savePublicPageSettings" type="submit" class="btn btn-primary">Save Public Page Settings</button>
-                </form>
-            </div>
+                </div>
 
-            <!-- Live Game Page Settings -->
-            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>Live Game Page Settings</h3>
-                <form action="/mainSettings/liveGamePageSettings" method="POST" autocomplete="off" style="width: 100%;">
-                    <div class="form-check form-switch" style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <input class="form-check-input" type="checkbox" id="showTeamLogos" name="showTeamLogos" {{#if mainSettings.liveGamePageOptions.showTeamLogos}}checked{{/if}}>
-                        <label class="form-check-label" for="showTeamLogos" style="margin-left: 10px;">Show Team Logos</label>
-                        <label class="ms-3 text-muted">(Bitte danach die Live Game Seite neu laden !)</label>
+                <!-- Live Game Page Settings -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-tv me-2"></i>Live Game Seite</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/mainSettings/liveGamePageSettings" method="POST" autocomplete="off">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="showTeamLogos" name="showTeamLogos" {{#if mainSettings.liveGamePageOptions.showTeamLogos}}checked{{/if}}>
+                                    <label class="form-check-label" for="showTeamLogos">
+                                        <i class="fas fa-shield-alt me-2"></i>Team-Logos anzeigen
+                                    </label>
+                                </div>
+                                <small class="text-muted mb-3 d-block">
+                                    <i class="fas fa-info-circle me-1"></i>Bitte danach die Live Game Seite neu laden!
+                                </small>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save me-2"></i>Speichern
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <button id="saveLiveGamePageSettings" type="submit" class="btn btn-primary">Save Live Game Page Settings</button>
-                </form>
-            </div>
+                </div>
 
-            <!-- User Management -->
-            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3>User Management</h3>
-                <div class="d-flex flex-column" style="gap: 10px;">
-                    <a href="user/register" class="btn btn-secondary" style="width: 200px;">Register New User</a>
-                    <a href="user/list" class="btn btn-secondary" style="width: 200px;">List Users</a>
-                    <a href="user/deleteAdmin" class="btn btn-secondary" style="width: 200px;">Delete Admin User</a>
+                <!-- Feedback Management -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-comment-dots me-2"></i>Feedback System</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/mainSettings/feedbackSettings" method="POST" autocomplete="off" class="mb-3">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="enableFeedback" name="enableFeedback" {{#if mainSettings.feedbackOptions.enableFeedback}}checked{{/if}}>
+                                    <label class="form-check-label" for="enableFeedback">
+                                        <i class="fas fa-toggle-on me-2"></i>Feedback System aktivieren
+                                    </label>
+                                </div>
+                                <div class="d-grid mb-3">
+                                    <button type="submit" class="btn btn-info">
+                                        <i class="fas fa-save me-2"></i>Speichern
+                                    </button>
+                                </div>
+                            </form>
+                            <div class="d-grid">
+                                <a href="/feedback/list" class="btn btn-outline-info">
+                                    <i class="fas fa-comments me-2"></i>Feedback verwalten
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Feedback Management -->
-            <div class="page-divider" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <h3>Feedback Management</h3>
-                <form action="/mainSettings/feedbackSettings" method="POST" autocomplete="off" style="width: 100%; margin-bottom: 15px;">
-                    <div class="form-check form-switch" style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <input class="form-check-input" type="checkbox" id="enableFeedback" name="enableFeedback" {{#if mainSettings.feedbackOptions.enableFeedback}}checked{{/if}}>
-                        <label class="form-check-label" for="enableFeedback" style="margin-left: 10px;">Enable Feedback System</label>
+        <!-- Users & Teams Tab -->
+        <div class="tab-pane fade" id="users-tab-pane" role="tabpanel" aria-labelledby="users-tab" tabindex="0">
+            <div class="row g-4">
+                <!-- User Management -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Benutzerverwaltung</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="user/register" class="btn btn-outline-secondary">
+                                    <i class="fas fa-user-plus me-2"></i>Neuen Benutzer registrieren
+                                </a>
+                                <a href="user/list" class="btn btn-outline-secondary">
+                                    <i class="fas fa-list me-2"></i>Benutzer auflisten
+                                </a>
+                                <a href="user/deleteAdmin" class="btn btn-outline-danger">
+                                    <i class="fas fa-user-times me-2"></i>Admin-Benutzer löschen
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                    <button id="saveFeedbackSettings" type="submit" class="btn btn-primary">Save Feedback Settings</button>
-                </form>
-                <div class="mt-3">
-                    <a href="/feedback/list" class="btn btn-info" style="width: 200px;">
-                        <i class="fas fa-comments"></i> Feedback Admin
-                    </a>
+                </div>
+
+                <!-- MyTeam Management -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-users-cog me-2"></i>MyTeam System</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/mainSettings/myTeamSettings" method="POST" autocomplete="off" class="mb-3">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="myTeamEnabled" name="myTeamEnabled" {{#if mainSettings.myTeamPageOptions.myTeamEnabled}}checked{{/if}}>
+                                    <label class="form-check-label" for="myTeamEnabled">
+                                        <i class="fas fa-toggle-on me-1"></i>MyTeam aktivieren
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="allowImageUpload" name="allowImageUpload" {{#if mainSettings.myTeamPageOptions.allowImageUpload}}checked{{/if}}>
+                                    <label class="form-check-label" for="allowImageUpload">
+                                        <i class="fas fa-image me-1"></i>Team-Bild Upload erlauben
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="allowLogoUpload" name="allowLogoUpload" {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}checked{{/if}}>
+                                    <label class="form-check-label" for="allowLogoUpload">
+                                        <i class="fas fa-shield-alt me-1"></i>Team-Logo Upload/Bearbeitung erlauben
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="allowPlayerAdd" name="allowPlayerAdd" {{#if mainSettings.myTeamPageOptions.allowPlayerAdd}}checked{{/if}}>
+                                    <label class="form-check-label" for="allowPlayerAdd">
+                                        <i class="fas fa-user-plus me-1"></i>Spieler hinzufügen erlauben
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="allowCertificateDownload" name="allowCertificateDownload" {{#if mainSettings.myTeamPageOptions.allowCertificateDownload}}checked{{/if}}>
+                                    <label class="form-check-label" for="allowCertificateDownload">
+                                        <i class="fas fa-certificate me-1"></i>Urkunden-Download erlauben
+                                    </label>
+                                </div>
+                                <div class="d-grid mb-3">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>MyTeam-Einstellungen speichern
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="alert alert-info" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <small>Aktiviert den MyTeam-Bereich, in dem Teams mit ihren Zugangscodes ihre eigenen Daten einsehen können.</small>
+                            </div>
+                            
+                            <hr>
+                            <h6 class="text-muted mb-2">Team-Dateien verwalten</h6>
+                            <div class="d-grid">
+                                <a href="/mainSettings/cleanupTeamFiles" class="btn btn-warning" 
+                                   onclick="return confirm('Sind Sie sicher, dass Sie alle ungenutzten Team-Bilder und Logos löschen möchten?\n\nDies kann nicht rückgängig gemacht werden!')">
+                                    <i class="fas fa-trash-alt me-2"></i>Ungenutzte Dateien löschen
+                                </a>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Löscht alle Team-Bilder und Logos, die nicht mit einem Team verknüpft sind.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div class="tab-pane fade" id="stats-tab-pane" role="tabpanel" aria-labelledby="stats-tab" tabindex="0">
+            <div class="row g-4">
+                <!-- General Counters -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Allgemeine Zähler</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-success mb-1">{{ generalCounters.allGoals }}</h4>
+                                        <small class="text-muted">Alle Tore</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-primary mb-1">{{ generalCounters.gamesPlayed }}</h4>
+                                        <small class="text-muted">Gespielte Spiele</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mt-3">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-warning mb-1">{{ generalCounters.goalSektCounter }}</h4>
+                                        <small class="text-muted">Tor-Sekt Zähler</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mt-3">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-info mb-1">{{ generalCounters.wonSektBottles }}</h4>
+                                        <small class="text-muted">Gewonnene Sektflaschen</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <a href="mainSettings/resetCounters" class="btn btn-outline-danger"
+                                    onclick="return confirm('Willst du wirklich alle Zähler löschen ?');">
+                                    <i class="fas fa-trash me-2"></i>Allgemeine Zähler löschen
+                                </a>
+                                <a href="/team/clearTeamCounters" class="btn btn-outline-danger"
+                                    onclick="return confirm('Are you sure you want to clear all team counters?');">
+                                    <i class="fas fa-users me-2"></i>Team-Zähler löschen
+                                </a>
+                                <a href="#" onclick="resetPlayers()" class="btn btn-outline-danger">
+                                    <i class="fas fa-user me-2"></i>Spieler-Statistiken löschen
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visitor Statistics -->
+                <div class="col-lg-6">
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Besucherstatistiken</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <div class="bg-light rounded p-4">
+                                        <h3 class="text-primary mb-1">{{ generalCounters.totalPageViews }}</h3>
+                                        <small class="text-muted">Gesamte Seitenaufrufe</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light rounded p-4">
+                                        <h3 class="text-success mb-1">{{ generalCounters.uniqueVisitors }}</h3>
+                                        <small class="text-muted">Eindeutige Besucher</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <a href="/mainSettings/resetVisitorCounters" class="btn btn-warning"
+                                    onclick="return confirm('Are you sure you want to reset all visitor counters?');">
+                                    <i class="fas fa-chart-line me-2"></i>Besucher-Zähler zurücksetzen
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -340,3 +630,6 @@
             `!! Das überschreibt die aktuelle DB in Mongo: ${dbName} mit den Daten aus dem Bakup!!!`);
     }
 </script>
+
+<!-- Bootstrap Tab JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>

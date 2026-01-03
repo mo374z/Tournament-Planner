@@ -165,10 +165,12 @@ router.post('/login', async (req, res) => {
             maxAge: 54000000, // 15 hours in milliseconds
         });
 
-        //res.status(200).json({ token }); // Send the token as a response
-
-        //res.redirect('/user/protected'); // Redirect to the protected route
-        res.redirect('/'); // Redirect to main page
+        // Redirect based on user role
+        if (user.role === 'beamer') {
+            res.redirect('/game/live'); // Redirect beamer users to Live Game page
+        } else {
+            res.redirect('/'); // Redirect other users to main page
+        }
     } catch (error) {
         console.error('Error during login:', error);
         res.status(500).send('Internal Server Error');

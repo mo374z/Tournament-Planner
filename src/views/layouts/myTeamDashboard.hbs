@@ -1,0 +1,1544 @@
+<div class="container">
+    <!-- Header Section -->
+    <div class="page-divider">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 p-3 bg-dark text-white rounded">
+            <h1 class="mb-2 mb-md-0">
+                <i class="fas fa-users text-primary me-2"></i>{{viewTitle}}
+            </h1>
+            <a href="/myteam/logout" class="btn btn-outline-light">
+                <i class="fas fa-sign-out-alt me-1"></i>Abmelden
+            </a>
+        </div>
+    </div>
+    
+    <!-- Team Info Section -->
+    <div class="page-divider">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <!-- Team Basic Info -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>{{team.name}}
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center g-3 gy-4">
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card group-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.group}}</div>
+                                    <div class="stat-label">Gruppe</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card games-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-gamepad"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.gamesPlayed}}</div>
+                                    <div class="stat-label">Gespielt</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card goals-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-futbol"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.goals.[0]}}:{{team.goals.[1]}}</div>
+                                    <div class="stat-label">Tore</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card sekt-stat">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-wine-bottle"></i>
+                                    </div>
+                                    <div class="stat-value">{{team.sektWon}}</div>
+                                    <div class="stat-label">Sekt</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Results Breakdown -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Spielergebnisse
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-4">
+                                <div class="result-card win-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="result-number">{{team.gamesWon}}</div>
+                                    <div class="result-label">Siege</div>
+                                    <div class="result-progress">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-success" style="width: {{percentage team.gamesWon team.gamesPlayed}}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="result-card draw-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-equals"></i>
+                                    </div>
+                                    <div class="result-number">{{team.gamesDraw}}</div>
+                                    <div class="result-label">Unentsch.</div>
+                                    <div class="result-progress">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-warning" style="width: {{percentage team.gamesDraw team.gamesPlayed}}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="result-card loss-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-times-circle"></i>
+                                    </div>
+                                    <div class="result-number">{{team.gamesLost}}</div>
+                                    <div class="result-label">Niederlagen</div>
+                                    <div class="result-progress">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-danger" style="width: {{percentage team.gamesLost team.gamesPlayed}}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="row g-3">
+                    <!-- Team Logo (jetzt zuerst) -->
+                    {{#if team.logo.path}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h2 class="card-title mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>Team Logo
+                                </h2>
+                            </div>
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                                {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
+                                <div class="team-logo-clickable" style="cursor: pointer;" 
+                                     data-bs-toggle="modal" data-bs-target="#teamLogoModal"
+                                     onclick="showLogoModal('{{team.logo.path}}', '{{team.name}}', '{{team._id}}')">
+                                    {{{logoDiv team.logo team.name 150 150}}}
+                                </div>
+                                <small class="text-muted mt-2 position-absolute" style="bottom: 1px; font-size: 0.75rem;">
+                                    <i class="fas fa-eye me-1"></i>Klick zum Vergrößern &
+                                     um das Logo zu bearbeiten <i class="fas fa-edit me-1"></i>
+                                </small>
+                                {{else}}
+                                <div>
+                                    {{{logoDiv team.logo team.name 150 150}}}
+                                </div>
+                                <small class="text-muted mt-2 position-absolute" style="bottom: 1px; font-size: 0.75rem;">
+                                    <i class="fas fa-eye me-1"></i>Logo-Anzeige (Bearbeitung nicht verfügbar)
+                                </small>
+                                {{/if}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    <!-- Team Image (jetzt nach dem Logo) -->
+                    {{#if team.imagePath}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-header bg-secondary text-white">
+                                <h2 class="card-title mb-0">
+                                    <i class="fas fa-image me-2"></i>Team Bild
+                                </h2>
+                            </div>
+                            <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                                <img src="{{team.imagePath}}" alt="{{team.name}}" class="img-fluid rounded shadow team-image-clickable" 
+                                     style="max-height: 200px; cursor: pointer;" 
+                                     data-bs-toggle="modal" data-bs-target="#teamImageModal"
+                                     onclick="showImageModal('{{team.imagePath}}', '{{team.name}}', '{{team._id}}')">
+                                <small class="text-muted mt-2">
+                                    <i class="fas fa-eye me-1"></i>Klick zum Vergrößern &
+                                    {{#if mainSettings.myTeamPageOptions.allowImageUpload}}
+                                    <br><i class="fas fa-upload me-1"></i> um ein neues Bild hochzuladen
+                                    {{/if}}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    <!-- Fallback wenn weder Logo noch Bild vorhanden -->
+                    {{#unless (or team.logo.path team.imagePath)}}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body text-center d-flex align-items-center justify-content-center">
+                                <div class="text-muted">
+                                    <i class="fas fa-image fa-3x mb-3"></i>
+                                    <p>Kein Team-Logo oder Bild verfügbar</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/unless}}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Games Section -->
+    <div class="page-divider">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Kommende Spiele
+                </h2>
+            </div>
+            <div class="card-body">
+                {{#if upcomingGames.length}}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i>SpielNr.</th>
+                                    <th><i class="fas fa-clock me-1"></i>Uhrzeit</th>
+                                    <th class="d-none d-md-table-cell"><i class="fas fa-gamepad me-1"></i>Spiel</th>
+                                    <th><i class="fas fa-users me-1"></i>Gegner</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each upcomingGames}}
+                                <tr>
+                                    <td class="fw-bold">{{number}}</td>
+                                    <td><span class="badge bg-info">{{formattedTime}}</span></td>
+                                    <td class="d-none d-md-table-cell">{{gameDisplayName}}</td>
+                                    <td><strong>{{opponent.name}}</strong></td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                {{else}}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p class="mb-0">Keine kommenden Spiele</p>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Past Games Section -->
+    <div class="page-divider">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>Bisherige Spiele
+                </h2>
+            </div>
+            <div class="card-body">
+                {{#if pastGames.length}}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i>SpielNr.</th>
+                                    <th><i class="fas fa-clock me-1"></i>Uhrzeit</th>
+                                    <th class="d-none d-md-table-cell"><i class="fas fa-gamepad me-1"></i>Spiel</th>
+                                    <th><i class="fas fa-users me-1"></i>Gegner</th>
+                                    <th><i class="fas fa-futbol me-1"></i>Ergebnis</th>
+                                    <th class="d-none d-sm-table-cell"><i class="fas fa-medal me-1"></i>Resultat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each pastGames}}
+                                <tr>
+                                    <td class="fw-bold">{{number}}</td>
+                                    <td><span class="badge bg-secondary">{{formattedTime}}</span></td>
+                                    <td class="d-none d-md-table-cell">{{gameDisplayName}}</td>
+                                    <td><strong>{{opponent.name}}</strong></td>
+                                    <td>
+                                        {{#if goals}}
+                                            <span class="badge bg-primary"><strong>{{goals.[0]}}</strong> : {{goals.[1]}}</span>
+                                        {{else}}
+                                            <span class="text-muted">-</span>
+                                        {{/if}}
+                                    </td>
+                                    <td class="d-none d-sm-table-cell">
+                                        <span class="badge 
+                                            {{#if (stringeq winner.name 'Unentschieden')}}bg-secondary
+                                            {{else}}{{#if (eq winner.id team._id)}}bg-success
+                                            {{else}}bg-danger{{/if}}{{/if}}">
+                                            {{#if (stringeq winner.name 'Unentschieden')}}Unentschieden
+                                            {{else}}{{#if (eq winner.id team._id)}}Gewonnen
+                                            {{else}}Verloren{{/if}}{{/if}}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                {{else}}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p class="mb-0">Keine bisherigen Spiele</p>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Team Players Section -->
+    <div class="page-divider">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>Unsere Spieler
+                </h2>
+            </div>
+            <div class="card-body">
+                {{#if players.length}}
+                    <div class="row g-3">
+                        {{#each players}}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="player-card p-3 border rounded">
+                                <div class="d-flex align-items-center">
+                                    <div class="player-number me-3">
+                                        {{#if number}}
+                                        <div class="number-badge">
+                                            {{number}}
+                                        </div>
+                                        {{else}}
+                                        <div class="number-badge no-number">
+                                            ?
+                                        </div>
+                                        {{/if}}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-1">{{name}}</h5>
+                                        {{#if position}}
+                                        <small class="text-muted">{{position}}</small>
+                                        {{/if}}
+                                        {{#if total_goals}}
+                                        <div class="player-stats">
+                                            <small class="text-success">
+                                                <i class="fas fa-futbol me-1"></i>{{total_goals}} Tore
+                                            </small>
+                                        </div>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                {{else}}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-user-friends fa-3x mb-3"></i>
+                        <p class="mb-0">Noch keine Spieler hinzugefügt</p>
+                    </div>
+                {{/if}}
+                
+                {{#if mainSettings.myTeamPageOptions.allowPlayerAdd}}
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPlayerModal">
+                        <i class="fas fa-user-plus me-2"></i>Spieler hinzufügen
+                    </button>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Certificate Download Section -->
+    {{#if mainSettings.myTeamPageOptions.allowCertificateDownload}}
+    <div class="page-divider">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-certificate me-2"></i>Urkunde
+                </h2>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-award fa-3x text-warning mb-2"></i>
+                    <p class="text-muted">Laden Sie Ihre Team-Urkunde herunter</p>
+                </div>
+                <a href="/myteam/downloadCertificate" class="btn btn-warning btn-lg">
+                    <i class="fas fa-download me-2"></i>Urkunde downloaden
+                </a>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>Die Urkunde wird als Word-Dokument (.docx) heruntergeladen
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+    
+    <!-- Footer Section -->
+    <div class="text-center my-4">
+        <a href="/myteam/logout" class="btn btn-outline-secondary">
+            <i class="fas fa-sign-out-alt me-1"></i>Abmelden
+        </a>
+    </div>
+</div>
+
+{{#if mainSettings.myTeamPageOptions.allowPlayerAdd}}
+<!-- Add Player Modal -->
+<div class="modal fade" id="addPlayerModal" tabindex="-1" aria-labelledby="addPlayerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPlayerModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>Neuen Spieler hinzufügen
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPlayerForm">
+                    <div class="mb-3">
+                        <label for="playerName" class="form-label">
+                            <i class="fas fa-user me-1"></i>Spielername <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="playerName" name="name" required maxlength="50" placeholder="Name des Spielers">
+                        <div class="form-text">Pflichtfeld - Name des neuen Spielers</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="playerNumber" class="form-label">
+                            <i class="fas fa-hashtag me-1"></i>Trikotnummer
+                        </label>
+                        <input type="text" class="form-control" id="playerNumber" name="number" maxlength="10" placeholder="z.B. 10">
+                        <div class="form-text">Optional - Trikotnummer des Spielers</div>
+                    </div>
+                    <div class="alert alert-info d-none" id="addPlayerInfo">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <span id="addPlayerInfoText"></span>
+                    </div>
+                    <div class="alert alert-danger d-none" id="addPlayerError">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        <span id="addPlayerErrorText"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Abbrechen
+                </button>
+                <button type="button" class="btn btn-success" id="savePlayerBtn">
+                    <i class="fas fa-user-plus me-2"></i>Spieler hinzufügen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<!-- Team Image Modal -->
+<div class="modal fade" id="teamImageModal" tabindex="-1" aria-labelledby="teamImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="teamImageModalLabel">
+                    <i class="fas fa-image me-2"></i><span id="modalTeamName">Team Bild</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalTeamImage" src="" alt="" class="img-fluid rounded shadow" style="max-width: 100%; max-height: 60vh; margin-bottom: 1rem;">
+                
+                <!-- Upload Section in Modal -->
+                {{#if mainSettings.myTeamPageOptions.allowImageUpload}}
+                <div class="border-top pt-3">
+                    <h6 class="mb-3"><i class="fas fa-upload me-2"></i>Neues Team-Bild hochladen <br>(Zuerst mit "Browse auswählen und dann hochladen drücken")</h6>
+                    <form action="/myteam/uploadImage" method="POST" enctype="multipart/form-data" class="d-flex flex-column gap-2">
+                        <input type="hidden" name="teamId" id="modalTeamId" value="">
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="modalTeamImage" name="teamImage" accept="image/*" required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-cloud-upload-alt me-1"></i>Hochladen
+                            </button>
+                        </div>
+                        <small class="text-muted">Erlaubte Formate: JPG, PNG, GIF (max. 5 MB)</small>
+                    </form>
+                </div>
+                {{/if}}
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-success" id="downloadImageBtn" onclick="downloadImage()">
+                    <i class="fas fa-download me-2"></i>Bild herunterladen
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Schließen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Logo Modal -->
+<div class="modal fade" id="teamLogoModal" tabindex="-1" aria-labelledby="teamLogoModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="teamLogoModalLabel">
+                    <i class="fas fa-shield-alt me-2"></i>Team Logo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
+                <!-- Logo Upload -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6><i class="fas fa-upload me-2"></i>Neues Logo hochladen</h6>
+                        <form id="logoUploadForm" action="/myteam/uploadLogo" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="teamId" id="logoTeamId">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input type="file" class="form-control" id="logoFileInput" name="teamLogo" accept="image/*" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-upload me-2"></i>Logo hochladen
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">
+                                Unterstützte Formate: JPG, PNG, GIF (Max. 5MB)
+                            </small>
+                        </form>
+                    </div>
+                </div>
+                <hr>
+                {{/if}}
+                
+                <!-- Logo Bearbeitung - genau wie Team Details -->
+                <div class="team-logo" style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+                    <p class="text-muted mb-4 text-center">
+                        <i class="fa fa-info-circle"></i> 
+                        <strong>Anleitung:</strong> Logo im Kreis an passende Position schieben und Größe anpassen. <br> Dann auf "Speichern" klicken !
+                    </p>
+                    
+                    <!-- Logo Container - zentriert -->
+                    <div class="text-center mb-5" style="padding: 50px 60px;">
+                        <div style="position: relative; display: inline-block;">
+                            <!-- Pfeil nach oben -->
+                            <div style="position: absolute; top: -35px; left: 50%; transform: translateX(-50%);">
+                                <button type="button" id="myteam-move-up" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                                    <i class="fa fa-arrow-up"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Pfeil nach links -->
+                            <div style="position: absolute; top: 50%; left: -45px; transform: translateY(-50%);">
+                                <button type="button" id="myteam-move-left" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                                    <i class="fa fa-arrow-left"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Pfeil nach rechts -->
+                            <div style="position: absolute; top: 50%; right: -45px; transform: translateY(-50%);">
+                                <button type="button" id="myteam-move-right" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                                    <i class="fa fa-arrow-right"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Pfeil nach unten -->
+                            <div style="position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%);">
+                                <button type="button" id="myteam-move-down" class="btn btn-outline-primary btn-sm" style="padding: 5px 10px;">
+                                    <i class="fa fa-arrow-down"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Logo Container -->
+                            <div id="myteam-logo-container" 
+                                 style="position: relative; 
+                                        width: 150px; 
+                                        height: 150px; 
+                                        border-radius: 50%; 
+                                        overflow: hidden; 
+                                        border: 3px solid #007bff; 
+                                        margin: 0 auto; 
+                                        background: #f8f9fa;"
+                                 data-container-width="150"
+                                 data-container-height="150">
+                                <img id="myteam-logo-img" 
+                                     src="" 
+                                     alt="Team Logo" 
+                                     style="position: absolute; 
+                                            transform-origin: center center;
+                                            transform: translate(-50%, -50%) scale(0.5);
+                                            left: 50%;
+                                            top: 50%;
+                                            max-width: none;
+                                            cursor: move;"
+                                     data-normalized-x="0.5"
+                                     data-normalized-y="0.5">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
+                    <!-- Zentrieren Buttons -->
+                    <div class="text-center mb-4">
+                        <button type="button" id="myteam-center-horizontal" class="btn btn-outline-primary btn-sm mx-2">Horizontal zentrieren</button>
+                        <button type="button" id="myteam-center-vertical" class="btn btn-outline-primary btn-sm mx-2">Vertikal zentrieren</button>
+                    </div>
+                    
+                    <!-- Größe Regler -->
+                    <div class="text-center mb-4">
+                        <label for="myteam-logo-scale" class="form-label"><strong>Größe:</strong></label><br>
+                        <div style="display: inline-block; width: 300px;">
+                            <input type="range" id="myteam-logo-scale" min="0.05" max="1.5" step="0.05" 
+                                   value="0.5" 
+                                   class="form-range" style="width: 100%;">
+                            <div class="text-center mt-1">
+                                <span id="myteam-scale-value" style="font-weight: bold;">0.5</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hintergrundfarbe -->
+                    <div class="text-center mb-4">
+                        <label for="myteam-background-color" class="form-label"><strong>Hintergrundfarbe:</strong></label><br>
+                        <input type="color" id="myteam-background-color" 
+                               value="#f8f9fa"
+                               class="form-control" style="width: 100px; height: 40px; margin: 0 auto;">
+                    </div>
+                    
+                    <!-- Zurücksetzen und Speichern -->
+                    <div class="text-center mb-4">
+                        <button type="button" id="myteam-save-logo-position" class="btn btn-success btn-lg d-block w-100 mb-2">Speichern</button>
+                        <button type="button" id="myteam-reset-logo" class="btn btn-secondary d-block w-100">Zurücksetzen auf Standard</button>
+                    </div>
+                    {{else}}
+                    <div class="text-center">
+                        <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Logo-Bearbeitung ist nicht aktiviert.</p>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen & Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-divider {
+        margin-bottom: 2rem;
+    }
+    
+    /* Statistics Cards */
+    .stat-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: var(--bs-primary);
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Specialized stat card colors */
+    .group-stat:hover { border-color: #0d6efd; }
+    .group-stat .stat-icon { color: #0d6efd; }
+    
+    .games-stat:hover { border-color: #0dcaf0; }
+    .games-stat .stat-icon { color: #0dcaf0; }
+    
+    .goals-stat:hover { border-color: #198754; }
+    .goals-stat .stat-icon { color: #198754; }
+    
+    .sekt-stat:hover { border-color: #6f42c1; }
+    .sekt-stat .stat-icon { color: #6f42c1; }
+    
+    /* Result Cards */
+    .result-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.25rem 0.75rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid #f1f3f4;
+        height: 100%;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    
+    .result-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-number {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .result-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .result-progress .progress {
+        height: 4px;
+        border-radius: 2px;
+        background-color: #f1f3f4;
+    }
+    
+    /* Win/Draw/Loss specific styling */
+    .win-card:hover { border-color: #198754; }
+    .win-card .result-icon { color: #198754; }
+    .win-card .result-number { color: #198754; }
+    .win-card .result-label { color: #198754; }
+    
+    .draw-card:hover { border-color: #ffc107; }
+    .draw-card .result-icon { color: #ffc107; }
+    .draw-card .result-number { color: #ffc107; }
+    .draw-card .result-label { color: #ffc107; }
+    
+    .loss-card:hover { border-color: #dc3545; }
+    .loss-card .result-icon { color: #dc3545; }
+    .loss-card .result-number { color: #dc3545; }
+    .loss-card .result-label { color: #dc3545; }
+    
+    .info-item {
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        border-left: 4px solid var(--bs-primary);
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .info-item:hover {
+        background-color: #e9ecef;
+        transform: translateX(2px);
+    }
+    
+    .card {
+        border: none;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .badge {
+        font-size: 0.875rem;
+    }
+    
+    .card-header {
+        border-bottom: none;
+    }
+    
+    @media (max-width: 576px) {
+        .container {
+            padding: 0.5rem;
+        }
+        
+        .card-header h2, .card-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .stat-card {
+            padding: 1rem 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+        
+        .stat-value {
+            font-size: 1.4rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+        }
+        
+        .result-card {
+            padding: 1rem 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .result-icon {
+            font-size: 1.2rem;
+        }
+        
+        .result-number {
+            font-size: 1.3rem;
+        }
+        
+        .result-label {
+            font-size: 0.7rem;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.5rem 0.25rem;
+            font-size: 0.85rem;
+        }
+        
+        .page-divider {
+            margin-bottom: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-divider {
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card, .result-card {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    @media (min-width: 769px) and (max-width: 991px) {
+        .stat-value {
+            font-size: 1.6rem;
+        }
+        
+        .result-number {
+            font-size: 1.4rem;
+        }
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    .text-muted i {
+        opacity: 0.6;
+    }
+    
+    /* Mobile-first responsive design */
+    @media (min-width: 576px) {
+        .container {
+            padding: 1rem;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .container {
+            padding: 1.5rem;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .container {
+            padding: 2rem 1rem;
+        }
+    }
+    
+    /* Enhanced visual hierarchy */
+    .card-title {
+        font-weight: 600;
+        letter-spacing: -0.025em;
+    }
+    
+    .info-item strong {
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    /* Smooth scrolling for better UX on mobile */
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Loading animation for better perceived performance */
+    .card {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Progress bar animations */
+    .progress-bar {
+        transition: width 1s ease-in-out;
+    }
+    
+    /* Card spacing improvements */
+    .card + .card {
+        margin-top: 1rem;
+    }
+    
+    /* Player card styles */
+    .player-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .player-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-color: var(--bs-primary);
+    }
+    
+    .player-avatar i {
+        transition: color 0.3s ease;
+    }
+    
+    .player-card:hover .player-avatar i {
+        color: var(--bs-primary) !important;
+    }
+    
+    /* Player number badge styles */
+    .number-badge {
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+    
+    .number-badge.no-number {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+        min-width: 40px;
+        padding: 0;
+    }
+    
+    .player-card:hover .number-badge {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+    }
+    
+    .player-card:hover .number-badge.no-number {
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+    }
+    
+    .player-stats {
+        margin-top: 0.25rem;
+    }
+    
+    .player-stats .fas {
+        font-size: 0.8rem;
+    }
+</style>
+
+<script>
+// Global variables for modal
+let currentImageSrc = '';
+let currentTeamName = '';
+let currentLogoSrc = '';
+let currentLogoTeamName = '';
+let currentLogoTeamId = '';
+let logoPositionData = {};
+
+// Show image in modal
+function showImageModal(imageSrc, teamName, teamId) {
+    currentImageSrc = imageSrc;
+    currentTeamName = teamName;
+    
+    const modalImage = document.getElementById('modalTeamImage');
+    const modalTitle = document.getElementById('modalTeamName');
+    const modalTeamId = document.getElementById('modalTeamId');
+    
+    modalImage.src = imageSrc;
+    modalImage.alt = teamName + ' - Teambild';
+    modalTitle.textContent = teamName + ' - Teambild';
+    
+    // Set team ID for upload form
+    if (modalTeamId && teamId) {
+        modalTeamId.value = teamId;
+    }
+}
+
+// Show logo modal
+function showLogoModal(logoSrc, teamName, teamId) {
+    currentLogoSrc = logoSrc;
+    currentLogoTeamName = teamName;
+    currentLogoTeamId = teamId;
+    
+    document.getElementById('logoTeamId').value = teamId;
+    
+    // Update modal title
+    document.getElementById('teamLogoModalLabel').innerHTML = 
+        `<i class="fas fa-shield-alt me-2"></i>Team Logo: ${teamName}`;
+    
+    // Set logo image src
+    const logoImg = document.getElementById('myteam-logo-img');
+    if (logoImg && currentLogoSrc) {
+        logoImg.src = currentLogoSrc;
+        logoImg.style.display = 'block';
+    }
+    
+    // Load logo data and display
+    loadLogoData(teamId);
+}
+
+// Load logo data from backend
+function loadLogoData(teamId) {
+    fetch(`/team/${teamId}/logoData`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.logo) {
+                logoPositionData = data.logo;
+                updateMyTeamLogoFromData();
+            } else {
+                // Use default values if no logo data found
+                logoPositionData = {
+                    position: { x: 0.5, y: 0.5 },
+                    scale: 0.5,
+                    backgroundColor: '#f8f9fa'
+                };
+                updateMyTeamLogoFromData();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading logo data:', error);
+            // Fallback with default values
+            logoPositionData = {
+                position: { x: 0.5, y: 0.5 },
+                scale: 0.5,
+                backgroundColor: '#f8f9fa'
+            };
+            updateMyTeamLogoFromData();
+        });
+}
+
+// Update MyTeam logo display with loaded data
+function updateMyTeamLogoFromData() {
+    const logoImg = document.getElementById('myteam-logo-img');
+    const logoContainer = document.getElementById('myteam-logo-container');
+    const scaleSlider = document.getElementById('myteam-logo-scale');
+    const scaleValue = document.getElementById('myteam-scale-value');
+    const backgroundColorPicker = document.getElementById('myteam-background-color');
+    
+    if (!logoImg || !logoContainer) {
+        console.log('Logo elements not found');
+        return;
+    }
+    
+    console.log('Updating MyTeam logo from data:', logoPositionData);
+    
+    const position = logoPositionData.position || { x: 0.5, y: 0.5 };
+    const scale = logoPositionData.scale || 0.5;
+    const backgroundColor = logoPositionData.backgroundColor || '#f8f9fa';
+    
+    // Update controls
+    if (scaleSlider) scaleSlider.value = scale;
+    if (scaleValue) scaleValue.textContent = scale;
+    if (backgroundColorPicker) backgroundColorPicker.value = backgroundColor;
+    
+    // Update container background
+    logoContainer.style.backgroundColor = backgroundColor;
+    
+    // Store normalized values
+    logoImg.dataset.normalizedX = position.x;
+    logoImg.dataset.normalizedY = position.y;
+    
+    console.log('Set normalized values:', position.x, position.y, 'scale:', scale);
+    
+    // Direct CSS positioning like in team details
+    updateMyTeamLogoPosition(logoImg, position.x, position.y, scale);
+}
+
+// Direct logo positioning function
+function updateMyTeamLogoPosition(logoImg, normalizedX, normalizedY, scale) {
+    if (!logoImg) return;
+    
+    // Convert normalized values to percentage
+    const leftPercent = normalizedX * 100;
+    const topPercent = normalizedY * 100;
+    
+    // Apply CSS transforms directly like in team details
+    logoImg.style.position = 'absolute';
+    logoImg.style.transformOrigin = 'center center';
+    logoImg.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    logoImg.style.left = `${leftPercent}%`;
+    logoImg.style.top = `${topPercent}%`;
+    logoImg.style.maxWidth = 'none';
+    logoImg.style.cursor = 'move';
+    
+    console.log(`Applied CSS: left: ${leftPercent}%, top: ${topPercent}%, scale: ${scale}`);
+}
+
+// Download image function
+function downloadImage() {
+    if (!currentImageSrc) return;
+    
+    const link = document.createElement('a');
+    link.href = currentImageSrc;
+    
+    // Get filename from path or create one
+    const filename = currentImageSrc.split('/').pop() || `${currentTeamName.replace(/\s+/g, '_')}_teambild.jpg`;
+    link.download = filename;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Add hover effect for clickable image
+document.addEventListener('DOMContentLoaded', function() {
+    const clickableImages = document.querySelectorAll('.team-image-clickable');
+    clickableImages.forEach(function(img) {
+        img.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        
+        img.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // MyTeam Logo Modal Event Listeners
+    initMyTeamLogoEventListeners();
+    
+    // MyTeam Add Player Modal Event Listeners
+    {{#if mainSettings.myTeamPageOptions.allowPlayerAdd}}
+    initAddPlayerModal();
+    {{/if}}
+});
+
+// Initialize MyTeam Logo Event Listeners
+function initMyTeamLogoEventListeners() {
+    {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
+    // Wait for modal to be visible before initializing
+    const logoModal = document.getElementById('teamLogoModal');
+    if (logoModal) {
+        logoModal.addEventListener('shown.bs.modal', function() {
+            setupMyTeamLogoControls();
+        });
+    }
+    {{/if}}
+}
+
+// Setup MyTeam Logo Controls (called when modal is shown)
+function setupMyTeamLogoControls() {
+    const logoImg = document.getElementById('myteam-logo-img');
+    const logoContainer = document.getElementById('myteam-logo-container');
+    const scaleSlider = document.getElementById('myteam-logo-scale');
+    const scaleValue = document.getElementById('myteam-scale-value');
+    const backgroundColorPicker = document.getElementById('myteam-background-color');
+    
+    if (!logoImg || !logoContainer) return;
+    
+    console.log('Setting up MyTeam logo controls...');
+    
+    let isDragging = false;
+    
+    // Remove existing event listeners to prevent duplicates
+    logoImg.removeEventListener('mousedown', handleMouseDown);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    
+    // Mouse event handlers
+    function handleMouseDown(e) {
+        isDragging = true;
+        e.preventDefault();
+        console.log('Started dragging');
+    }
+    
+    function handleMouseMove(e) {
+        if (isDragging) {
+            const rect = logoContainer.getBoundingClientRect();
+            const centerX = e.clientX - rect.left;
+            const centerY = e.clientY - rect.top;
+            
+            // Convert to normalized values (0-1)
+            const normalizedX = Math.max(0, Math.min(1, centerX / rect.width));
+            const normalizedY = Math.max(0, Math.min(1, centerY / rect.height));
+            
+            // Update position with direct CSS
+            const currentScale = parseFloat(scaleSlider ? scaleSlider.value : 0.5) || 0.5;
+            updateMyTeamLogoPosition(logoImg, normalizedX, normalizedY, currentScale);
+            
+            // Store normalized values in data attributes
+            logoImg.dataset.normalizedX = normalizedX;
+            logoImg.dataset.normalizedY = normalizedY;
+            
+            console.log('Updated position:', normalizedX, normalizedY);
+        }
+    }
+    
+    function handleMouseUp() {
+        if (isDragging) {
+            console.log('Stopped dragging');
+        }
+        isDragging = false;
+    }
+    
+    // Add event listeners
+    logoImg.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    // Scale functionality
+    if (scaleSlider) {
+        scaleSlider.removeEventListener('input', scaleSlider.myTeamScaleHandler);
+        
+        scaleSlider.myTeamScaleHandler = function() {
+            const scale = this.value;
+            const normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+            const normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+            
+            updateMyTeamLogoPosition(logoImg, normalizedX, normalizedY, scale);
+            if (scaleValue) scaleValue.textContent = scale;
+            
+            console.log('Scale changed to:', scale);
+        };
+        
+        scaleSlider.addEventListener('input', scaleSlider.myTeamScaleHandler);
+    }
+    
+    // Background color functionality
+    if (backgroundColorPicker) {
+        backgroundColorPicker.removeEventListener('input', backgroundColorPicker.myTeamBgHandler);
+        
+        backgroundColorPicker.myTeamBgHandler = function() {
+            logoContainer.style.backgroundColor = this.value;
+            console.log('Background color changed to:', this.value);
+        };
+        
+        backgroundColorPicker.addEventListener('input', backgroundColorPicker.myTeamBgHandler);
+    }
+    
+    // Arrow movement functions
+    function moveLogoByArrow(direction) {
+        let normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+        let normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+        let step = 0.02; // 2% in normalized values
+        
+        switch(direction) {
+            case 'up':
+                normalizedY = Math.max(0, normalizedY - step);
+                break;
+            case 'down':
+                normalizedY = Math.min(1, normalizedY + step);
+                break;
+            case 'left':
+                normalizedX = Math.max(0, normalizedX - step);
+                break;
+            case 'right':
+                normalizedX = Math.min(1, normalizedX + step);
+                break;
+        }
+        
+        const currentScale = parseFloat(scaleSlider ? scaleSlider.value : 0.5) || 0.5;
+        updateMyTeamLogoPosition(logoImg, normalizedX, normalizedY, currentScale);
+        logoImg.dataset.normalizedX = normalizedX;
+        logoImg.dataset.normalizedY = normalizedY;
+        
+        console.log('Arrow moved to:', direction, normalizedX, normalizedY);
+    }
+    
+    // Arrow button event listeners
+    const upBtn = document.getElementById('myteam-move-up');
+    const downBtn = document.getElementById('myteam-move-down');
+    const leftBtn = document.getElementById('myteam-move-left');
+    const rightBtn = document.getElementById('myteam-move-right');
+    
+    if (upBtn) {
+        upBtn.removeEventListener('click', upBtn.myTeamMoveHandler);
+        upBtn.myTeamMoveHandler = () => moveLogoByArrow('up');
+        upBtn.addEventListener('click', upBtn.myTeamMoveHandler);
+    }
+    
+    if (downBtn) {
+        downBtn.removeEventListener('click', downBtn.myTeamMoveHandler);
+        downBtn.myTeamMoveHandler = () => moveLogoByArrow('down');
+        downBtn.addEventListener('click', downBtn.myTeamMoveHandler);
+    }
+    
+    if (leftBtn) {
+        leftBtn.removeEventListener('click', leftBtn.myTeamMoveHandler);
+        leftBtn.myTeamMoveHandler = () => moveLogoByArrow('left');
+        leftBtn.addEventListener('click', leftBtn.myTeamMoveHandler);
+    }
+    
+    if (rightBtn) {
+        rightBtn.removeEventListener('click', rightBtn.myTeamMoveHandler);
+        rightBtn.myTeamMoveHandler = () => moveLogoByArrow('right');
+        rightBtn.addEventListener('click', rightBtn.myTeamMoveHandler);
+    }
+    
+    // Center horizontally
+    const centerHorizontalBtn = document.getElementById('myteam-center-horizontal');
+    if (centerHorizontalBtn) {
+        centerHorizontalBtn.removeEventListener('click', centerHorizontalBtn.myTeamCenterHHandler);
+        
+        centerHorizontalBtn.myTeamCenterHHandler = function() {
+            const normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+            const currentScale = parseFloat(scaleSlider ? scaleSlider.value : 0.5) || 0.5;
+            updateMyTeamLogoPosition(logoImg, 0.5, normalizedY, currentScale);
+            logoImg.dataset.normalizedX = 0.5;
+            console.log('Centered horizontally');
+        };
+        
+        centerHorizontalBtn.addEventListener('click', centerHorizontalBtn.myTeamCenterHHandler);
+    }
+    
+    // Center vertically
+    const centerVerticalBtn = document.getElementById('myteam-center-vertical');
+    if (centerVerticalBtn) {
+        centerVerticalBtn.removeEventListener('click', centerVerticalBtn.myTeamCenterVHandler);
+        
+        centerVerticalBtn.myTeamCenterVHandler = function() {
+            const normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+            const currentScale = parseFloat(scaleSlider ? scaleSlider.value : 0.5) || 0.5;
+            updateMyTeamLogoPosition(logoImg, normalizedX, 0.5, currentScale);
+            logoImg.dataset.normalizedY = 0.5;
+            console.log('Centered vertically');
+        };
+        
+        centerVerticalBtn.addEventListener('click', centerVerticalBtn.myTeamCenterVHandler);
+    }
+    
+    // Reset functionality
+    const resetBtn = document.getElementById('myteam-reset-logo');
+    if (resetBtn) {
+        resetBtn.removeEventListener('click', resetBtn.myTeamResetHandler);
+        
+        resetBtn.myTeamResetHandler = function() {
+            const normalizedX = 0.5;
+            const normalizedY = 0.5;
+            const defaultScale = 0.5;
+            const defaultBackgroundColor = '#f8f9fa';
+            
+            updateMyTeamLogoPosition(logoImg, normalizedX, normalizedY, defaultScale);
+            logoImg.dataset.normalizedX = normalizedX;
+            logoImg.dataset.normalizedY = normalizedY;
+            
+            if (scaleSlider) scaleSlider.value = defaultScale;
+            if (scaleValue) scaleValue.textContent = defaultScale;
+            if (backgroundColorPicker) backgroundColorPicker.value = defaultBackgroundColor;
+            logoContainer.style.backgroundColor = defaultBackgroundColor;
+            
+            console.log('Reset logo position');
+        };
+        
+        resetBtn.addEventListener('click', resetBtn.myTeamResetHandler);
+    }
+    
+    // Save functionality
+    const saveBtn = document.getElementById('myteam-save-logo-position');
+    if (saveBtn) {
+        saveBtn.removeEventListener('click', saveBtn.myTeamSaveHandler);
+        
+        saveBtn.myTeamSaveHandler = function() {
+            const normalizedX = parseFloat(logoImg.dataset.normalizedX) || 0.5;
+            const normalizedY = parseFloat(logoImg.dataset.normalizedY) || 0.5;
+            const currentScale = parseFloat(scaleSlider ? scaleSlider.value : 0.5) || 0.5;
+            const currentBackgroundColor = backgroundColorPicker ? backgroundColorPicker.value : '#f8f9fa';
+            
+            console.log('Saving normalized position:', normalizedX, normalizedY, 'scale:', currentScale);
+            
+            fetch('/myteam/saveLogoPosition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    x: normalizedX,
+                    y: normalizedY,
+                    scale: currentScale,
+                    backgroundColor: currentBackgroundColor
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Logo-Position erfolgreich gespeichert!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('Fehler beim Speichern: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving logo position:', error);
+                alert('Fehler beim Speichern der Logo-Position!');
+            });
+        };
+        
+        saveBtn.addEventListener('click', saveBtn.myTeamSaveHandler);
+    }
+    
+    console.log('MyTeam logo controls setup complete');
+}
+
+// Initialize Add Player Modal functionality
+function initAddPlayerModal() {
+    const addPlayerModal = document.getElementById('addPlayerModal');
+    const addPlayerForm = document.getElementById('addPlayerForm');
+    const savePlayerBtn = document.getElementById('savePlayerBtn');
+    const playerNameInput = document.getElementById('playerName');
+    const playerNumberInput = document.getElementById('playerNumber');
+    const addPlayerInfo = document.getElementById('addPlayerInfo');
+    const addPlayerError = document.getElementById('addPlayerError');
+    const addPlayerInfoText = document.getElementById('addPlayerInfoText');
+    const addPlayerErrorText = document.getElementById('addPlayerErrorText');
+    
+    if (!addPlayerModal || !addPlayerForm || !savePlayerBtn) return;
+    
+    // Reset modal when opened
+    addPlayerModal.addEventListener('show.bs.modal', function() {
+        addPlayerForm.reset();
+        hideMessages();
+    });
+    
+    // Save player button click
+    savePlayerBtn.addEventListener('click', async function() {
+        const name = playerNameInput.value.trim();
+        const number = playerNumberInput.value.trim();
+        
+        // Validation
+        if (!name) {
+            showError('Name ist erforderlich.');
+            playerNameInput.focus();
+            return;
+        }
+        
+        if (name.length > 50) {
+            showError('Name darf maximal 50 Zeichen lang sein.');
+            playerNameInput.focus();
+            return;
+        }
+        
+        if (number && number.length > 10) {
+            showError('Trikotnummer darf maximal 15 Zeichen lang sein.');
+            playerNumberInput.focus();
+            return;
+        }
+        
+        // Show loading state
+        savePlayerBtn.disabled = true;
+        const originalText = savePlayerBtn.innerHTML;
+        savePlayerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Speichern...';
+        
+        try {
+            const response = await fetch('/myteam/addPlayer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, number })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showInfo('Spieler erfolgreich hinzugefügt!');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showError(result.message || 'Fehler beim Hinzufügen des Spielers.');
+            }
+        } catch (error) {
+            console.error('Error adding player:', error);
+            showError('Fehler beim Hinzufügen des Spielers.');
+        } finally {
+            savePlayerBtn.disabled = false;
+            savePlayerBtn.innerHTML = originalText;
+        }
+    });
+    
+    function showError(message) {
+        hideMessages();
+        addPlayerErrorText.textContent = message;
+        addPlayerError.classList.remove('d-none');
+    }
+    
+    function showInfo(message) {
+        hideMessages();
+        addPlayerInfoText.textContent = message;
+        addPlayerInfo.classList.remove('d-none');
+    }
+    
+    function hideMessages() {
+        addPlayerError.classList.add('d-none');
+        addPlayerInfo.classList.add('d-none');
+    }
+}
+</script>
+
+{{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
+<!-- Load logoUtils.js -->
+<script src="/js/logoUtils.js"></script>
+{{/if}}

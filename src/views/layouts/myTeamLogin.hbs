@@ -1,0 +1,71 @@
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">MyTeam - Anmeldung</h3>
+                </div>
+                <div class="card-body">
+                    {{#if error}}
+                        <div class="alert alert-danger" role="alert">
+                            {{error}}
+                        </div>
+                    {{/if}}
+                    
+                    <form action="/myteam/login" method="POST">
+                        {{#if isAdmin}}
+                        <!-- Admin Login: Team selection OR access code -->
+                        <div class="alert alert-info" role="alert">
+                            <small><i class="fas fa-user-shield"></i> Admin-Anmeldung: <br>Wählen Sie ein Team aus ODER geben Sie einen Code zum Testen ein</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="teamId" class="form-label">Team auswählen:</label>
+                            <select class="form-control" id="teamId" name="teamId">
+                                <option value="">-- Team wählen --</option>
+                                {{#each teams}}
+                                    <option value="{{this._id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="accessCode" class="form-label">Oder Zugangscode zum Testen:</label>
+                            <input type="text" class="form-control" id="accessCode" name="accessCode" 
+                                   placeholder="6-stelliger Zugangscode" maxlength="6">
+                        </div>
+                        {{else}}
+                        <!-- Regular User Login: Only access code -->
+                        <div class="mb-3">
+                            <label for="accessCode" class="form-label">Team-Zugangscode:</label>
+                            <input type="text" class="form-control" id="accessCode" name="accessCode" 
+                                   placeholder="6-stelliger Zugangscode" maxlength="6" required>
+                        </div>
+                        {{/if}}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Anmelden</button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        {{#if isAdmin}}
+                        <small class="text-muted">
+                            Als Administrator können Sie ein Team direkt auswählen oder einen Zugangscode zum Testen verwenden.
+                        </small>
+                        {{else}}
+                        <small class="text-muted">
+                            Den Zugangscode erhalten Sie von der Turnierleitung.
+                        </small>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-uppercase access code input
+document.getElementById('accessCode').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+</script>

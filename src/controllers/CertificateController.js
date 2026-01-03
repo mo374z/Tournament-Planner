@@ -19,20 +19,10 @@ commonMiddleware(router, ['admin']); // Only admins can access the certificate p
 //Generate the certificate and download it bzw. save it on the server in the folder public/certificates
 //uses https://www.npmjs.com/package/docxtemplater-image-module-free 
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        //Check if the folder exists, if not create it
-        if (!fs.existsSync(path.join(__dirname, '../../public/templates/'))) {
-            fs.mkdirSync(path.join(__dirname, '../../public/templates/'), { recursive: true });
-        }
-        cb(null, 'public/templates/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, 'template.docx');
-    }
-});
 
-const upload = multer({ storage: storage });
+//Futuere improvement: 
+// Use Libre Office in headless mode to convert the generated docx files to pdf files for better compatibility
+
 
 router.get('/', async (req, res) => {
     const teams = await Team.find({});
@@ -48,24 +38,17 @@ router.get('/', async (req, res) => {
     res.render('layouts/certificate', { teams, templateExists });
 });
 
-router.get('/downloadTemplate', (req, res) => {
-    const templatePath = path.join(__dirname, '../../public/templates/template.docx');
-    if (fs.existsSync(templatePath)) {
-        res.download(templatePath);
-    } else {
-        res.status(404).send('Template not found');
-    }
-});
 
-router.post('/uploadTemplate', upload.single('template'), (req, res) => {
-    res.redirect('/certificate');
-});
 
-router.post('/generateCertificate', async (req, res) => {
-    const { teamId } = req.body;
-    const team = await Team.findById(teamId).exec();
+// Reusable certificate generation function
+async function generateCertificateBuffer(team) {
     const rank = team.finalPlacement;
     const templatePath = path.join(__dirname, '../../public/templates/template.docx');
+    
+    if (!fs.existsSync(templatePath)) {
+        throw new Error('Template not found: template.docx');
+    }
+    
     const templateBytes = fs.readFileSync(templatePath);
 
     // Load the Word document
@@ -100,33 +83,86 @@ router.post('/generateCertificate', async (req, res) => {
     };
 
     doc.render(placeholders);
-
     const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+    
+    return { buffer, rank };
+} 
 
-    // Save the certificate to the server
-    //Check if the folder exists, if not create it
-    const certificatesDir = path.join(__dirname, '../../public/certificates/');
-    if (!fs.existsSync(certificatesDir)) {
-        fs.mkdirSync(certificatesDir, { recursive: true });
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        //Check if the folder exists, if not create it
+        if (!fs.existsSync(path.join(__dirname, '../../public/templates/'))) {
+            fs.mkdirSync(path.join(__dirname, '../../public/templates/'), { recursive: true });
+        }
+        cb(null, 'public/templates/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, 'template.docx');
     }
-    
-    // Robust filename sanitization to prevent path traversal attacks
-    const fileName = `${rank}_${team.name}_certificate.docx`;
-    // Remove or replace dangerous characters, normalize unicode, and ensure only filename (no path components)
-    const sanitizedfileName = path.basename(fileName)
-        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') // Remove dangerous characters
-        .replace(/^\.+/, '_') // Prevent hidden files starting with dots
-        .replace(/\.+$/, '') + '.docx'; // Remove trailing dots and ensure .docx extension
-    
-    // Double-check: ensure the resulting path is within the certificates directory
-    const outputPath = path.resolve(certificatesDir, sanitizedfileName);
-    if (!outputPath.startsWith(path.resolve(certificatesDir))) {
-        throw new Error('Invalid filename: path traversal detected');
-    }
-    
-    fs.writeFileSync(outputPath, buffer);
+});
 
-    res.download(outputPath);
+const upload = multer({ storage: storage });
+
+router.get('/', async (req, res) => {
+    const teams = await Team.find({});
+    //ad the rank to the team object
+    for (let i = 0; i < teams.length; i++) {
+        teams[i].rank = await getRank(teams[i]);
+    }
+    //sort the teams by rank
+    teams.sort((a, b) => a.rank - b.rank);
+    const templateExists = fs.existsSync(path.join(__dirname, '../../public/templates/template.docx'));
+    res.render('layouts/certificate', { teams, templateExists });
+});
+
+router.get('/downloadTemplate', (req, res) => {
+    const templatePath = path.join(__dirname, '../../public/templates/template.docx');
+    if (fs.existsSync(templatePath)) {
+        res.download(templatePath);
+    } else {
+        res.status(404).send('Template not found');
+    }
+});
+
+router.post('/uploadTemplate', upload.single('template'), (req, res) => {
+    res.redirect('/certificate');
+});
+
+router.post('/generateCertificate', async (req, res) => {
+    try {
+        const { teamId } = req.body;
+        const team = await Team.findById(teamId).exec();
+        
+        const { buffer, rank } = await generateCertificateBuffer(team);
+
+        // Save the certificate to the server
+        //Check if the folder exists, if not create it
+        const certificatesDir = path.join(__dirname, '../../public/certificates/');
+        if (!fs.existsSync(certificatesDir)) {
+            fs.mkdirSync(certificatesDir, { recursive: true });
+        }
+        
+        // Robust filename sanitization to prevent path traversal attacks
+        const fileName = `${rank}_${team.name}_certificate.docx`;
+        // Remove or replace dangerous characters, normalize unicode, and ensure only filename (no path components)
+        const sanitizedfileName = path.basename(fileName)
+            .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') // Remove dangerous characters
+            .replace(/^\.+/, '_') // Prevent hidden files starting with dots
+            .replace(/\.+$/, '') + '.docx'; // Remove trailing dots and ensure .docx extension
+        
+        // Double-check: ensure the resulting path is within the certificates directory
+        const outputPath = path.resolve(certificatesDir, sanitizedfileName);
+        if (!outputPath.startsWith(path.resolve(certificatesDir))) {
+            throw new Error('Invalid filename: path traversal detected');
+        }
+        
+        fs.writeFileSync(outputPath, buffer);
+
+        res.download(outputPath);
+    } catch (err) {
+        console.error('Error generating certificate:', err);
+        res.status(500).send('Error generating certificate: ' + err.message);
+    }
 });
 
 router.post('/generatePresentation', async (req, res) => {
@@ -235,3 +271,6 @@ router.post('/generatePresentation', async (req, res) => {
 });
 
 module.exports = router;
+
+// Export the certificate generation function for reuse
+module.exports.generateCertificateBuffer = generateCertificateBuffer;
