@@ -83,6 +83,10 @@ var MainSettingsSchema = new mongoose.Schema({
         allowPlayerAdd: {
             type: Boolean,
             default: false
+        },
+        allowCertificateDownload: {
+            type: Boolean,
+            default: false
         }
     }
 });

@@ -314,7 +314,7 @@ router.post('/liveGamePageSettings', async (req, res) => {
 // POST route to handle MyTeam Settings
 router.post('/myTeamSettings', async (req, res) => {
     try {
-        const { myTeamEnabled, allowImageUpload, allowLogoUpload, allowPlayerAdd } = req.body;
+        const { myTeamEnabled, allowImageUpload, allowLogoUpload, allowPlayerAdd, allowCertificateDownload } = req.body;
 
         // Find the MainSettings document and update its values
         let mainSettings = await MainSettings.findOne({});
@@ -333,6 +333,7 @@ router.post('/myTeamSettings', async (req, res) => {
         mainSettings.myTeamPageOptions.allowImageUpload = allowImageUpload === 'on';
         mainSettings.myTeamPageOptions.allowLogoUpload = allowLogoUpload === 'on';
         mainSettings.myTeamPageOptions.allowPlayerAdd = allowPlayerAdd === 'on';
+        mainSettings.myTeamPageOptions.allowCertificateDownload = allowCertificateDownload === 'on';
 
         // Save the updated MainSettings
         await mainSettings.save();

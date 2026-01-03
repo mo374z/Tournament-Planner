@@ -20,6 +20,60 @@ commonMiddleware(router, ['admin']); // Only admins can access the certificate p
 //Generate the certificate and download it bzw. save it on the server in the folder public/certificates
 //uses https://www.npmjs.com/package/docxtemplater-image-module-free 
 
+
+//Futuere improvement: 
+// Use Libre Office in headless mode to convert the generated docx files to pdf files for better compatibility
+
+
+
+// Reusable certificate generation function
+async function generateCertificateBuffer(team) {
+    const rank = await getRank(team);
+    const templatePath = path.join(__dirname, '../../public/templates/template.docx');
+    
+    if (!fs.existsSync(templatePath)) {
+        throw new Error('Template not found: template.docx');
+    }
+    
+    const templateBytes = fs.readFileSync(templatePath);
+
+    // Load the Word document
+    const zip = new PizZip(templateBytes);
+    const imageModule = new ImageModule({
+        centered: true, // Center the image
+        getImage: function(tagValue) {
+            return fs.readFileSync(tagValue);
+        },
+        getSize: function(img, tagValue, tagName) {
+            //Get the size of the image
+            const dimensions = sizeOf(img);
+            // console.log('Image dimensions:', dimensions);
+            // Calculate the aspect ratio of the image
+            const aspectRatio = dimensions.width / dimensions.height;
+            const maxHeight = 450; // Maximum height of the image
+            return [maxHeight * aspectRatio, maxHeight]; // Return the width and height
+        }
+    });
+    const doc = new Docxtemplater(zip, {
+        modules: [imageModule],
+        paragraphLoop: true,
+        linebreaks: true,
+    });
+
+    // Replace placeholders with actual data
+    const placeholders = {
+        teamName: team.name,
+        group: team.group,
+        rank: rank.toString(),
+        image: path.join(__dirname, '../../public', team.imagePath || '/teampictures/default.jpg')
+    };
+
+    doc.render(placeholders);
+    const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+    
+    return { buffer, rank };
+} 
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         //Check if the folder exists, if not create it
@@ -61,71 +115,40 @@ router.post('/uploadTemplate', upload.single('template'), (req, res) => {
 });
 
 router.post('/generateCertificate', async (req, res) => {
-    const { teamId } = req.body;
-    const team = await Team.findById(teamId).exec();
-    const rank = await getRank(team);
-    const templatePath = path.join(__dirname, '../../public/templates/template.docx');
-    const templateBytes = fs.readFileSync(templatePath);
+    try {
+        const { teamId } = req.body;
+        const team = await Team.findById(teamId).exec();
+        
+        const { buffer, rank } = await generateCertificateBuffer(team);
 
-    // Load the Word document
-    const zip = new PizZip(templateBytes);
-    const imageModule = new ImageModule({
-        centered: true, // Center the image
-        getImage: function(tagValue) {
-            return fs.readFileSync(tagValue);
-        },
-        getSize: function(img, tagValue, tagName) {
-            //Get the size of the image
-            const dimensions = sizeOf(img);
-            // console.log('Image dimensions:', dimensions);
-            // Calculate the aspect ratio of the image
-            const aspectRatio = dimensions.width / dimensions.height;
-            const maxHeight = 450; // Maximum height of the image
-            return [maxHeight * aspectRatio, maxHeight]; // Return the width and height
+        // Save the certificate to the server
+        //Check if the folder exists, if not create it
+        const certificatesDir = path.join(__dirname, '../../public/certificates/');
+        if (!fs.existsSync(certificatesDir)) {
+            fs.mkdirSync(certificatesDir, { recursive: true });
         }
-    });
-    const doc = new Docxtemplater(zip, {
-        modules: [imageModule],
-        paragraphLoop: true,
-        linebreaks: true,
-    });
+        
+        // Robust filename sanitization to prevent path traversal attacks
+        const fileName = `${rank}_${team.name}_certificate.docx`;
+        // Remove or replace dangerous characters, normalize unicode, and ensure only filename (no path components)
+        const sanitizedfileName = path.basename(fileName)
+            .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') // Remove dangerous characters
+            .replace(/^\.+/, '_') // Prevent hidden files starting with dots
+            .replace(/\.+$/, '') + '.docx'; // Remove trailing dots and ensure .docx extension
+        
+        // Double-check: ensure the resulting path is within the certificates directory
+        const outputPath = path.resolve(certificatesDir, sanitizedfileName);
+        if (!outputPath.startsWith(path.resolve(certificatesDir))) {
+            throw new Error('Invalid filename: path traversal detected');
+        }
+        
+        fs.writeFileSync(outputPath, buffer);
 
-    // Replace placeholders with actual data
-    const placeholders = {
-        teamName: team.name,
-        group: team.group,
-        rank: rank.toString(),
-        image: path.join(__dirname, '../../public', team.imagePath || '/teampictures/default.jpg')
-    };
-
-    doc.render(placeholders);
-
-    const buffer = doc.getZip().generate({ type: 'nodebuffer' });
-
-    // Save the certificate to the server
-    //Check if the folder exists, if not create it
-    const certificatesDir = path.join(__dirname, '../../public/certificates/');
-    if (!fs.existsSync(certificatesDir)) {
-        fs.mkdirSync(certificatesDir, { recursive: true });
+        res.download(outputPath);
+    } catch (err) {
+        console.error('Error generating certificate:', err);
+        res.status(500).send('Error generating certificate: ' + err.message);
     }
-    
-    // Robust filename sanitization to prevent path traversal attacks
-    const fileName = `${rank}_${team.name}_certificate.docx`;
-    // Remove or replace dangerous characters, normalize unicode, and ensure only filename (no path components)
-    const sanitizedfileName = path.basename(fileName)
-        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') // Remove dangerous characters
-        .replace(/^\.+/, '_') // Prevent hidden files starting with dots
-        .replace(/\.+$/, '') + '.docx'; // Remove trailing dots and ensure .docx extension
-    
-    // Double-check: ensure the resulting path is within the certificates directory
-    const outputPath = path.resolve(certificatesDir, sanitizedfileName);
-    if (!outputPath.startsWith(path.resolve(certificatesDir))) {
-        throw new Error('Invalid filename: path traversal detected');
-    }
-    
-    fs.writeFileSync(outputPath, buffer);
-
-    res.download(outputPath);
 });
 
 router.post('/generatePresentation', async (req, res) => {
@@ -231,3 +254,6 @@ router.post('/generatePresentation', async (req, res) => {
 });
 
 module.exports = router;
+
+// Export the certificate generation function for reuse
+module.exports.generateCertificateBuffer = generateCertificateBuffer;
