@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 var TeamSchema = new mongoose.Schema({
-    name:{
+    name: {
         type: String,
         required: 'This field is required'
     },
@@ -24,7 +24,7 @@ var TeamSchema = new mongoose.Schema({
     goals: { // Tore (geschossene Tore [0] - erhaltene Tore[1])
         type: Array,
     },
-    goalsGroupStage:{
+    goalsGroupStage: {
         type: Array,
     },
     sektWon: {
@@ -56,6 +56,10 @@ var TeamSchema = new mongoose.Schema({
     },
     accessCodeHash: {
         type: String,
+    },
+    finalPlacement: {
+        type: Number,
+        default: null
     },
     //array of opponents the team has played against (maybe add this later)
     // opponents: {
@@ -119,7 +123,7 @@ function rankTeams(teams, groupRank = false) {
             nonQualifiedTeams.push(...sortedGroupTeams.slice(2));
         });
 
-        // Sort qualified teams based on overall performance
+        // Sort qualified teams based on overall performance, note that this is not necessarily equal to the final placement
         const sortedQualifiedTeams = qualifiedTeams.sort((a, b) => {
             if (a.points_General !== b.points_General) {
                 return b.points_General - a.points_General;
@@ -134,17 +138,17 @@ function rankTeams(teams, groupRank = false) {
             }
         });
 
-        // Sort non-qualified teams based on overall performance
+        // Sort non-qualified teams based on group stage performance
         const sortedNonQualifiedTeams = nonQualifiedTeams.sort((a, b) => {
-            if (a.points_General !== b.points_General) {
-                return b.points_General - a.points_General;
+            if (a.points_Group_Stage !== b.points_Group_Stage) {
+                return b.points_Group_Stage - a.points_Group_Stage;
             } else {
-                const goalDifferenceA = a.goals[0] - a.goals[1];
-                const goalDifferenceB = b.goals[0] - b.goals[1];
+                const goalDifferenceA = a.goalsGroupStage[0] - a.goalsGroupStage[1];
+                const goalDifferenceB = b.goalsGroupStage[0] - b.goalsGroupStage[1];
                 if (goalDifferenceA !== goalDifferenceB) {
                     return goalDifferenceB - goalDifferenceA;
                 } else {
-                    return b.goals[0] - a.goals[0];
+                    return b.goalsGroupStage[0] - a.goalsGroupStage[0];
                 }
             }
         });
@@ -156,7 +160,7 @@ function rankTeams(teams, groupRank = false) {
 
 async function getRank(team, groupRank = false) {
     if (groupRank) {
-        allTeams = await Team.find({group: team.group}).exec();
+        allTeams = await Team.find({ group: team.group }).exec();
     } else {
         allTeams = await Team.find({}).exec();
     }
@@ -165,25 +169,33 @@ async function getRank(team, groupRank = false) {
     return teamIndex + 1;
 }
 
-// Updated to work with the new ranking system
-async function getTeamRank(rank) {
-    const allTeams = await Team.find({}).exec();
-    const sortedTeams = rankTeams(allTeams, false);
-    return sortedTeams[rank];
-}
+async function updateFinalRanks() {
+    const Game = mongoose.model('Game');
 
-// Get a team at a specific rank within a group
-async function getTeamGroupRank(rank, group) {
-    const allTeamsInGroup = await Team.find({group: group}).exec();
-    const sortedTeams = rankTeams(allTeamsInGroup, true);
-    return sortedTeams[rank];
+    // Find all placement games that have ended
+    const placementGames = await Game.find({
+        finalPlacement: { $ne: null },
+        status: 'Ended'
+    }).exec();
+
+    // Update finalPlacement for each team that participated in a placement game
+    for (const game of placementGames) {
+        // Determine winner and loser
+        const isTeam0Winner = game.goals[0] > game.goals[1];
+        const winnerId = isTeam0Winner ? game.opponents[0] : game.opponents[1];
+        const loserId = isTeam0Winner ? game.opponents[1] : game.opponents[0];
+
+        // Winner gets finalPlacement, loser gets finalPlacement + 1
+        await Team.findByIdAndUpdate(winnerId, { finalPlacement: game.finalPlacement });
+        await Team.findByIdAndUpdate(loserId, { finalPlacement: game.finalPlacement + 1 });
+    }
 }
 
 async function getRankedTeams() {
     let allTeams = await Team.find({}).exec();
     allTeams.forEach(team => {
         team.goalDifference = team.goals[0] - team.goals[1];
-    }); 
+    });
     allTeams = rankTeams(allTeams, false);
     // Add index to each team
     allTeams.forEach((team, index) => {
@@ -192,7 +204,7 @@ async function getRankedTeams() {
     return allTeams;
 }
 
-function getAllGroupNames(teams){
+function getAllGroupNames(teams) {
     groupNames = [];
     for (const team of teams) {
         if (!groupNames.includes(team.group)) {
@@ -203,14 +215,13 @@ function getAllGroupNames(teams){
 }
 
 
-function getAllTeamsInGroup(teams, group){
-    return teams.filter(team => team.group === group); 
+function getAllTeamsInGroup(teams, group) {
+    return teams.filter(team => team.group === group);
 }
 
-module.exports =  {
+module.exports = {
     getRank,
-    getTeamRank,
-    getTeamGroupRank,
+    updateFinalRanks,
     rankTeams,
     getAllGroupNames,
     getAllTeamsInGroup,

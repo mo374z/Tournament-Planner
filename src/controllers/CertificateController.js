@@ -9,7 +9,6 @@ const ImageModule = require('docxtemplater-image-module-free');
 const sizeOf = require('image-size');
 const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
-const { getRank } = require('../models/Team');
 const { commonMiddleware } = require('../middleware/auth');
 const Automizer = require('pptx-automizer').default;
 const { modify } = require('pptx-automizer');
@@ -23,12 +22,27 @@ commonMiddleware(router, ['admin']); // Only admins can access the certificate p
 
 //Futuere improvement: 
 // Use Libre Office in headless mode to convert the generated docx files to pdf files for better compatibility
+const upload = multer({ storage: storage });
+
+router.get('/', async (req, res) => {
+    const teams = await Team.find({});
+    
+    // sort teams by finalPlacement parameter
+    teams.sort((a, b) => {
+        if (a.finalPlacement === null) return 1;
+        if (b.finalPlacement === null) return -1;
+        return a.finalPlacement - b.finalPlacement;
+    });
+
+    const templateExists = fs.existsSync(path.join(__dirname, '../../public/templates/template.docx'));
+    res.render('layouts/certificate', { teams, templateExists });
+});
 
 
 
 // Reusable certificate generation function
 async function generateCertificateBuffer(team) {
-    const rank = await getRank(team);
+    const rank = team.finalPlacement;
     const templatePath = path.join(__dirname, '../../public/templates/template.docx');
     
     if (!fs.existsSync(templatePath)) {
@@ -155,10 +169,13 @@ router.post('/generatePresentation', async (req, res) => {
     try {
         console.log('Start generating presentation...');
         const teams = await Team.find().exec();
-        for (let i = 0; i < teams.length; i++) {
-            teams[i].rank = await getRank(teams[i]);
-        }
-        teams.sort((a, b) => a.rank - b.rank);
+        
+        // sort teams by finalPlacement parameter
+        teams.sort((a, b) => {
+            if (a.finalPlacement === null) return 1;
+            if (b.finalPlacement === null) return -1;
+            return a.finalPlacement - b.finalPlacement;
+        });
 
         const templatePath = path.join(__dirname, '../../public/templates/template.pptx');
         const outputDir = path.join(__dirname, '../../public/presentations');
@@ -199,7 +216,7 @@ router.post('/generatePresentation', async (req, res) => {
                 
                 // Replace placeholders with actual data
                 slide.modifyElement('{team}', [modify.setText(team.name)]);
-                slide.modifyElement('{rank}', [modify.setText(team.rank + ".")]);
+                slide.modifyElement('{rank}', [modify.setText(team.finalPlacement + ".")]);
 
                 const imagePath = path.join(__dirname, '../../public/', team.imagePath || '/teampictures/default.jpg');
                 if (!fs.existsSync(imagePath)) {
