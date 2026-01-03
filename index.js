@@ -181,17 +181,58 @@ app.use((req, res, next) => {
   next();
 });
 
+// Use a simple in-memory cache to avoid hitting the database on every request.
+let mainSettingsCache = { myTeamEnabled: false };
+let mainSettingsCacheLoaded = false;
+let mainSettingsCacheLastFetch = 0;
+const MAIN_SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Function to invalidate MainSettings cache (can be called from other modules)
+function invalidateMainSettingsCache() {
+  mainSettingsCacheLoaded = false;
+  mainSettingsCacheLastFetch = 0;
+  console.log('MainSettings cache invalidated');
+}
+
+// Export cache invalidation function for use by controllers
+global.invalidateMainSettingsCache = invalidateMainSettingsCache;
+
 // Global middleware to load only necessary MainSettings fields for navigation
 app.use(async (req, res, next) => {
+  const now = Date.now();
+  
+  // If cache is fresh, use it and skip the database query.
+  if (
+    mainSettingsCacheLoaded &&
+    now - mainSettingsCacheLastFetch < MAIN_SETTINGS_CACHE_TTL_MS
+  ) {
+    res.locals.myTeamEnabled = mainSettingsCache.myTeamEnabled;
+    return next();
+  }
+  
   try {
     const MainSettings = mongoose.model('MainSettings');
-    const mainSettings = await MainSettings.findOne({}, {
-      'myTeamPageOptions.myTeamEnabled': 1
-    });
-    res.locals.myTeamEnabled = mainSettings?.myTeamPageOptions?.myTeamEnabled || false;
+    const mainSettings = await MainSettings.findOne(
+      {},
+      { 'myTeamPageOptions.myTeamEnabled': 1 }
+    );
+    const myTeamEnabled =
+      (mainSettings &&
+        mainSettings.myTeamPageOptions &&
+        mainSettings.myTeamPageOptions.myTeamEnabled) ||
+      false;
+    
+    // Update cache
+    mainSettingsCache = { myTeamEnabled };
+    mainSettingsCacheLoaded = true;
+    mainSettingsCacheLastFetch = now;
+    res.locals.myTeamEnabled = myTeamEnabled;
   } catch (err) {
     console.log('Error loading MainSettings for navigation:', err);
-    res.locals.myTeamEnabled = false;
+    // On error, fall back to cached value if available, otherwise false.
+    res.locals.myTeamEnabled = mainSettingsCacheLoaded
+      ? mainSettingsCache.myTeamEnabled
+      : false;
   }
   next();
 });

@@ -192,6 +192,11 @@ router.post('/', async (req, res) => {
 
         // Save the updated MainSettings
         await mainSettings.save();
+        
+        // Invalidate cache after saving
+        if (global.invalidateMainSettingsCache) {
+            global.invalidateMainSettingsCache();
+        }
 
         // Redirect to the main settings page after resetting counters
         res.redirect('/');
@@ -221,6 +226,11 @@ router.post('/publicPageSettings', async (req, res) => {
 
         // Save the updated MainSettings
         await mainSettings.save();
+        
+        // Invalidate cache after saving
+        if (global.invalidateMainSettingsCache) {
+            global.invalidateMainSettingsCache();
+        }
 
         // Redirect to the main settings page after resetting counters
         res.redirect('/mainSettings');
@@ -252,6 +262,11 @@ router.post('/feedbackSettings', async (req, res) => {
 
         // Save the updated MainSettings
         await mainSettings.save();
+        
+        // Invalidate cache after saving
+        if (global.invalidateMainSettingsCache) {
+            global.invalidateMainSettingsCache();
+        }
 
         // Redirect to the main settings page
         res.redirect('/mainSettings');
@@ -283,6 +298,11 @@ router.post('/liveGamePageSettings', async (req, res) => {
 
         // Save the updated MainSettings
         await mainSettings.save();
+        
+        // Invalidate cache after saving
+        if (global.invalidateMainSettingsCache) {
+            global.invalidateMainSettingsCache();
+        }
 
         // Redirect to the main settings page
         res.redirect('/mainSettings');
@@ -316,6 +336,11 @@ router.post('/myTeamSettings', async (req, res) => {
 
         // Save the updated MainSettings
         await mainSettings.save();
+        
+        // Invalidate cache after saving
+        if (global.invalidateMainSettingsCache) {
+            global.invalidateMainSettingsCache();
+        }
 
         // Redirect to the main settings page
         res.redirect('/mainSettings');

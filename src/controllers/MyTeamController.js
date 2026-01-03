@@ -97,7 +97,7 @@ router.post("/login", checkLoginStatus, async (req, res) => {
         // Set team session cookie using found team
         res.cookie('myTeamId', matchingTeam._id.toString(), {
           httpOnly: true,
-          maxAge: 30 * 60 * 1000 // 30 minutes
+          maxAge: 60 * 60 * 1000 // 60 minutes
         });
 
         res.redirect('/myteam/dashboard');
