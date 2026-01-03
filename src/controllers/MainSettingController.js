@@ -468,52 +468,70 @@ router.get('/cleanupTeamFiles', async (req, res) => {
         
         const usedFiles = getUsedFiles(teams);
         
+        // Helper function to check if directory exists
+        const directoryExists = async (dir) => {
+            try {
+                await fs.promises.access(dir);
+                return true;
+            } catch {
+                return false;
+            }
+        };
+        
         // Clean team pictures directory
-        if (fs.existsSync(teamPicturesDir)) {
-            const files = fs.readdirSync(teamPicturesDir);
-            totalFiles += files.length;
-            
-            files.forEach(file => {
-                // Skip default files and hidden files
-                if (file.startsWith('.') || file.toLowerCase().includes('default') || file.toLowerCase().includes('placeholder')) {
-                    return;
-                }
+        if (await directoryExists(teamPicturesDir)) {
+            try {
+                const files = await fs.promises.readdir(teamPicturesDir);
+                totalFiles += files.length;
                 
-                // If file is not used by any team, delete it
-                if (!usedFiles.has(file)) {
-                    const filePath = path.join(teamPicturesDir, file);
-                    try {
-                        fs.unlinkSync(filePath);
-                        deletedFiles.push(`teampictures/${file}`);
-                    } catch (err) {
-                        console.error(`Error deleting file ${filePath}:`, err);
+                for (const file of files) {
+                    // Skip default files and hidden files
+                    if (file.startsWith('.') || file.toLowerCase().includes('default') || file.toLowerCase().includes('placeholder')) {
+                        continue;
+                    }
+                    
+                    // If file is not used by any team, delete it
+                    if (!usedFiles.has(file)) {
+                        const filePath = path.join(teamPicturesDir, file);
+                        try {
+                            await fs.promises.unlink(filePath);
+                            deletedFiles.push(`teampictures/${file}`);
+                        } catch (err) {
+                            console.error(`Error deleting file ${filePath}:`, err);
+                        }
                     }
                 }
-            });
+            } catch (err) {
+                console.error(`Error reading team pictures directory:`, err);
+            }
         }
         
         // Clean team logos directory
-        if (fs.existsSync(teamLogosDir)) {
-            const files = fs.readdirSync(teamLogosDir);
-            totalFiles += files.length;
-            
-            files.forEach(file => {
-                // Skip default files and hidden files
-                if (file.startsWith('.') || file.toLowerCase().includes('default') || file.toLowerCase().includes('placeholder')) {
-                    return;
-                }
+        if (await directoryExists(teamLogosDir)) {
+            try {
+                const files = await fs.promises.readdir(teamLogosDir);
+                totalFiles += files.length;
                 
-                // If file is not used by any team, delete it
-                if (!usedFiles.has(file)) {
-                    const filePath = path.join(teamLogosDir, file);
-                    try {
-                        fs.unlinkSync(filePath);
-                        deletedFiles.push(`teamlogos/${file}`);
-                    } catch (err) {
-                        console.error(`Error deleting file ${filePath}:`, err);
+                for (const file of files) {
+                    // Skip default files and hidden files
+                    if (file.startsWith('.') || file.toLowerCase().includes('default') || file.toLowerCase().includes('placeholder')) {
+                        continue;
+                    }
+                    
+                    // If file is not used by any team, delete it
+                    if (!usedFiles.has(file)) {
+                        const filePath = path.join(teamLogosDir, file);
+                        try {
+                            await fs.promises.unlink(filePath);
+                            deletedFiles.push(`teamlogos/${file}`);
+                        } catch (err) {
+                            console.error(`Error deleting file ${filePath}:`, err);
+                        }
                     }
                 }
-            });
+            } catch (err) {
+                console.error(`Error reading team logos directory:`, err);
+            }
         }
         
         console.log(`Team files cleanup completed:`);

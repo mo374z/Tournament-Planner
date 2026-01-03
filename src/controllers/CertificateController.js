@@ -22,7 +22,7 @@ commonMiddleware(router, ['admin']); // Only admins can access the certificate p
 
 //Futuere improvement: 
 // Use Libre Office in headless mode to convert the generated docx files to pdf files for better compatibility
-const upload = multer({ storage: storage });
+
 
 router.get('/', async (req, res) => {
     const teams = await Team.find({});

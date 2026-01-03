@@ -41,12 +41,17 @@ commonMiddleware(router, ['admin']); // Only admins have access to the team mana
 // Generate unique access code for teams
 async function generateUniqueAccessCode() {
   const codeLength = 6; // Length of the access code
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Characters to use in the code
   let accessCode;
   let isUnique = false;
-  
+
   while (!isUnique) {
-    // Generate random alphanumeric code
-    accessCode = Math.random().toString(36).substring(2, 2 + codeLength).toUpperCase();
+    // Generate random alphanumeric code with guaranteed length
+    accessCode = '';
+    for (let i = 0; i < codeLength; i++) {
+      const randomIndex = Math.floor(Math.random() * chars.length);
+      accessCode += chars[randomIndex];
+    }
     // Check if code already exists
     const existingTeam = await Team.findOne({ accessCode: accessCode });
     if (!existingTeam) {
@@ -639,7 +644,7 @@ router.post("/updateName", async (req, res) => {
   }
 });
 
-async function getUpcomingGamesForTeam(teamId) { //return upcoming games for a team requering the team ID object
+async function getUpcomingGamesForTeam(teamId) { //return upcoming games for a team requiring the team ID object
   const games = await Game.find({
     opponents: teamId,
     status: { $in: ["Scheduled", "active"] },
@@ -699,7 +704,7 @@ async function getPastGamesForTeam(teamId) {
         // Determine winner based on goals
         if (game.goals[currentTeamIndex] > game.goals[opponentIndex]) {
           winner = opponents.find(opp => opp.id.toString() === teamId.toString());
-          //ad the index to the winner object
+          //add the index to the winner object
           winner.index = currentTeamIndex;
         } else {
           winner = opponents.find(opp => opp.id.toString() !== teamId.toString());

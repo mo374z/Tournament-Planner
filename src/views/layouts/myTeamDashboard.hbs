@@ -422,7 +422,7 @@
                         <label for="playerNumber" class="form-label">
                             <i class="fas fa-hashtag me-1"></i>Trikotnummer
                         </label>
-                        <input type="text" class="form-control" id="playerNumber" name="number" maxlength="15" placeholder="z.B. 10">
+                        <input type="text" class="form-control" id="playerNumber" name="number" maxlength="10" placeholder="z.B. 10">
                         <div class="form-text">Optional - Trikotnummer des Spielers</div>
                     </div>
                     <div class="alert alert-info d-none" id="addPlayerInfo">
@@ -1480,8 +1480,8 @@ function initAddPlayerModal() {
             return;
         }
         
-        if (number && number.length > 3) {
-            showError('Trikotnummer darf maximal 3 Zeichen lang sein.');
+        if (number && number.length > 10) {
+            showError('Trikotnummer darf maximal 15 Zeichen lang sein.');
             playerNumberInput.focus();
             return;
         }
