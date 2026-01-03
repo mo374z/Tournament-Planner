@@ -64,8 +64,58 @@
 </div>
 
 <script>
-// Auto-uppercase access code input
-document.getElementById('accessCode').addEventListener('input', function() {
-    this.value = this.value.toUpperCase();
-});
+// Auto-uppercase access code input and filter allowed characters
+const accessCodeInput = document.getElementById('accessCode');
+
+if (accessCodeInput) {
+    // Convert to uppercase and filter allowed characters on input
+    accessCodeInput.addEventListener('input', function(e) {
+        let value = this.value;
+        
+        // Convert to uppercase and remove any characters that aren't letters or numbers
+        value = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        
+        // Update the input value
+        this.value = value;
+    });
+    
+    // Prevent pasting invalid characters
+    accessCodeInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        
+        // Get pasted text
+        let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        
+        // Convert to uppercase and filter only allowed characters
+        let cleanedText = pastedText.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        
+        // Respect maxlength attribute
+        const maxLength = this.getAttribute('maxlength');
+        if (maxLength && cleanedText.length > maxLength) {
+            cleanedText = cleanedText.substring(0, maxLength);
+        }
+        
+        // Insert the cleaned text
+        this.value = cleanedText;
+        
+        // Trigger input event for any other listeners
+        this.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    
+    // Prevent typing invalid characters
+    accessCodeInput.addEventListener('keypress', function(e) {
+        const char = String.fromCharCode(e.which);
+        
+        // Allow control characters (backspace, delete, etc.)
+        if (e.which <= 32) {
+            return;
+        }
+        
+        // Only allow letters and numbers
+        if (!/[a-zA-Z0-9]/.test(char)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+}
 </script>
