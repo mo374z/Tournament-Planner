@@ -17,11 +17,11 @@
             <input type="text" class="form-control" id="teamSearch" placeholder="Mannschaft suchen...">
             <select class="form-control mt-2" id="team" name="teamId" required>
                 {{#each teams}}
-                    <option value="{{this._id}}">{{this.name}} (Platz: {{this.finalPlacement}})</option>
+                    <option value="{{this._id}}" data-final-placement="{{this.finalPlacement}}">{{this.name}} (Platz: {{#if this.finalPlacement}}{{this.finalPlacement}}{{else}}Noch nicht platziert{{/if}})</option>
                 {{/each}}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary mt-3">Urkunde generieren</button>
+        <button type="submit" class="btn btn-primary mt-3" id="generateCertificateBtn">Urkunde generieren</button>
     </form>
     <hr>
     <h1>Präsentations-Generator</h1>   
@@ -30,6 +30,35 @@
     </form>
 </div>
 <script>
+// Function to check and update certificate button state
+function updateCertificateButtonState() {
+    const teamSelect = document.getElementById('team');
+    const generateBtn = document.getElementById('generateCertificateBtn');
+    const selectedOption = teamSelect.options[teamSelect.selectedIndex];
+    
+    if (selectedOption && selectedOption.dataset.finalPlacement && selectedOption.dataset.finalPlacement !== 'null' && selectedOption.dataset.finalPlacement !== '') {
+        // Team has final placement - enable button
+        generateBtn.disabled = false;
+        generateBtn.classList.remove('btn-secondary');
+        generateBtn.classList.add('btn-primary');
+        generateBtn.innerHTML = 'Urkunde generieren';
+    } else {
+        // Team has no final placement - disable button
+        generateBtn.disabled = true;
+        generateBtn.classList.remove('btn-primary');
+        generateBtn.classList.add('btn-secondary');
+        generateBtn.innerHTML = 'Urkunde generieren (Team noch nicht platziert)';
+    }
+}
+
+// Initialize button state on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateCertificateButtonState();
+    
+    // Update button state when team selection changes
+    document.getElementById('team').addEventListener('change', updateCertificateButtonState);
+});
+
 document.getElementById('teamSearch').addEventListener('input', function() {
     const searchValue = this.value.toLowerCase();
     const options = document.getElementById('team').options;
@@ -49,5 +78,8 @@ document.getElementById('teamSearch').addEventListener('input', function() {
         }
     }
     document.getElementById('team').size = hasResults ? resultsLength : 1;
+    
+    // Update button state after search filtering
+    updateCertificateButtonState();
 });
 </script>

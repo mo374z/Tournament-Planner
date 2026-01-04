@@ -217,6 +217,14 @@ router.get("/dashboard", async (req, res) => {
       team.imagePath = '/teampictures/default.jpg';
     }
 
+
+    //Check if team has a final placement and if certificate download is allowed and disable if not
+    if (team.finalPlacement !== null && mainSettings.myTeamPageOptions?.allowCertificateDownload) {
+      //mainSettings.myTeamPageOptions.allowCertificateDownload = true;
+    } else {
+      mainSettings.myTeamPageOptions.allowCertificateDownload = false;
+    }
+
     //create own team object to pass to the view to have control over what information is gets passed
     const teamView = {
         _id: team._id,
