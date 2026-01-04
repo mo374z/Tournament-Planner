@@ -3,167 +3,145 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const PizZip = require('pizzip');
-const Docxtemplater = require('docxtemplater');
-const ImageModule = require('docxtemplater-image-module-free');
-const sizeOf = require('image-size');
+const { execSync } = require('child_process');
+const AdmZip = require('adm-zip');
 const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 const { commonMiddleware } = require('../middleware/auth');
 const Automizer = require('pptx-automizer').default;
 const { modify } = require('pptx-automizer');
-const { ModifyShapeHelper, CmToDxa } = require('pptx-automizer');
+const { ModifyShapeHelper } = require('pptx-automizer');
+const sizeOf = require('image-size');
 
-commonMiddleware(router, ['admin']); // Only admins can access the certificate page
-
-//Generate the certificate and download it bzw. save it on the server in the folder public/certificates
-//uses https://www.npmjs.com/package/docxtemplater-image-module-free 
-
-
-//Futuere improvement: 
-// Use Libre Office in headless mode to convert the generated docx files to pdf files for better compatibility
+commonMiddleware(router, ['admin']); 
 
 
 router.get('/', async (req, res) => {
-    const teams = await Team.find({});
-    
-    // sort teams by finalPlacement parameter
-    teams.sort((a, b) => {
-        if (a.finalPlacement === null) return 1;
-        if (b.finalPlacement === null) return -1;
-        return a.finalPlacement - b.finalPlacement;
-    });
-
-    const templateExists = fs.existsSync(path.join(__dirname, '../../public/templates/template.docx'));
+    const teams = await Team.find({}).sort({ finalPlacement: 1 });
+    const templateExists = fs.existsSync(path.join(__dirname, '../../public/templates/template_budeturnier_2026.odt'));
     res.render('layouts/certificate', { teams, templateExists });
 });
 
-
-
-// Reusable certificate generation function
-async function generateCertificateBuffer(team) {
-    const rank = team.finalPlacement;
-    const templatePath = path.join(__dirname, '../../public/templates/template.docx');
+// Generate certificate from ODT template and convert to PDF
+async function generateCertificatePdf(team, outputPath) {
+    console.log('Starting certificate generation for team:', team.name);
+    
+    const templatePath = path.join(__dirname, '../../public/templates/template_budeturnier_2026.odt');
     
     if (!fs.existsSync(templatePath)) {
-        throw new Error('Template not found: template.docx');
+        throw new Error('Template not found: template_budeturnier_2026.odt');
     }
     
-    const templateBytes = fs.readFileSync(templatePath);
-
-    // Load the Word document
-    const zip = new PizZip(templateBytes);
-    const imageModule = new ImageModule({
-        centered: true, // Center the image
-        getImage: function(tagValue) {
-            return fs.readFileSync(tagValue);
-        },
-        getSize: function(img, tagValue, tagName) {
-            //Get the size of the image
-            const dimensions = sizeOf(img);
-            // console.log('Image dimensions:', dimensions);
-            // Calculate the aspect ratio of the image
-            const aspectRatio = dimensions.width / dimensions.height;
-            const maxHeight = 450; // Maximum height of the image
-            return [maxHeight * aspectRatio, maxHeight]; // Return the width and height
-        }
-    });
-    const doc = new Docxtemplater(zip, {
-        modules: [imageModule],
-        paragraphLoop: true,
-        linebreaks: true,
-    });
-
-    // Replace placeholders with actual data
-    const placeholders = {
-        teamName: team.name,
-        group: team.group,
-        rank: rank.toString(),
-        image: path.join(__dirname, '../../public', team.imagePath || '/teampictures/default.jpg')
-    };
-
-    doc.render(placeholders);
-    const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+    console.log('Template found:', templatePath);
     
-    return { buffer, rank };
-} 
+    const tempDir = path.join(__dirname, '../../public/certificates/temp');
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+    }
+    
+    const tempOdtPath = path.join(tempDir, `temp_${Date.now()}.odt`);
+    
+    try {
+        // Read ODT template and replace placeholders
+        console.log('Reading ODT template...');
+        const zip = new AdmZip(templatePath);
+        const contentXml = zip.readAsText('content.xml');
+        
+        // Replace placeholders in the XML
+        console.log('Replacing placeholders...');
+        const replacedXml = contentXml
+            .replace(/{teamName}/g, team.name || '')
+            .replace(/{group}/g, team.group || '')
+            .replace(/{rank}/g, (team.finalPlacement || '').toString());
+        
+        // Write modified content back
+        zip.updateFile('content.xml', Buffer.from(replacedXml, 'utf8'));
+        zip.writeZip(tempOdtPath);
+        console.log('Modified ODT written to:', tempOdtPath);
+        
+        // Convert ODT to PDF using LibreOffice
+        console.log('Converting to PDF...');
+        
+        try {
+            const result = execSync(`libreoffice --headless --convert-to pdf --outdir "${tempDir}" "${tempOdtPath}" 2>&1`, {
+                timeout: 30000,
+                encoding: 'utf8'
+            });
+            console.log('LibreOffice output:', result);
+        } catch (execError) {
+            console.error('LibreOffice conversion error:', execError.message);
+            console.error('LibreOffice output:', execError.stdout || execError.stderr || 'No output');
+            throw new Error('LibreOffice conversion failed: ' + (execError.stdout || execError.message));
+        }
+        
+        console.log('PDF conversion complete');
+        
+        // LibreOffice creates PDF with the original template name, not the temp file name
+        // Look for any PDF file created in the temp directory
+        const filesAfter = fs.readdirSync(tempDir);
+        const pdfFile = filesAfter.find(f => f.endsWith('.pdf'));
+        
+        if (pdfFile) {
+            const tempPdfPath = path.join(tempDir, pdfFile);
+            console.log('PDF found:', tempPdfPath, '- Moving to:', outputPath);
+            fs.renameSync(tempPdfPath, outputPath);
+        } else {
+            console.error('Files in temp directory:', filesAfter);
+            throw new Error('PDF file was not created by LibreOffice');
+        }
+        
+        console.log('Certificate PDF generated successfully');
+    } finally {
+        // Clean up temp ODT
+        if (fs.existsSync(tempOdtPath)) {
+            console.log('Cleaning up temp ODT file');
+            fs.unlinkSync(tempOdtPath);
+        }
+    }
+}
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        //Check if the folder exists, if not create it
-        if (!fs.existsSync(path.join(__dirname, '../../public/templates/'))) {
-            fs.mkdirSync(path.join(__dirname, '../../public/templates/'), { recursive: true });
-        }
-        cb(null, 'public/templates/');
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '../../public/templates/');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
     },
-    filename: function (req, file, cb) {
-        cb(null, 'template.docx');
-    }
+    filename: (req, file, cb) => cb(null, 'template_budeturnier_2026.odt')
 });
 
-const upload = multer({ storage: storage });
-
-router.get('/', async (req, res) => {
-    const teams = await Team.find({});
-
-    // sort teams by finalPlacement parameter
-    teams.sort((a, b) => {
-
-        if (a.finalPlacement === null) return 1;
-
-        if (b.finalPlacement === null) return -1;
-
-        return a.finalPlacement - b.finalPlacement;
-
-    });
-    const templateExists = fs.existsSync(path.join(__dirname, '../../public/templates/template.docx'));
-    res.render('layouts/certificate', { teams, templateExists });
-});
+const upload = multer({ storage });
 
 router.get('/downloadTemplate', (req, res) => {
-    const templatePath = path.join(__dirname, '../../public/templates/template.docx');
-    if (fs.existsSync(templatePath)) {
-        res.download(templatePath);
-    } else {
-        res.status(404).send('Template not found');
-    }
+    const templatePath = path.join(__dirname, '../../public/templates/template_budeturnier_2026.odt');
+    fs.existsSync(templatePath) ? res.download(templatePath) : res.status(404).send('Template not found');
 });
 
-router.post('/uploadTemplate', upload.single('template'), (req, res) => {
-    res.redirect('/certificate');
-});
+router.post('/uploadTemplate', upload.single('template'), (req, res) => res.redirect('/certificate'));
 
 router.post('/generateCertificate', async (req, res) => {
     try {
-        const { teamId } = req.body;
-        const team = await Team.findById(teamId).exec();
+        const team = await Team.findById(req.body.teamId).exec();
+        if (!team) return res.status(404).send('Team not found');
         
-        const { buffer, rank } = await generateCertificateBuffer(team);
-
-        // Save the certificate to the server
-        //Check if the folder exists, if not create it
         const certificatesDir = path.join(__dirname, '../../public/certificates/');
         if (!fs.existsSync(certificatesDir)) {
             fs.mkdirSync(certificatesDir, { recursive: true });
         }
         
-        // Robust filename sanitization to prevent path traversal attacks
-        const fileName = `${rank}_${team.name}_certificate.docx`;
-        // Remove or replace dangerous characters, normalize unicode, and ensure only filename (no path components)
-        const sanitizedfileName = path.basename(fileName)
-            .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_') // Remove dangerous characters
-            .replace(/^\.+/, '_') // Prevent hidden files starting with dots
-            .replace(/\.+$/, '') + '.docx'; // Remove trailing dots and ensure .docx extension
+        const sanitizedName = `${team.finalPlacement}_${team.name}_certificate`
+            .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+            .replace(/^\.+/, '_')
+            .replace(/\.+$/, '');
         
-        // Double-check: ensure the resulting path is within the certificates directory
-        const outputPath = path.resolve(certificatesDir, sanitizedfileName);
-        if (!outputPath.startsWith(path.resolve(certificatesDir))) {
-            throw new Error('Invalid filename: path traversal detected');
-        }
+        const pdfPath = path.join(certificatesDir, `${sanitizedName}.pdf`);
         
-        fs.writeFileSync(outputPath, buffer);
-
-        res.download(outputPath);
+        await generateCertificatePdf(team, pdfPath);
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${sanitizedName}.pdf"`);
+        res.sendFile(pdfPath, () => {
+            setTimeout(() => fs.existsSync(pdfPath) && fs.unlinkSync(pdfPath), 5000);
+        });
     } catch (err) {
         console.error('Error generating certificate:', err);
         res.status(500).send('Error generating certificate: ' + err.message);
@@ -276,6 +254,4 @@ router.post('/generatePresentation', async (req, res) => {
 });
 
 module.exports = router;
-
-// Export the certificate generation function for reuse
-module.exports.generateCertificateBuffer = generateCertificateBuffer;
+module.exports.generateCertificatePdf = generateCertificatePdf;
