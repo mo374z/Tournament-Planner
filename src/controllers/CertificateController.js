@@ -42,25 +42,72 @@ async function generateCertificatePdf(team, outputPath) {
     const tempOdtPath = path.join(tempDir, `temp_${Date.now()}.odt`);
     
     try {
-        // Read ODT template and replace placeholders
-        console.log('Reading ODT template...');
-        const zip = new AdmZip(templatePath);
-        const contentXml = zip.readAsText('content.xml');
+        // Copy original template to temp location
+        fs.copyFileSync(templatePath, tempOdtPath);
         
-        // Replace placeholders in the XML
-        console.log('Replacing placeholders...');
-        const replacedXml = contentXml
-            .replace(/{teamName}/g, team.name || '')
-            .replace(/{group}/g, team.group || '')
-            .replace(/{rank}/g, (team.finalPlacement || '').toString());
+        // Extract the ODT (it's a ZIP file)
+        const extractDir = path.join(tempDir, `extract_${Date.now()}`);
+        fs.mkdirSync(extractDir, { recursive: true });
         
-        // Write modified content back
-        zip.updateFile('content.xml', Buffer.from(replacedXml, 'utf8'));
-        zip.writeZip(tempOdtPath);
+        console.log('Extracting ODT...');
+        const zip = new AdmZip(tempOdtPath);
+        zip.extractAllTo(extractDir, true);
+        
+        // Read content.xml
+        const contentXmlPath = path.join(extractDir, 'content.xml');
+        let contentXml = fs.readFileSync(contentXmlPath, 'utf8');
+        
+        console.log('Original XML length:', contentXml.length);
+        
+        // Simple replacements
+        const replacements = {
+            '{teamName}': team.name || '',
+            '{group}': team.group || '',
+            '{rank}': (team.finalPlacement || '').toString()
+        };
+        
+        console.log('Replacing placeholders with:', replacements);
+        
+        // Perform replacements
+        Object.keys(replacements).forEach(placeholder => {
+            if (contentXml.includes(placeholder)) {
+                contentXml = contentXml.split(placeholder).join(replacements[placeholder]);
+                console.log(`Replaced ${placeholder}`);
+            } else {
+                console.warn(`Placeholder ${placeholder} not found in template`);
+            }
+        });
+        
+        // Write modified content.xml back
+        fs.writeFileSync(contentXmlPath, contentXml, 'utf8');
+        console.log('Modified content.xml written');
+        
+        // Repackage into ODT
+        console.log('Repackaging ODT...');
+        const newZip = new AdmZip();
+        
+        // Add all files back maintaining structure
+        const addDirectoryToZip = (dirPath, zipPath = '') => {
+            const items = fs.readdirSync(dirPath);
+            items.forEach(item => {
+                const itemPath = path.join(dirPath, item);
+                const zipItemPath = zipPath ? `${zipPath}/${item}` : item;
+                
+                if (fs.statSync(itemPath).isDirectory()) {
+                    addDirectoryToZip(itemPath, zipItemPath);
+                } else {
+                    newZip.addLocalFile(itemPath, zipPath);
+                }
+            });
+        };
+        
+        addDirectoryToZip(extractDir);
+        newZip.writeZip(tempOdtPath);
+        
+        // Clean up extract directory
+        fs.rmSync(extractDir, { recursive: true, force: true });
+        
         console.log('Modified ODT written to:', tempOdtPath);
-        
-        // Convert ODT to PDF using LibreOffice
-        console.log('Converting to PDF...');
         
         try {
             const result = execSync(`libreoffice --headless --convert-to pdf --outdir "${tempDir}" "${tempOdtPath}" 2>&1`, {
