@@ -199,6 +199,17 @@ router.get("/dashboard", async (req, res) => {
     // Get past games using TeamController function
     const pastGames = await TeamController.getPastGamesForTeam(team._id);
 
+    //Sort the goals and opponents in the past games so that team is always opponent0 and goals[0] are their goals
+    pastGames.forEach(game => {
+      if (game.opponents[1].toString() === team._id.toString()) {
+        // Swap opponents
+        [game.opponents[0], game.opponents[1]] = [game.opponents[1], game.opponents[0]];
+        // Swap goals
+        [game.goals[0], game.goals[1]] = [game.goals[1], game.goals[0]];
+      }
+    });
+
+
     // Get players for this team
     const players = await Player.find({ team: team._id }).exec();
 
@@ -208,6 +219,7 @@ router.get("/dashboard", async (req, res) => {
 
     //create own team object to pass to the view to have control over what information is gets passed
     const teamView = {
+        _id: team._id,
         group: team.group,
         gamesPlayed: team.gamesPlayed,
         gamesWon: team.gamesWon,

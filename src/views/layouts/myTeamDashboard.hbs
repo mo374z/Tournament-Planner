@@ -271,19 +271,22 @@
                                     <td><strong>{{opponent.name}}</strong></td>
                                     <td>
                                         {{#if goals}}
-                                            <span class="badge bg-primary"><strong>{{goals.[0]}}</strong> : {{goals.[1]}}</span>
+                                            <span class="badge bg-primary">
+                                                <span class="fw-bold text-warning fs-6">{{goals.[0]}}</span> : {{goals.[1]}}
+                                            </span>
                                         {{else}}
                                             <span class="text-muted">-</span>
                                         {{/if}}
                                     </td>
                                     <td class="d-none d-sm-table-cell">
-                                        <span class="badge 
+                                        {{!-- Opponents and goals are sorted so that team is always opponent0 and goals[0] are their goals --}}
+                                        <span class="badge  
                                             {{#if (stringeq winner.name 'Unentschieden')}}bg-secondary
-                                            {{else}}{{#if (eq winner.id team._id)}}bg-success
-                                            {{else}}bg-danger{{/if}}{{/if}}">
+                                            {{else}}{{#if (eq winner.id opponents.[0]._id)}}bg-success
+                                            {{else}}bg-danger{{/if}}{{/if}}">  
                                             {{#if (stringeq winner.name 'Unentschieden')}}Unentschieden
-                                            {{else}}{{#if (eq winner.id team._id)}}Gewonnen
-                                            {{else}}Verloren{{/if}}{{/if}}
+                                            {{else}}{{#if (eq winner.id opponents.[0]._id)}}Gewonnen
+                                            {{else}}Verloren {{/if}}{{/if}}
                                         </span>
                                     </td>
                                 </tr>
