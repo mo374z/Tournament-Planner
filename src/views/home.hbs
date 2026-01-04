@@ -43,10 +43,10 @@
                     <tbody>
                         {{#each rankedTeams}}
                         <tr>
-                            <td>{{index}}</td>
+                            <td>{{this.finalPlacement}}</td>
                             <td>{{this.name}}</td>
                             <td><strong>{{this.goals.[0]}}</strong>:{{this.goals.[1]}}</td>
-                            <td>{{this.goalDifference}}</td>
+                            <td>{{this.goalsDifference}}</td>
                             <td>{{this.points_General}}</td>
                             <td>{{this.sektWon}}</td>
                         </tr>

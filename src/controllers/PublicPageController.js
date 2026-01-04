@@ -10,7 +10,6 @@ const genCounters = mongoose.model('generalCounters');
 const { checkLoginStatus, authorizeRoles } = require('../middleware/auth');
 const { updateSocketConfig } = require('../config/socketConfig');
 const socketConfig = updateSocketConfig(process.argv.slice(2));
-const { getRankedTeams } = require('../models/Team');
 const Handlebars = require('handlebars');
 
 const cookieParser = require('cookie-parser');
@@ -92,7 +91,26 @@ async function renderPublicPage(req, res) {
 
             let rankedTeams = [];
             if (mainSettings.publicPageOptions.showRankingTable) { // Check if the ranking table should be displayed
-                rankedTeams = await getRankedTeams();
+                // Update final placements based on completed placement games
+                //await updateFinalRanks(); 
+                //This schould be done not every time the public page is loaded to reduce DB load
+                
+                const Teams = await Team.find({});
+                
+                // Calculate additional fields for each team
+                await Promise.all(Teams.map(async team => {
+                    team.index = Teams.indexOf(team) + 1;
+                    team.goalsDifference = team.goals[0] - team.goals[1];
+                    team.goalsDifferenceGroupStage = team.goalsGroupStage[0] - team.goalsGroupStage[1];
+                }));
+                
+                // Sort by final placement (rank), putting teams without placement at the end
+                rankedTeams = Teams.sort((a, b) => {
+                    if (a.finalPlacement === null) return 1;
+                    if (b.finalPlacement === null) return -1;
+                    return a.finalPlacement - b.finalPlacement;
+                });
+
             }
 
             // Get all teams for the filter dropdown sorted by name alphabetically

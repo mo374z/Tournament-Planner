@@ -191,7 +191,7 @@ const MAIN_SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 function invalidateMainSettingsCache() {
   mainSettingsCacheLoaded = false;
   mainSettingsCacheLastFetch = 0;
-  console.log('MainSettings cache invalidated');
+  //console.log('MainSettings cache invalidated');
 }
 
 // Export cache invalidation function for use by controllers
