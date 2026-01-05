@@ -1,16 +1,5 @@
 <div class="container">
     <h1>Urkunden-Generator</h1>
-    <form action="/certificate/uploadTemplate" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="template">Neues Urkunden-Template hochladen (.odt):</label>
-            <input type="file" class="form-control" id="template" name="template" accept=".odt" required>
-        </div>
-        <button type="submit" class="btn btn-primary mt-3">Template hochladen</button>
-    </form>
-    {{#if templateExists}}
-    <a href="/certificate/downloadTemplate" class="btn btn-secondary mt-3">Aktuelles Template herunterladen</a>
-    {{/if}}
-    <hr>
     <form action="/certificate/generateCertificate" method="POST" target="_blank">
         <div class="form-group">
             <label for="team">Mannschaft auswählen:</label>

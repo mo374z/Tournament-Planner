@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Urkunde</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+    
+    @page { size: A4; margin: 0; }
+    html, body { height: 100%; }
+    body { margin: 0; background: #eee; font-family: 'Roboto', Helvetica, sans-serif; }
+
+    .page {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    }
+
+    /* Logo */
+    .logo {
+      position: absolute;
+      top: 8mm;
+      left: 8mm;
+      width: 50mm;
+      height: 50mm;
+      object-fit: contain;
+      z-index: 5;
+    }
+
+    /* Optional image box (like your final mock) */
+    .image-box {
+      position: absolute;
+      top: 60mm;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150mm;
+      height: 112.5mm;
+      background: #f3f3f3;
+      border: 2px solid rgba(0,0,0,.15);
+      border-radius: 2mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 4;
+    }
+    .image-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .image-fallback {
+      color: rgba(0,0,0,.45);
+      font-weight: 600;
+      font-size: 14pt;
+    }
+
+    /* Text content */
+    .content {
+      position: absolute;
+      top: 180mm;
+      left: 20mm;
+      right: 20mm;
+      text-align: center;
+      color: #111;
+      z-index: 6;
+    }
+    .event { font-size: 26pt; font-weight: 500; margin-bottom: 2mm; }
+    .title { font-size: 48pt; font-weight: 900; letter-spacing: .5px; margin: 0 0 6mm; }
+    .team  { font-size: 26pt; font-weight: 700; margin: 0 0 6mm; }
+
+    .rank-plaque {
+      position: absolute;
+      top: 235mm;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
+    }
+    .rank-number {
+      font-size: 30pt;
+      font-weight: 900;
+    }
+    .rank-place {
+      font-size: 16pt;
+      font-weight: 700;
+      margin-top: 1mm;
+    }
+
+    .stripe {
+      position: absolute;
+      height: 8mm;
+      transform: rotate(-20deg);
+      left: -40mm;
+      opacity: 1;
+      z-index: 6;
+    }
+    .y  { background: #f1e500; }
+    .dk { background: #2f2f2f; }
+    .md { background: #6d6d6d; }
+    .lt { background: #cfcfcf; }
+
+    .sstripe {
+      position: absolute;
+      height: 6mm;
+      transform: rotate(-20deg);
+      z-index: 6;
+    }
+
+
+    @media print {
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <img class="logo" src="logo.png" alt="Logo" />
+
+    <div class="image-box">
+      <!-- If IMAGE_URL is empty, keep fallback visible -->
+      <img src="{{IMAGE_URL}}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <div class="image-fallback" style="display:none;">No image</div>
+    </div>
+
+    <div class="content">
+      <div class="event">Budeturnier 2026</div>
+      <div class="title">URKUNDE</div>
+      <div class="team">{{TEAM_NAME}}</div>
+    </div>
+
+    <div class="rank-plaque">
+      <div class="rank-number">{{RANK}}.</div>
+      <div class="rank-place">Platz</div>
+    </div>
+
+    <div class="sstripe y"  style="top: 50mm; left: 18mm; width: 55mm;"></div>
+    <div class="sstripe md" style="top: 58mm; left: 10mm; width: 50mm;"></div>
+    <div class="sstripe dk" style="top:58mm; left: 18mm;  width: 90mm"></div>
+    <div class="sstripe lt" style="top: 60mm; left: 5mm; width: 80mm;"></div>
+
+    <div class="sstripe lt" style="top: 160mm; left: 145mm; width: 55mm;"></div>
+    <div class="sstripe y"  style="top: 164mm; left: 150mm; width: 45mm;"></div>
+    <div class="sstripe md" style="top: 170mm; left: 142mm; width: 60mm; height: 7mm;"></div>
+
+    <div class="image-box" style="top: auto; bottom: -6.5mm; height: 70mm; width: 230mm; border: none;">
+      <img src="skyline.png" alt="Skyline" />
+    </div>
+</body>
+</html>
