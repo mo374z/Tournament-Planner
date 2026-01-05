@@ -22,17 +22,12 @@ router.get('/', async (req, res) => {
     res.render('layouts/certificate', { teams, templateExists });
 });
 
-// Generate certificate from ODT template and convert to PDF
 async function generateCertificatePdf(team, outputPath) {
-    console.log('Starting certificate generation for team:', team.name);
-    
     const templatePath = path.join(__dirname, '../../public/templates/template_budeturnier_2026.odt');
     
     if (!fs.existsSync(templatePath)) {
         throw new Error('Template not found: template_budeturnier_2026.odt');
     }
-    
-    console.log('Template found:', templatePath);
     
     const tempDir = path.join(__dirname, '../../public/certificates/temp');
     if (!fs.existsSync(tempDir)) {
@@ -42,54 +37,48 @@ async function generateCertificatePdf(team, outputPath) {
     const tempOdtPath = path.join(tempDir, `temp_${Date.now()}.odt`);
     
     try {
-        // Copy original template to temp location
         fs.copyFileSync(templatePath, tempOdtPath);
         
-        // Extract the ODT (it's a ZIP file)
         const extractDir = path.join(tempDir, `extract_${Date.now()}`);
         fs.mkdirSync(extractDir, { recursive: true });
         
-        console.log('Extracting ODT...');
         const zip = new AdmZip(tempOdtPath);
         zip.extractAllTo(extractDir, true);
         
-        // Read content.xml
         const contentXmlPath = path.join(extractDir, 'content.xml');
         let contentXml = fs.readFileSync(contentXmlPath, 'utf8');
         
-        console.log('Original XML length:', contentXml.length);
-        
-        // Simple replacements
         const replacements = {
             '{teamName}': team.name || '',
             '{group}': team.group || '',
             '{rank}': (team.finalPlacement || '').toString()
         };
         
-        console.log('Replacing placeholders with:', replacements);
-        
-        // Perform replacements
         Object.keys(replacements).forEach(placeholder => {
-            if (contentXml.includes(placeholder)) {
-                contentXml = contentXml.split(placeholder).join(replacements[placeholder]);
-                console.log(`Replaced ${placeholder}`);
-            } else {
-                console.warn(`Placeholder ${placeholder} not found in template`);
-            }
+            contentXml = contentXml.split(placeholder).join(replacements[placeholder]);
         });
         
-        // Write modified content.xml back
         fs.writeFileSync(contentXmlPath, contentXml, 'utf8');
-        console.log('Modified content.xml written');
         
-        // Repackage into ODT
-        console.log('Repackaging ODT...');
+        if (team.imagePath) {
+            const teamImagePath = path.join(__dirname, '../../public', team.imagePath);
+            const picturesDir = path.join(extractDir, 'Pictures');
+            
+            if (fs.existsSync(teamImagePath) && fs.existsSync(picturesDir)) {
+                const existingImages = fs.readdirSync(picturesDir);
+                let targetImage = existingImages.find(img => img.toLowerCase().includes('placeholder'));
+                if (!targetImage && existingImages.length > 0) targetImage = existingImages[0];
+                
+                if (targetImage) {
+                    fs.copyFileSync(teamImagePath, path.join(picturesDir, targetImage));
+                }
+            }
+        }
+        
         const newZip = new AdmZip();
         
-        // Add all files back maintaining structure
         const addDirectoryToZip = (dirPath, zipPath = '') => {
-            const items = fs.readdirSync(dirPath);
-            items.forEach(item => {
+            fs.readdirSync(dirPath).forEach(item => {
                 const itemPath = path.join(dirPath, item);
                 const zipItemPath = zipPath ? `${zipPath}/${item}` : item;
                 
@@ -103,47 +92,22 @@ async function generateCertificatePdf(team, outputPath) {
         
         addDirectoryToZip(extractDir);
         newZip.writeZip(tempOdtPath);
-        
-        // Clean up extract directory
         fs.rmSync(extractDir, { recursive: true, force: true });
         
-        console.log('Modified ODT written to:', tempOdtPath);
+        execSync(`libreoffice --headless --convert-to pdf --outdir "${tempDir}" "${tempOdtPath}" 2>&1`, {
+            timeout: 30000,
+            encoding: 'utf8'
+        });
         
-        try {
-            const result = execSync(`libreoffice --headless --convert-to pdf --outdir "${tempDir}" "${tempOdtPath}" 2>&1`, {
-                timeout: 30000,
-                encoding: 'utf8'
-            });
-            console.log('LibreOffice output:', result);
-        } catch (execError) {
-            console.error('LibreOffice conversion error:', execError.message);
-            console.error('LibreOffice output:', execError.stdout || execError.stderr || 'No output');
-            throw new Error('LibreOffice conversion failed: ' + (execError.stdout || execError.message));
-        }
-        
-        console.log('PDF conversion complete');
-        
-        // LibreOffice creates PDF with the original template name, not the temp file name
-        // Look for any PDF file created in the temp directory
-        const filesAfter = fs.readdirSync(tempDir);
-        const pdfFile = filesAfter.find(f => f.endsWith('.pdf'));
+        const pdfFile = fs.readdirSync(tempDir).find(f => f.endsWith('.pdf'));
         
         if (pdfFile) {
-            const tempPdfPath = path.join(tempDir, pdfFile);
-            console.log('PDF found:', tempPdfPath, '- Moving to:', outputPath);
-            fs.renameSync(tempPdfPath, outputPath);
+            fs.renameSync(path.join(tempDir, pdfFile), outputPath);
         } else {
-            console.error('Files in temp directory:', filesAfter);
-            throw new Error('PDF file was not created by LibreOffice');
+            throw new Error('PDF conversion failed');
         }
-        
-        console.log('Certificate PDF generated successfully');
     } finally {
-        // Clean up temp ODT
-        if (fs.existsSync(tempOdtPath)) {
-            console.log('Cleaning up temp ODT file');
-            fs.unlinkSync(tempOdtPath);
-        }
+        if (fs.existsSync(tempOdtPath)) fs.unlinkSync(tempOdtPath);
     }
 }
 

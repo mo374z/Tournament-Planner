@@ -456,7 +456,6 @@ router.post('/addPlayer', async (req, res) => {
   }
 });
 
-// Download team certificate
 router.get('/downloadCertificate', async (req, res) => {
   try {
     const teamId = req.cookies.myTeamId;
@@ -487,11 +486,10 @@ router.get('/downloadCertificate', async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${sanitizedName}.pdf"`);
     res.sendFile(pdfPath, () => {
-      console.log('Certificate (PDF) viewed by team:', team.name);
       setTimeout(() => fs.existsSync(pdfPath) && fs.unlinkSync(pdfPath), 5000);
     });
   } catch (err) {
-    console.error('Error during MyTeam certificate download:', err);
+    console.error('Error during certificate download:', err);
     const message = err.message.includes('Template not found') 
       ? "Urkundenvorlage nicht gefunden. Bitte kontaktieren Sie den Administrator."
       : "Fehler beim Generieren der Urkunde.";
