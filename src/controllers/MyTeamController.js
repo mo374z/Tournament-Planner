@@ -239,6 +239,7 @@ router.get("/dashboard", async (req, res) => {
         name: team.name,
         imagePath: team.imagePath,
         logo: team.logo || {},
+        finalPlacement: team.finalPlacement,
         _id: team._id // Add team ID for upload form
     };
 
