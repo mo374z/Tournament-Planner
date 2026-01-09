@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const { checkLoginStatus } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 // Import helper functions from TeamController
 const TeamController = require('./TeamController');
@@ -238,6 +239,7 @@ router.get("/dashboard", async (req, res) => {
         name: team.name,
         imagePath: team.imagePath,
         logo: team.logo || {},
+        finalPlacement: team.finalPlacement,
         _id: team._id // Add team ID for upload form
     };
 
@@ -455,56 +457,44 @@ router.post('/addPlayer', async (req, res) => {
   }
 });
 
-// Download team certificate
 router.get('/downloadCertificate', async (req, res) => {
   try {
     const teamId = req.cookies.myTeamId;
-    if (!teamId) {
-      return res.redirect('/myteam/login');
-    }
+    if (!teamId) return res.redirect('/myteam/login');
 
-    // Check if certificate download is enabled
     const mainSettings = await MainSettings.findOne({});
-    if (!mainSettings || !mainSettings.myTeamPageOptions?.allowCertificateDownload) {
-      return res.status(403).render("layouts/error", {
-        message: "Urkunden-Download ist nicht aktiviert."
-      });
+    if (!mainSettings?.myTeamPageOptions?.allowCertificateDownload) {
+      return res.status(403).render("layouts/error", { message: "Urkunden-Download ist nicht aktiviert." });
     }
 
     const team = await Team.findById(teamId).exec();
-    if (!team) {
-      return res.status(404).render("layouts/error", {
-        message: "Team nicht gefunden."
-      });
-    }
+    if (!team) return res.status(404).render("layouts/error", { message: "Team nicht gefunden." });
 
-    // Use certificate generation function from CertificateController
-    const { generateCertificateBuffer } = require('./CertificateController');
-    const { buffer, rank } = await generateCertificateBuffer(team);
+    const { generateCertificatePdf } = require('./CertificateController');
+    
+    const certificatesDir = path.join(__dirname, '../../public/certificates/');
+    if (!fs.existsSync(certificatesDir)) fs.mkdirSync(certificatesDir, { recursive: true });
 
-    // Send file as download
-    const fileName = `${rank}_${team.name}_certificate.docx`;
-    const sanitizedfileName = path.basename(fileName)
-        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-        .replace(/^\.+/, '_')
-        .replace(/\.+$/, '') + '.docx';
+    const sanitizedName = `${team.finalPlacement}_${team.name}_certificate`
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+      .replace(/^\.+/, '_')
+      .replace(/\.+$/, '');
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${sanitizedfileName}"`);
-    res.send(buffer);
-
-    console.log('Certificate downloaded by team:', team.name);
+    const pdfPath = path.join(certificatesDir, `${sanitizedName}.pdf`);
+    
+    await generateCertificatePdf(team, pdfPath);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${sanitizedName}.pdf"`);
+    res.sendFile(pdfPath, () => {
+      setTimeout(() => fs.existsSync(pdfPath) && fs.unlinkSync(pdfPath), 5000);
+    });
   } catch (err) {
-    console.log('Error during MyTeam certificate download:', err);
-    if (err.message === 'Template not found: template.docx') {
-      res.status(404).render("layouts/error", {
-        message: "Urkundenvorlage nicht gefunden. Bitte kontaktieren Sie den Administrator."
-      });
-    } else {
-      res.status(500).render("layouts/error", {
-        message: "Fehler beim Generieren der Urkunde."
-      });
-    }
+    console.error('Error during certificate download:', err);
+    const message = err.message.includes('Template not found') 
+      ? "Urkundenvorlage nicht gefunden. Bitte kontaktieren Sie den Administrator."
+      : "Fehler beim Generieren der Urkunde.";
+    res.status(err.message.includes('Template not found') ? 404 : 500).render("layouts/error", { message });
   }
 });
 

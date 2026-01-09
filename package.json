@@ -12,6 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "@handlebars/allow-prototype-access": "^1.0.5",
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -29,7 +31,7 @@
     "path": "^0.12.7",
     "pizzip": "^3.1.7",
     "pptx-automizer": "^0.6.2",
-    "puppeteer": "^23.9.0",
+    "puppeteer": "^24.34.0",
     "socket.io": "^4.7.2"
   },
   "devDependencies": {

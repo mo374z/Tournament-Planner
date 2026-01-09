@@ -73,7 +73,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
-                            <div class="col-4">
+                            <div class="col-6 col-md-3">
                                 <div class="result-card win-card">
                                     <div class="result-icon">
                                         <i class="fas fa-trophy"></i>
@@ -87,7 +87,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-6 col-md-3">
                                 <div class="result-card draw-card">
                                     <div class="result-icon">
                                         <i class="fas fa-equals"></i>
@@ -101,7 +101,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-6 col-md-3">
                                 <div class="result-card loss-card">
                                     <div class="result-icon">
                                         <i class="fas fa-times-circle"></i>
@@ -111,6 +111,20 @@
                                     <div class="result-progress">
                                         <div class="progress">
                                             <div class="progress-bar bg-danger" style="width: {{percentage team.gamesLost team.gamesPlayed}}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="result-card placement-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-medal"></i>
+                                    </div>
+                                    <div class="result-number">{{#if team.finalPlacement}}{{team.finalPlacement}}{{else}}-{{/if}}</div>
+                                    <div class="result-label">Platzierung</div>
+                                    <div class="result-progress">
+                                        <div class="progress">
+                                            <div class="progress-bar bg-info" style="width: 100%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -378,16 +392,11 @@
             <div class="card-body text-center">
                 <div class="mb-3">
                     <i class="fas fa-award fa-3x text-warning mb-2"></i>
-                    <p class="text-muted">Laden Sie Ihre Team-Urkunde herunter</p>
+                    <p class="text-muted">Die finale Platzierung steht fest. Laden Sie Ihre Team-Urkunde herunter</p>
                 </div>
-                <a href="/myteam/downloadCertificate" class="btn btn-warning btn-lg">
-                    <i class="fas fa-download me-2"></i>Urkunde downloaden
+                <a href="/myteam/downloadCertificate" class="btn btn-warning btn-lg" target="_blank">
+                    <i class="fas fa-download me-2"></i>Urkunde herunterladen
                 </a>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>Die Urkunde wird als Word-Dokument (.docx) heruntergeladen
-                    </small>
-                </div>
             </div>
         </div>
     </div>
@@ -756,6 +765,11 @@
     .loss-card .result-icon { color: #dc3545; }
     .loss-card .result-number { color: #dc3545; }
     .loss-card .result-label { color: #dc3545; }
+    
+    .placement-card:hover { border-color: #0dcaf0; }
+    .placement-card .result-icon { color: #0dcaf0; }
+    .placement-card .result-number { color: #0dcaf0; }
+    .placement-card .result-label { color: #0dcaf0; }
     
     .info-item {
         padding: 0.75rem;

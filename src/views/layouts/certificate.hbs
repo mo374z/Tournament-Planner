@@ -1,17 +1,6 @@
 <div class="container">
     <h1>Urkunden-Generator</h1>
-    <form action="/certificate/uploadTemplate" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="template">Neues Urkunden-Template hochladen:</label>
-            <input type="file" class="form-control" id="template" name="template" accept=".docx" required>
-        </div>
-        <button type="submit" class="btn btn-primary mt-3">Template hochladen</button>
-    </form>
-    {{#if templateExists}}
-    <a href="/certificate/downloadTemplate" class="btn btn-secondary mt-3">Aktuelles Template herunterladen</a>
-    {{/if}}
-    <hr>
-    <form action="/certificate/generateCertificate" method="POST">
+    <form action="/certificate/generateCertificate" method="POST" target="_blank">
         <div class="form-group">
             <label for="team">Mannschaft auswählen:</label>
             <input type="text" class="form-control" id="teamSearch" placeholder="Mannschaft suchen...">
@@ -23,12 +12,32 @@
         </div>
         <button type="submit" class="btn btn-primary mt-3" id="generateCertificateBtn">Urkunde generieren</button>
     </form>
+    
+    <form action="/certificate/generateAllCertificates" method="POST" class="mt-3" id="generateAllForm">
+        <button type="submit" class="btn btn-success">Alle Urkunden als ZIP herunterladen</button>
+    </form>
     <hr>
     <h1>Präsentations-Generator</h1>   
     <form action="/certificate/generatePresentation" method="POST">
         <button type="submit" class="btn btn-primary mt-3">PowerPoint-Präsentation generieren</button>
     </form>
 </div>
+
+<!-- Status Modal -->
+<div class="modal fade" id="generatingModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Lädt...</span>
+                </div>
+                <h5>Urkunden werden generiert...</h5>
+                <p class="text-muted mb-0">Bitte warten Sie, während alle Urkunden der platzierten Teams erstellt und als ZIP-Datei verpackt werden.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Function to check and update certificate button state
 function updateCertificateButtonState() {
@@ -50,6 +59,51 @@ function updateCertificateButtonState() {
         generateBtn.innerHTML = 'Urkunde generieren (Team noch nicht platziert)';
     }
 }
+
+// Handle generate all certificates form submission
+document.getElementById('generateAllForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Show loading modal using Bootstrap 5
+    const modal = new bootstrap.Modal(document.getElementById('generatingModal'));
+    modal.show();
+    
+    try {
+        // Make AJAX request to generate certificates
+        const response = await fetch('/certificate/generateAllCertificates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Fehler beim Generieren der Urkunden');
+        }
+        
+        // Get the blob from response
+        const blob = await response.blob();
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Urkunden_' + new Date().toISOString().replace(/:/g, '-').split('.')[0] + '.zip';
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Close modal when done
+        modal.hide();
+    } catch (error) {
+        console.error('Fehler:', error);
+        alert('Fehler beim Generieren der Urkunden: ' + error.message);
+        modal.hide();
+    }
+});
 
 // Initialize button state on page load
 document.addEventListener('DOMContentLoaded', function() {
