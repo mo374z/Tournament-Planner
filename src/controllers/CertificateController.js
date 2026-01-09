@@ -10,6 +10,7 @@ const Automizer = require('pptx-automizer').default;
 const { modify } = require('pptx-automizer');
 const { ModifyShapeHelper } = require('pptx-automizer');
 const sizeOf = require('image-size');
+const archiver = require('archiver');
 
 commonMiddleware(router, ['admin']);
 
@@ -69,6 +70,45 @@ router.post('/generateCertificate', async (req, res) => {
     } catch (err) {
         console.error('Error generating certificate:', err);
         res.status(500).send('Error generating certificate: ' + err.message);
+    }
+});
+
+router.post('/generateAllCertificates', async (req, res) => {
+    try {
+        const teams = await Team.find({ finalPlacement: { $ne: null } }).sort({ finalPlacement: 1 }).exec();
+        if (!teams || teams.length === 0) return res.status(404).send('Keine Teams mit Platzierung gefunden');
+
+        const tempDir = path.join(__dirname, '../../public/certificates/temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+        const pdfPaths = [];
+        for (const team of teams) {
+            const sanitizedName = `${team.finalPlacement}_${team.name}_certificate`.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/^\.+/, '_').replace(/\.+$/, '');
+            const pdfPath = path.join(tempDir, `${sanitizedName}.pdf`);
+            await generateCertificatePdf(team, pdfPath);
+            pdfPaths.push({ path: pdfPath, name: `${sanitizedName}.pdf` });
+        }
+
+        const zipFileName = `Urkunden_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.zip`;
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${zipFileName}"`);
+
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        archive.on('error', (err) => { throw err; });
+        archive.pipe(res);
+
+        for (const file of pdfPaths) {
+            archive.file(file.path, { name: file.name });
+        }
+
+        await archive.finalize();
+
+        setTimeout(() => {
+            pdfPaths.forEach(file => fs.existsSync(file.path) && fs.unlinkSync(file.path));
+        }, 5000);
+    } catch (err) {
+        console.error('Fehler beim Generieren der Urkunden-ZIP:', err);
+        res.status(500).send('Fehler beim Generieren der Urkunden-ZIP: ' + err.message);
     }
 });
 
