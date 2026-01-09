@@ -1,0 +1,245 @@
+<script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+<style>
+    .team-card {
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 3px solid transparent;
+    }
+    
+    .team-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .team-card.selected {
+        border-color: #0d6efd;
+        background-color: #e7f3ff;
+    }
+    
+    .beer-counter {
+        font-size: 4rem;
+        font-weight: bold;
+        color: #ffa500;
+    }
+    
+    .counter-btn {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+        border-radius: 10px;
+    }
+    
+    .team-grid {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <h1 class="text-center mb-4">🍺 Getränkeausschank - Kassier</h1>
+    <hr>
+    
+    <div class="row">
+        <!-- Linke Seite: Team-Auswahl -->
+        <div class="col-md-6">
+            <h3>Teams auswählen:</h3>
+            <div class="team-grid">
+                <div class="row g-3">
+                    {{#each teams}}
+                    <div class="col-3">
+                        <div class="card team-card" data-team-id="{{this._id}}" data-team-name="{{this.name}}" onclick="selectTeam('{{this._id}}', '{{this.name}}')">
+                            <div class="card-body text-center p-2">
+                                <h6 class="card-title mb-1">{{this.name}}</h6>
+                                <p class="mb-0"><small>Gruppe {{this.group}}</small></p>
+                                <p class="text-primary mb-0"><strong>{{this.beerCount}} 🍺</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rechte Seite: Weizen-Zähler -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="text-center mb-4">Weizen bestellen</h3>
+                    
+                    <div id="noTeamSelected" class="alert alert-info text-center">
+                        <h5>← Bitte erst ein Team auswählen</h5>
+                    </div>
+                    
+                    <div id="orderSection" style="display: none;">
+                        <h4 class="text-center mb-4">Team: <span id="selectedTeamName" class="text-primary"></span></h4>
+                        
+                        <div class="text-center mb-4">
+                            <p class="mb-2">Anzahl Weizen:</p>
+                            <div class="beer-counter" id="beerCount">0</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-center gap-3 mb-4">
+                            <button class="btn btn-danger counter-btn" onclick="changeCount(-1)">
+                                <strong>−</strong>
+                            </button>
+                            <button class="btn btn-success counter-btn" onclick="changeCount(1)">
+                                <strong>+</strong>
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex justify-content-center gap-3 mb-3">
+                            <button class="btn btn-secondary" onclick="changeCount(-5)">-5</button>
+                            <button class="btn btn-secondary" onclick="changeCount(5)">+5</button>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-center gap-3">
+                            <button class="btn btn-primary btn-lg px-5" onclick="confirmOrder()">
+                                ✓ OK - Bestätigen
+                            </button>
+                            <button class="btn btn-outline-secondary btn-lg" onclick="resetSelection()">
+                                Zurücksetzen
+                            </button>
+                        </div>
+                        
+                        <div id="successMessage" class="alert alert-success mt-3" style="display: none;">
+                            Bestellung erfolgreich gespeichert!
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="/cashier/ranking" class="btn btn-info btn-lg" target="_blank">
+                    📊 Bier-Ranking anzeigen
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="/" class="btn btn-secondary">← Zurück zur Startseite</a>
+    </div>
+</div>
+
+<script>
+    let selectedTeamId = null;
+    let selectedTeamName = null;
+    let currentCount = 0;
+    
+    const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
+    
+    socket.on('connect', () => {
+        console.log('Socket connected to server');
+    });
+    
+    // Live-Update wenn andere Kassiere Bestellungen aufgeben
+    socket.on('beerCountUpdated', (data) => {
+        console.log('Beer count updated:', data);
+        // Aktualisiere die Anzeige des betroffenen Teams
+        const teamCard = document.querySelector(`[data-team-id="${data.teamId}"]`);
+        if (teamCard) {
+            const beerCountElement = teamCard.querySelector('.text-primary strong');
+            if (beerCountElement) {
+                beerCountElement.innerHTML = `${data.beerCount} 🍺`;
+            }
+        }
+    });
+    
+    function selectTeam(teamId, teamName) {
+        // Entferne vorherige Auswahl
+        document.querySelectorAll('.team-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Markiere ausgewähltes Team
+        const selectedCard = document.querySelector(`[data-team-id="${teamId}"]`);
+        selectedCard.classList.add('selected');
+        
+        // Setze Variablen
+        selectedTeamId = teamId;
+        selectedTeamName = teamName;
+        currentCount = 0;
+        
+        // Zeige Order Section
+        document.getElementById('noTeamSelected').style.display = 'none';
+        document.getElementById('orderSection').style.display = 'block';
+        document.getElementById('selectedTeamName').textContent = teamName;
+        document.getElementById('beerCount').textContent = currentCount;
+        document.getElementById('successMessage').style.display = 'none';
+    }
+    
+    function changeCount(delta) {
+        currentCount += delta;
+        if (currentCount < 0) {
+            currentCount = 0;
+        }
+        document.getElementById('beerCount').textContent = currentCount;
+    }
+    
+    async function confirmOrder() {
+        if (!selectedTeamId) {
+            alert('Bitte erst ein Team auswählen!');
+            return;
+        }
+        
+        if (currentCount === 0) {
+            alert('Bitte eine Anzahl größer als 0 eingeben!');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/cashier/update-beer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    teamId: selectedTeamId,
+                    count: currentCount
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Zeige Erfolgs-Nachricht
+                const successMsg = document.getElementById('successMessage');
+                successMsg.style.display = 'block';
+                successMsg.textContent = `${currentCount} Weizen für ${selectedTeamName} gespeichert! Neuer Stand: ${data.newCount}`;
+                
+                // Aktualisiere die Team-Card
+                const teamCard = document.querySelector(`[data-team-id="${selectedTeamId}"]`);
+                const beerCountElement = teamCard.querySelector('.text-primary strong');
+                if (beerCountElement) {
+                    beerCountElement.innerHTML = `${data.newCount} 🍺`;
+                }
+                
+                // Reset nach kurzer Zeit
+                setTimeout(() => {
+                    resetSelection();
+                }, 2000);
+            } else {
+                alert('Fehler beim Speichern: ' + data.message);
+            }
+        } catch (err) {
+            console.error('Error confirming order:', err);
+            alert('Fehler beim Speichern der Bestellung!');
+        }
+    }
+    
+    function resetSelection() {
+        selectedTeamId = null;
+        selectedTeamName = null;
+        currentCount = 0;
+        
+        document.querySelectorAll('.team-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        document.getElementById('noTeamSelected').style.display = 'block';
+        document.getElementById('orderSection').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+    }
+</script>

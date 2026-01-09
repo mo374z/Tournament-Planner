@@ -1,0 +1,400 @@
+<script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+
+<style>
+    .ranking-container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        margin: 30px auto;
+        max-width: 1400px;
+    }
+    
+    .trophy {
+        font-size: 4rem;
+        animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .rank-badge {
+        font-size: 2rem;
+        font-weight: bold;
+        width: 60px;
+        height: 60px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    
+    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #808080); color: white; }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+    .rank-other { background: linear-gradient(135deg, #6c757d, #495057); color: white; }
+    
+    /* Bier-Balken Styling */
+    .beer-chart-container {
+        position: relative;
+        height: 600px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        padding: 60px 20px 20px 20px;
+        background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .beer-bar-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        max-width: 200px;
+        margin: 0 10px;
+    }
+    
+    .beer-bar {
+        width: 100%;
+        position: relative;
+        border-radius: 10px 10px 5px 5px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transition: all 0.5s ease;
+    }
+    
+    .beer-bar:hover {
+        transform: scale(1.05);
+    }
+    
+    .beer-liquid {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, 
+            #FFD700 0%,
+            #FFA500 50%,
+            #FF8C00 100%);
+        border-radius: 10px 10px 5px 5px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Wellenförmige Oberfläche */
+    .beer-liquid::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: -50%;
+        width: 200%;
+        height: 40px;
+        background: linear-gradient(to bottom, 
+            rgba(255, 215, 0, 0.8) 0%,
+            rgba(255, 165, 0, 0.6) 100%);
+        border-radius: 50%;
+        animation: wave 3s ease-in-out infinite;
+    }
+    
+    .beer-liquid::after {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -50%;
+        width: 200%;
+        height: 35px;
+        background: linear-gradient(to bottom, 
+            rgba(255, 215, 0, 0.6) 0%,
+            rgba(255, 165, 0, 0.4) 100%);
+        border-radius: 45%;
+        animation: wave 4s ease-in-out infinite;
+        animation-delay: -1.5s;
+    }
+    
+    @keyframes wave {
+        0%, 100% {
+            transform: translateX(0) translateY(0);
+        }
+        25% {
+            transform: translateX(-100%) translateY(-100px);
+        }
+        50% {
+            transform: translateX(0) translateY(-35px);
+        }
+        75% {
+            transform: translateX(20%) translateY(-25px);
+        }
+    }
+    
+    .beer-foam {
+        position: absolute;
+        top: -35px;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: linear-gradient(to bottom, 
+            #FFFFFF 0%,
+            #FFFEF0 40%,
+            #FFF8DC 70%,
+            rgba(255, 248, 220, 0.6) 100%);
+        border-radius: 20px 20px 12px 12px;
+        box-shadow: 0 -3px 8px rgba(255,255,255,0.9),
+                    inset 0 2px 5px rgba(255,255,255,0.5);
+        animation: foam-bubble 2s ease-in-out infinite, foam-sway 3s ease-in-out infinite;
+        z-index: 5;
+    }
+    
+    @keyframes foam-bubble {
+        0%, 100% {
+            transform: translateY(0) scale(1);
+        }
+        50% {
+            transform: translateY(-3px) scale(1.02);
+        }
+    }
+    
+    @keyframes foam-sway {
+        0%, 100% {
+            border-radius: 20px 20px 12px 12px;
+        }
+        25% {
+            border-radius: 25px 18px 12px 12px;
+        }
+        50% {
+            border-radius: 18px 25px 12px 12px;
+        }
+        75% {
+            border-radius: 22px 20px 12px 12px;
+        }
+    }
+    
+    
+    /* Realistische Schaumblasen */
+    .beer-foam::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.95) 4px, transparent 4px),
+            radial-gradient(circle at 25% 35%, rgba(255, 255, 255, 0.9) 5px, transparent 5px),
+            radial-gradient(circle at 40% 15%, rgba(255, 255, 255, 0.85) 3px, transparent 3px),
+            radial-gradient(circle at 55% 30%, rgba(255, 255, 255, 0.92) 4px, transparent 4px),
+            radial-gradient(circle at 65% 25%, rgba(255, 255, 255, 0.88) 6px, transparent 6px),
+            radial-gradient(circle at 75% 40%, rgba(255, 255, 255, 0.9) 3px, transparent 3px),
+            radial-gradient(circle at 85% 18%, rgba(255, 255, 255, 0.93) 5px, transparent 5px),
+            radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.87) 4px, transparent 4px),
+            radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.91) 3px, transparent 3px),
+            radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.89) 4px, transparent 4px),
+            radial-gradient(circle at 20% 65%, rgba(255, 255, 255, 0.86) 5px, transparent 5px),
+            radial-gradient(circle at 45% 70%, rgba(255, 255, 255, 0.94) 3px, transparent 3px),
+            radial-gradient(circle at 80% 55%, rgba(255, 255, 255, 0.88) 4px, transparent 4px),
+            radial-gradient(circle at 10% 45%, rgba(255, 255, 255, 0.92) 3px, transparent 3px),
+            radial-gradient(circle at 60% 48%, rgba(255, 255, 255, 0.9) 5px, transparent 5px),
+            radial-gradient(circle at 90% 35%, rgba(255, 255, 255, 0.85) 4px, transparent 4px);
+        background-size: 100% 100%;
+        animation: bubble-rise 4s ease-in-out infinite;
+        border-radius: inherit;
+    }
+    
+    @keyframes bubble-rise {
+        0%, 100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        50% {
+            opacity: 0.95;
+            transform: translateY(-2px);
+        }
+    }
+    
+    @keyframes bubble-float {
+        0%, 100% {
+            transform: translateY(0) scale(1);
+            opacity: 0.8;
+        }
+        50% {
+            transform: translateY(-5px) scale(1.2);
+            opacity: 1;
+        }
+    }
+    
+    .beer-count {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        font-weight: bold;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        z-index: 10;
+    }
+    
+    .beer-label {
+        margin-top: 15px;
+        text-align: center;
+    }
+    
+    .beer-label h4 {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .beer-label .badge {
+        font-size: 1rem;
+        padding: 8px 15px;
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 50px;
+        color: #6c757d;
+    }
+</style>
+
+<div class="ranking-container">
+    <div class="text-center mb-4">
+        <span class="trophy">🏆</span>
+        <h1 class="display-3 fw-bold mb-2">Bier-Ranking</h1>
+        <p class="lead text-muted">Top 5 Teams mit dem höchsten Weizen-Konsum</p>
+    </div>
+    
+    <hr>
+    
+    {{#if teams}}
+    <div class="row">
+        <!-- Linke Seite: Rangliste -->
+        <div class="col-md-5">
+            <h3 class="mb-4">🏅 Rangliste</h3>
+            {{#each teams}}
+            <div class="card shadow-sm mb-3">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rank-badge {{#if (gt @index 2)}}rank-other{{else}}rank-{{math @index '+' 1}}{{/if}}">
+                        {{math @index '+' 1}}
+                    </div>
+                    <div class="ms-4 flex-grow-1">
+                        <h4 class="mb-0">{{this.name}}</h4>
+                    </div>
+                    <div class="text-end">
+                        <h2 class="mb-0" style="color: #ffa500;">
+                            🍺 <span id="count-{{this._id}}">{{this.beerCount}}</span>
+                        </h2>
+                        <small class="text-muted">Weizen</small>
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        
+        <!-- Rechte Seite: Bier-Balkendiagramm -->
+        <div class="col-md-7">
+            <h3 class="mb-4">🍺 Top 3 Visualisierung</h3>
+            <div class="beer-chart-container" id="beerChartContainer">
+                {{#each topThree}}
+                <div class="beer-bar-wrapper">
+                    <div class="beer-bar" style="height: {{#if this.beerCount}}{{math this.beerCount '*' 20}}{{else}}20{{/if}}px; min-height: 50px; max-height: 400px;">
+                        <div class="beer-liquid">
+                            <div class="beer-foam"></div>
+                            <div class="beer-count">{{this.beerCount}}</div>
+                        </div>
+                    </div>
+                    <div class="beer-label">
+                        <h4>{{this.name}}</h4>
+                        <span class="badge {{#if (eqref @index 0)}}bg-warning{{else}}{{#if (eqref @index 1)}}bg-secondary{{else}}bg-danger{{/if}}{{/if}}">
+                            #{{math @index '+' 1}}
+                        </span>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-4">
+        <button class="btn btn-primary btn-lg" onclick="window.location.reload()">
+            🔄 Aktualisieren
+        </button>
+        <a href="/cashier/order" class="btn btn-secondary btn-lg ms-2">
+            ← Zurück zur Bestellung
+        </a>
+    </div>
+    {{else}}
+    <div class="no-data">
+        <h3>Noch keine Daten verfügbar</h3>
+        <p>Sobald Teams Weizen bestellen, erscheint hier das Ranking.</p>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="/cashier/order" class="btn btn-secondary btn-lg">
+            ← Zurück zur Bestellung
+        </a>
+    </div>
+    {{/if}}
+</div>
+
+<script>
+    const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
+    
+    socket.on('connect', () => {
+        console.log('Socket connected to server');
+    });
+    
+    // Live-Update des Rankings
+    socket.on('beerCountUpdated', async (data) => {
+        console.log('Beer count updated, refreshing ranking...');
+        
+        // Fetch updated ranking data
+        try {
+            const response = await fetch('/cashier/api/ranking');
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update individual counts
+                result.teams.forEach(team => {
+                    const countElement = document.getElementById(`count-${team._id}`);
+                    if (countElement) {
+                        countElement.textContent = team.beerCount;
+                    }
+                });
+                
+                // Update beer bars for top 3
+                if (result.topThree && result.topThree.length > 0) {
+                    const container = document.getElementById('beerChartContainer');
+                    if (container) {
+                        // Rebuild the beer bars
+                        let html = '';
+                        result.topThree.forEach((team, index) => {
+                            const height = team.beerCount ? Math.min(team.beerCount * 20, 400) : 20;
+                            const badgeClass = index === 0 ? 'bg-warning' : (index === 1 ? 'bg-secondary' : 'bg-danger');
+                            
+                            html += `
+                                <div class="beer-bar-wrapper">
+                                    <div class="beer-bar" style="height: ${height}px; min-height: 50px; max-height: 400px;">
+                                        <div class="beer-liquid">
+                                            <div class="beer-foam"></div>
+                                            <div class="beer-count">${team.beerCount}</div>
+                                        </div>
+                                    </div>
+                                    <div class="beer-label">
+                                        <h4>${team.name}</h4>
+                                        <span class="badge ${badgeClass}">#${index + 1}</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        container.innerHTML = html;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error updating ranking:', err);
+        }
+    });
+    
+    // Auto-refresh alle 30 Sekunden
+    setInterval(() => {
+        window.location.reload();
+    }, 30000);
+</script>

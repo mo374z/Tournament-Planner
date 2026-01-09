@@ -82,6 +82,9 @@ const io = socketIo(server, {
   },
 });
 
+// Make io globally available for other controllers
+global.io = io;
+
 app.use(cors());
 
 let timerInterval = null;
