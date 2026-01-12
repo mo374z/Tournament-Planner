@@ -279,9 +279,9 @@
                     </div>
                     <div class="text-end">
                         <h2 class="mb-0" style="color: #ffa500;">
-                            🍺 <span id="count-{{this._id}}">{{this.beerCount}}</span>
+                            � <span id="count-{{this._id}}">{{this.drinksCount.points}}</span> Pkt
                         </h2>
-                        <small class="text-muted">Weizen</small>
+                        <small class="text-muted">(🍺{{this.drinksCount.weizen}} / 🍻{{this.drinksCount.pils}})</small>
                     </div>
                 </div>
             </div>
@@ -294,14 +294,15 @@
             <div class="beer-chart-container" id="beerChartContainer">
                 {{#each topThree}}
                 <div class="beer-bar-wrapper">
-                    <div class="beer-bar" style="height: {{#if this.beerCount}}{{math this.beerCount '*' 20}}{{else}}20{{/if}}px; min-height: 50px; max-height: 400px;">
+                    <div class="beer-bar" style="height: {{#if this.drinksCount.points}}{{math this.drinksCount.points '*' 20}}{{else}}20{{/if}}px; min-height: 50px; max-height: 400px;">
                         <div class="beer-liquid">
                             <div class="beer-foam"></div>
-                            <div class="beer-count">{{this.beerCount}}</div>
+                            <div class="beer-count">{{this.drinksCount.points}}</div>
                         </div>
                     </div>
                     <div class="beer-label">
                         <h4>{{this.name}}</h4>
+                        <p class="mb-1"><small>(🍺{{this.drinksCount.weizen}} / 🍻{{this.drinksCount.pils}})</small></p>
                         <span class="badge {{#if (eqref @index 0)}}bg-warning{{else}}{{#if (eqref @index 1)}}bg-secondary{{else}}bg-danger{{/if}}{{/if}}">
                             #{{math @index '+' 1}}
                         </span>
@@ -342,7 +343,7 @@
     });
     
     // Live-Update des Rankings
-    socket.on('beerCountUpdated', async (data) => {
+    socket.on('drinksCountUpdated', async (data) => {
         console.log('Beer count updated, refreshing ranking...');
         
         // Fetch updated ranking data
@@ -355,7 +356,7 @@
                 result.teams.forEach(team => {
                     const countElement = document.getElementById(`count-${team._id}`);
                     if (countElement) {
-                        countElement.textContent = team.beerCount;
+                        countElement.textContent = team.drinksCount.points;
                     }
                 });
                 
@@ -366,7 +367,7 @@
                         // Rebuild the beer bars
                         let html = '';
                         result.topThree.forEach((team, index) => {
-                            const height = team.beerCount ? Math.min(team.beerCount * 20, 400) : 20;
+                            const height = team.drinksCount.points ? Math.min(team.drinksCount.points * 20, 400) : 20;
                             const badgeClass = index === 0 ? 'bg-warning' : (index === 1 ? 'bg-secondary' : 'bg-danger');
                             
                             html += `
@@ -374,11 +375,12 @@
                                     <div class="beer-bar" style="height: ${height}px; min-height: 50px; max-height: 400px;">
                                         <div class="beer-liquid">
                                             <div class="beer-foam"></div>
-                                            <div class="beer-count">${team.beerCount}</div>
+                                            <div class="beer-count">${team.drinksCount.points}</div>
                                         </div>
                                     </div>
                                     <div class="beer-label">
                                         <h4>${team.name}</h4>
+                                        <p class="mb-1"><small>(🍺${team.drinksCount.weizen} / 🍻${team.drinksCount.pils})</small></p>
                                         <span class="badge ${badgeClass}">#${index + 1}</span>
                                     </div>
                                 </div>

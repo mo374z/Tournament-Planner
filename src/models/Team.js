@@ -61,9 +61,10 @@ var TeamSchema = new mongoose.Schema({
         type: Number,
         default: null
     },
-    beerCount: {
-        type: Number,
-        default: 0
+    drinksCount: {
+        weizen: { type: Number, default: 0 },
+        pils: { type: Number, default: 0 },
+        points: { type: Number, default: 0 }
     },
     //array of opponents the team has played against (maybe add this later)
     // opponents: {

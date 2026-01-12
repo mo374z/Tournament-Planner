@@ -13,10 +13,40 @@ router.get('/order', cookieParser(), verifyToken, authorizeRoles('admin'), async
         res.locals.username = req.username;
         res.locals.userrole = req.userRole;
         
-        const teams = await Team.find({}).sort({ name: 1 });
+        // Alle Teams sortiert nach Gruppe und Name
+        const teams = await Team.find({}).sort({ group: 1, name: 1 });
+        
+        // Gruppiere Teams
+        const teamsByGroup = {};
+        teams.forEach(team => {
+            if (!teamsByGroup[team.group]) {
+                teamsByGroup[team.group] = [];
+            }
+            teamsByGroup[team.group].push(team);
+        });
+        
+        // Produkte mit Preisen
+        const products = {
+            drinks: [
+                { id: 'wasser', name: 'Wasser', price: 1.50, points: 0 },
+                { id: 'antialk', name: 'Antialk', price: 2.00, points: 0 },
+                { id: 'weizen', name: 'Weizen (0,5l)', price: 3.50, points: 2 },
+                { id: 'pils', name: 'Pils (0,33l)', price: 3.00, points: 1 },
+                { id: 'sekt_glas', name: 'Sekt (Glas)', price: 3.00, points: 0 },
+                { id: 'sekt_flasche', name: 'Sekt (Flasche)', price: 20.00, points: 0 }
+            ],
+            food: [
+                { id: 'butterbrezel', name: 'Butterbrezel', price: 2.00 },
+                { id: 'muffin', name: 'Muffin', price: 1.50 },
+                { id: 'pommes', name: 'Pommes', price: 3.50 },
+                { id: 'saiten', name: '1 Paar Saiten', price: 4.50 },
+                { id: 'grillfleisch', name: 'Grillfleischwecken', price: 5.00 }
+            ]
+        };
         
         res.render('layouts/cashierPage', {
-            teams: teams,
+            teamsByGroup: teamsByGroup,
+            products: products,
             title: 'Getränkebestellung'
         });
     } catch (err) {
@@ -28,42 +58,69 @@ router.get('/order', cookieParser(), verifyToken, authorizeRoles('admin'), async
 // POST Route zum Aktualisieren des Bier-Counts
 router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin'), async (req, res) => {
     try {
-        const { teamId, count } = req.body;
+        const { teamId, items } = req.body;
         
-        if (!teamId || count === undefined) {
-            return res.status(400).json({ success: false, message: 'Team ID und Count erforderlich' });
+        if (!teamId || !items || items.length === 0) {
+            return res.status(400).json({ success: false, message: 'Team ID und Items erforderlich' });
         }
 
-        const team = await Team.findById(teamId);
+        // Berechne Weizen, Pils und Punkte
+        let weizenCount = 0;
+        let pilsCount = 0;
+        let points = 0;
         
-        if (!team) {
-            return res.status(404).json({ success: false, message: 'Team nicht gefunden' });
-        }
+        items.forEach(item => {
+            if (item.id === 'weizen') {
+                weizenCount += item.quantity;
+                points += item.quantity * 2; // Weizen = 2 Punkte
+            } else if (item.id === 'pils') {
+                pilsCount += item.quantity;
+                points += item.quantity * 1; // Pils = 1 Punkt
+            }
+        });
 
-        team.beerCount = (team.beerCount || 0) + parseInt(count);
-        
-        if (team.beerCount < 0) {
-            team.beerCount = 0;
-        }
-        
-        await team.save();
+        // Nur updaten wenn ein echtes Team ausgewählt wurde (nicht "Kein Team")
+        if (teamId !== 'no_team') {
+            const team = await Team.findById(teamId);
+            
+            if (!team) {
+                return res.status(404).json({ success: false, message: 'Team nicht gefunden' });
+            }
 
-        // Emit socket event für Live-Updates
-        if (global.io) {
-            global.io.emit('beerCountUpdated', {
-                teamId: team._id,
-                teamName: team.name,
-                beerCount: team.beerCount
+            // Update drinksCount
+            if (!team.drinksCount) {
+                team.drinksCount = { weizen: 0, pils: 0, points: 0 };
+            }
+            
+            team.drinksCount.weizen = (team.drinksCount.weizen || 0) + weizenCount;
+            team.drinksCount.pils = (team.drinksCount.pils || 0) + pilsCount;
+            team.drinksCount.points = (team.drinksCount.points || 0) + points;
+            
+            await team.save();
+
+            // Emit socket event für Live-Updates
+            if (global.io) {
+                global.io.emit('drinksCountUpdated', {
+                    teamId: team._id,
+                    teamName: team.name,
+                    drinksCount: team.drinksCount
+                });
+            }
+
+            res.json({ 
+                success: true, 
+                message: 'Bestellung erfolgreich',
+                drinksCount: team.drinksCount
+            });
+        } else {
+            // "Kein Team" - nur Bestätigung ohne DB-Update
+            res.json({ 
+                success: true, 
+                message: 'Bestellung erfolgreich (Kein Team)'
             });
         }
-
-        res.json({ 
-            success: true, 
-            message: 'Bier-Count aktualisiert',
-            newCount: team.beerCount
-        });
     } catch (err) {
-        console.error('Error updating beer count:', err);
+        console.error('Error updating drinks count:', err);
         res.status(500).json({ success: false, message: 'Server Fehler' });
     }
 });
@@ -71,16 +128,18 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin')
 // GET Route für das Bier-Ranking
 router.get('/ranking', async (req, res) => {
     try {
-        // Top 5 Teams mit dem höchsten Bier-Count (für Liste)
+        // Top 5 Teams mit den höchsten Punkten
         const teams = await Team.find({})
-            .sort({ beerCount: -1 })
+            .sort({ 'drinksCount.points': -1 })
             .limit(5);
         
         // Top 3 für Balkendiagramm
         const topThree = teams.slice(0, 3);
         
         res.render('layouts/beerRanking', {
-            teams: teams,            topThree: topThree,            title: 'Bier-Ranking'
+            teams: teams,
+            topThree: topThree,
+            title: 'Bier-Ranking'
         });
     } catch (err) {
         console.error('Error loading beer ranking:', err);
@@ -92,9 +151,9 @@ router.get('/ranking', async (req, res) => {
 router.get('/api/ranking', async (req, res) => {
     try {
         const teams = await Team.find({})
-            .sort({ beerCount: -1 })
+            .sort({ 'drinksCount.points': -1 })
             .limit(5)
-            .select('name beerCount');
+            .select('name drinksCount');
         
         const topThree = teams.slice(0, 3);
         

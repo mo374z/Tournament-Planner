@@ -1,191 +1,382 @@
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <style>
-    .team-card {
+    .product-card {
         cursor: pointer;
         transition: all 0.2s;
-        border: 3px solid transparent;
+        border: 2px solid #dee2e6;
     }
     
-    .team-card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    .product-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        border-color: #0d6efd;
     }
     
-    .team-card.selected {
+    .product-card.selected {
         border-color: #0d6efd;
         background-color: #e7f3ff;
     }
     
-    .beer-counter {
-        font-size: 4rem;
-        font-weight: bold;
-        color: #ffa500;
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
     }
     
-    .counter-btn {
-        width: 80px;
-        height: 80px;
+    .quantity-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        border-radius: 8px;
+    }
+    
+    .quantity-display {
         font-size: 2rem;
-        border-radius: 10px;
+        font-weight: bold;
+        min-width: 60px;
+        text-align: center;
     }
     
-    .team-grid {
+    .cart-container {
+        position: sticky;
+        top: 20px;
         max-height: 80vh;
         overflow-y: auto;
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        background: white;
+    }
+    
+    .cart-item {
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px;
+    }
+    
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+    
+    .team-select {
+        font-size: 1.1rem;
+        padding: 10px;
+        border: 2px solid #0d6efd;
+    }
+    
+    .team-selection-modal .modal-dialog {
+        max-width: 1200px;
+    }
+    
+    .team-card {
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 3px solid #dee2e6;
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .team-card:hover {
+        background-color: #e7f3ff;
+        border-color: #0d6efd;
+        transform: translateX(5px);
+    }
+    
+    .team-card .card-body {
+        padding: 1rem 1.5rem;
+        width: 100%;
+    }
+    
+    .no-team-card {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+        font-weight: bold;
+        min-height: 80px;
+    }
+    
+    .no-team-card:hover {
+        background-color: #ffecb3;
+    }
+    
+    .no-team-card h5 {
+        font-size: 1.5rem;
+    }
+    
+    .selected-team-banner {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .products-section {
+        display: none;
+    }
+    
+    .products-section.active {
+        display: block;
     }
 </style>
 
 <div class="container-fluid mt-3">
-    <h1 class="text-center mb-4">🍺 Getränkeausschank - Kassier</h1>
+    <h1 class="text-center mb-4">🍺 Kassen-System</h1>
     <hr>
     
-    <div class="row">
-        <!-- Linke Seite: Team-Auswahl -->
-        <div class="col-md-6">
-            <h3>Teams auswählen:</h3>
-            <div class="team-grid">
-                <div class="row g-3">
-                    {{#each teams}}
-                    <div class="col-3">
-                        <div class="card team-card" data-team-id="{{this._id}}" data-team-name="{{this.name}}" onclick="selectTeam('{{this._id}}', '{{this.name}}')">
-                            <div class="card-body text-center p-2">
-                                <h6 class="card-title mb-1">{{this.name}}</h6>
-                                <p class="mb-0"><small>Gruppe {{this.group}}</small></p>
-                                <p class="text-primary mb-0"><strong>{{this.beerCount}} 🍺</strong></p>
-                            </div>
+    <!-- Gewähltes Team Banner -->
+    <div id="selectedTeamBanner" class="selected-team-banner" style="display: none;">
+        <div>
+            <h4 class="mb-0">Ausgewähltes Team: <span id="selectedTeamName"></span></h4>
+        </div>
+        <button class="btn btn-light" onclick="openTeamModal()">
+            🔄 Team ändern
+        </button>
+    </div>
+    
+    <!-- Produktauswahl (zunächst versteckt) -->
+    <div id="productsSection" class="products-section">
+        <div class="row">
+        <!-- Linke Seite: Produktauswahl -->
+        <div class="col-md-8">
+            <!-- Getränke -->
+            <h3>🍺 Getränke</h3>
+            <div class="row g-3 mb-4">
+                {{#each products.drinks}}
+                <div class="col-md-4 col-lg-3">
+                    <div class="card product-card" data-product-id="{{this.id}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="{{this.points}}" onclick="selectProduct('{{this.id}}', '{{this.name}}', {{this.price}}, {{this.points}})">
+                        <div class="card-body text-center p-3">
+                            <h6 class="card-title mb-2">{{this.name}}</h6>
+                            <p class="text-primary mb-0"><strong>{{this.price}} €</strong></p>
+                            {{#if this.points}}
+                            <small class="text-success">({{this.points}} Pkt)</small>
+                            {{/if}}
                         </div>
                     </div>
-                    {{/each}}
                 </div>
+                {{/each}}
+            </div>
+            
+            <!-- Essen -->
+            <h3>🍴 Essen</h3>
+            <div class="row g-3">
+                {{#each products.food}}
+                <div class="col-md-4 col-lg-3">
+                    <div class="card product-card" data-product-id="{{this.id}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="0" onclick="selectProduct('{{this.id}}', '{{this.name}}', {{this.price}}, 0)">
+                        <div class="card-body text-center p-3">
+                            <h6 class="card-title mb-2">{{this.name}}</h6>
+                            <p class="text-primary mb-0"><strong>{{this.price}} €</strong></p>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
             </div>
         </div>
         
-        <!-- Rechte Seite: Weizen-Zähler -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="text-center mb-4">Weizen bestellen</h3>
-                    
-                    <div id="noTeamSelected" class="alert alert-info text-center">
-                        <h5>← Bitte erst ein Team auswählen</h5>
-                    </div>
-                    
-                    <div id="orderSection" style="display: none;">
-                        <h4 class="text-center mb-4">Team: <span id="selectedTeamName" class="text-primary"></span></h4>
-                        
-                        <div class="text-center mb-4">
-                            <p class="mb-2">Anzahl Weizen:</p>
-                            <div class="beer-counter" id="beerCount">0</div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-center gap-3 mb-4">
-                            <button class="btn btn-danger counter-btn" onclick="changeCount(-1)">
-                                <strong>−</strong>
-                            </button>
-                            <button class="btn btn-success counter-btn" onclick="changeCount(1)">
-                                <strong>+</strong>
-                            </button>
-                        </div>
-                        
-                        <div class="d-flex justify-content-center gap-3 mb-3">
-                            <button class="btn btn-secondary" onclick="changeCount(-5)">-5</button>
-                            <button class="btn btn-secondary" onclick="changeCount(5)">+5</button>
-                        </div>
-                        
-                        <hr>
-                        
-                        <div class="d-flex justify-content-center gap-3">
-                            <button class="btn btn-primary btn-lg px-5" onclick="confirmOrder()">
-                                ✓ OK - Bestätigen
-                            </button>
-                            <button class="btn btn-outline-secondary btn-lg" onclick="resetSelection()">
-                                Zurücksetzen
-                            </button>
-                        </div>
-                        
-                        <div id="successMessage" class="alert alert-success mt-3" style="display: none;">
-                            Bestellung erfolgreich gespeichert!
-                        </div>
-                    </div>
+        <!-- Rechte Seite: Warenkorb -->
+        <div class="col-md-4">
+            <div class="cart-container">
+                <div class="p-3 bg-primary text-white">
+                    <h4 class="mb-0">🛒 Aktuelle Bestellung</h4>
                 </div>
-            </div>
-            
-            <div class="text-center mt-3">
-                <a href="/cashier/ranking" class="btn btn-info btn-lg" target="_blank">
-                    📊 Bier-Ranking anzeigen
-                </a>
+                
+                <div id="cartItems" class="p-3">
+                    <p class="text-muted text-center">Noch keine Artikel</p>
+                </div>
+                
+                <div class="p-3 border-top bg-light">
+                    <h5>Gesamt: <span id="totalPrice" class="text-primary">0.00 €</span></h5>
+                    <p class="mb-2 text-success"><strong><span id="totalPoints">0 Punkte</span></strong></p>
+                    <button id="payButton" class="btn btn-success btn-lg w-100 mt-2" onclick="completePurchase()" disabled>
+                        ✓ Bezahlt
+                    </button>
+                </div>
             </div>
         </div>
     </div>
     
     <div class="text-center mt-4">
-        <a href="/" class="btn btn-secondary">← Zurück zur Startseite</a>
+        <a href="/cashier/ranking" class="btn btn-info me-2" target="_blank">📊 Bier-Ranking</a>
+        <a href="/" class="btn btn-secondary">← Zurück</a>
+    </div>
+</div>
+
+<!-- Team-Auswahl Modal -->
+<div class="modal fade team-selection-modal" id="teamModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Team auswählen</h5>
+            </div>
+            <div class="modal-body">
+                <!-- Kein Team -->
+                <div class="card team-card no-team-card" onclick="selectTeam('no_team', 'Kein Team')">
+                    <div class="card-body">
+                        <h5 class="mb-0">🚫 Kein Team</h5>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Teams nach Gruppen -->
+                <div class="row">
+                    {{#each teamsByGroup}}
+                    <div class="col-md-4">
+                        <h6 class="text-center mb-3 text-primary">Gruppe {{@key}}</h6>
+                        {{#each this}}
+                        <div class="card team-card" onclick="selectTeam('{{this._id}}', '{{this.name}}', '{{this.group}}')">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>{{this.name}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    let selectedTeamId = null;
-    let selectedTeamName = null;
-    let currentCount = 0;
-    
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
+    
+    let selectedProduct = null;
+    let quantity = 1;
+    let cart = [];
+    let totalPrice = 0;
+    let totalPoints = 0;
+    let currentTeam = { id: null, name: null, group: null };
     
     socket.on('connect', () => {
         console.log('Socket connected to server');
     });
     
-    // Live-Update wenn andere Kassiere Bestellungen aufgeben
-    socket.on('beerCountUpdated', (data) => {
-        console.log('Beer count updated:', data);
-        // Aktualisiere die Anzeige des betroffenen Teams
-        const teamCard = document.querySelector(`[data-team-id="${data.teamId}"]`);
-        if (teamCard) {
-            const beerCountElement = teamCard.querySelector('.text-primary strong');
-            if (beerCountElement) {
-                beerCountElement.innerHTML = `${data.beerCount} 🍺`;
-            }
-        }
+    // Zeige Modal beim Laden der Seite
+    document.addEventListener('DOMContentLoaded', function() {
+        openTeamModal();
     });
     
-    function selectTeam(teamId, teamName) {
-        // Entferne vorherige Auswahl
-        document.querySelectorAll('.team-card').forEach(card => {
-            card.classList.remove('selected');
-        });
+    function openTeamModal() {
+        const modal = new bootstrap.Modal(document.getElementById('teamModal'));
+        modal.show();
+    }
+    
+    function selectTeam(teamId, teamName, teamGroup) {
+        currentTeam = { id: teamId, name: teamName, group: teamGroup };
         
-        // Markiere ausgewähltes Team
-        const selectedCard = document.querySelector(`[data-team-id="${teamId}"]`);
-        selectedCard.classList.add('selected');
-        
-        // Setze Variablen
-        selectedTeamId = teamId;
-        selectedTeamName = teamName;
-        currentCount = 0;
-        
-        // Zeige Order Section
-        document.getElementById('noTeamSelected').style.display = 'none';
-        document.getElementById('orderSection').style.display = 'block';
+        // Aktualisiere Banner
         document.getElementById('selectedTeamName').textContent = teamName;
-        document.getElementById('beerCount').textContent = currentCount;
-        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('selectedTeamBanner').style.display = 'flex';
+        
+        // Zeige Produktauswahl
+        document.getElementById('productsSection').classList.add('active');
+        
+        // Schließe Modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('teamModal'));
+        modal.hide();
     }
     
-    function changeCount(delta) {
-        currentCount += delta;
-        if (currentCount < 0) {
-            currentCount = 0;
+    function selectProduct(id, name, price, points) {
+        // Prüfe ob Produkt bereits im Warenkorb
+        const existingItem = cart.find(item => item.id === id);
+        
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cart.push({
+                id: id,
+                name: name,
+                price: price,
+                points: points,
+                quantity: 1
+            });
         }
-        document.getElementById('beerCount').textContent = currentCount;
+        
+        updateCartDisplay();
+        
+        // Kurze visuelle Rückmeldung
+        const card = event.currentTarget;
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            card.style.transform = '';
+        }, 100);
     }
     
-    async function confirmOrder() {
-        if (!selectedTeamId) {
+    function reduceQuantity(index) {
+        if (cart[index].quantity > 1) {
+            cart[index].quantity -= 1;
+        } else {
+            cart.splice(index, 1);
+        }
+        updateCartDisplay();
+    }
+    
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartDisplay();
+    }
+    
+    function updateCartDisplay() {
+        const cartItems = document.getElementById('cartItems');
+        const payButton = document.getElementById('payButton');
+        
+        totalPrice = 0;
+        totalPoints = 0;
+        
+        if (cart.length === 0) {
+            cartItems.innerHTML = '<p class="text-muted text-center">Noch keine Artikel</p>';
+            totalPrice = 0;
+            totalPoints = 0;
+            payButton.disabled = true;
+        } else {
+            let html = '';
+            
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                totalPrice += itemTotal;
+                totalPoints += item.points * item.quantity;
+                
+                html += `
+                    <div class="cart-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <strong>${item.quantity} x ${item.name}</strong><br>
+                                <small>${item.price.toFixed(2)} € = ${itemTotal.toFixed(2)} €</small>
+                                ${item.points > 0 ? `<br><small class="text-success">${item.quantity * item.points} Punkte</small>` : ''}
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-warning" onclick="reduceQuantity(${index})">−</button>
+                                <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})">×</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            cartItems.innerHTML = html;
+            payButton.disabled = false;
+        }
+        
+        document.getElementById('totalPrice').textContent = totalPrice.toFixed(2) + ' €';
+        document.getElementById('totalPoints').textContent = totalPoints + ' Punkte';
+    }
+    
+    async function completePurchase() {
+        if (!currentTeam.id) {
             alert('Bitte erst ein Team auswählen!');
+            openTeamModal();
             return;
         }
         
-        if (currentCount === 0) {
-            alert('Bitte eine Anzahl größer als 0 eingeben!');
+        if (cart.length === 0) {
+            alert('Warenkorb ist leer!');
             return;
         }
         
@@ -196,50 +387,31 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    teamId: selectedTeamId,
-                    count: currentCount
+                    teamId: currentTeam.id,
+                    items: cart
                 })
             });
             
             const data = await response.json();
             
             if (data.success) {
-                // Zeige Erfolgs-Nachricht
-                const successMsg = document.getElementById('successMessage');
-                successMsg.style.display = 'block';
-                successMsg.textContent = `${currentCount} Weizen für ${selectedTeamName} gespeichert! Neuer Stand: ${data.newCount}`;
+                alert(`Bestellung erfolgreich!\nGesamt: ${totalPrice.toFixed(2)} €`);
                 
-                // Aktualisiere die Team-Card
-                const teamCard = document.querySelector(`[data-team-id="${selectedTeamId}"]`);
-                const beerCountElement = teamCard.querySelector('.text-primary strong');
-                if (beerCountElement) {
-                    beerCountElement.innerHTML = `${data.newCount} 🍺`;
-                }
+                // Warenkorb leeren
+                cart = [];
+                updateCartDisplay();
                 
-                // Reset nach kurzer Zeit
-                setTimeout(() => {
-                    resetSelection();
-                }, 2000);
+                // Team zurücksetzen und Modal öffnen
+                currentTeam = { id: null, name: null, group: null };
+                document.getElementById('selectedTeamBanner').style.display = 'none';
+                document.getElementById('productsSection').classList.remove('active');
+                openTeamModal();
             } else {
                 alert('Fehler beim Speichern: ' + data.message);
             }
         } catch (err) {
-            console.error('Error confirming order:', err);
-            alert('Fehler beim Speichern der Bestellung!');
+            console.error('Error completing purchase:', err);
+            alert('Fehler beim Abschließen der Bestellung!');
         }
-    }
-    
-    function resetSelection() {
-        selectedTeamId = null;
-        selectedTeamName = null;
-        currentCount = 0;
-        
-        document.querySelectorAll('.team-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        document.getElementById('noTeamSelected').style.display = 'block';
-        document.getElementById('orderSection').style.display = 'none';
-        document.getElementById('successMessage').style.display = 'none';
     }
 </script>
