@@ -1,0 +1,271 @@
+<style>
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .page-header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card.revenue i {
+            color: #28a745;
+        }
+        
+        .stat-card.quantity i {
+            color: #17a2b8;
+        }
+        
+        .stat-card.points i {
+            color: #ffc107;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .table-container h2 {
+            color: #667eea;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            padding: 12px;
+            border: none;
+        }
+        
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .category-badge.drinks {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .category-badge.food {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-weight: 700;
+        }
+        
+        .rank-badge.rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .rank-badge.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(192, 192, 192, 0.5);
+        }
+        
+        .rank-badge.rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #e9a971);
+            color: white;
+            box-shadow: 0 4px 15px rgba(205, 127, 50, 0.5);
+        }
+        
+        .rank-badge.rank-other {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .currency {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .points-cell {
+            color: #ffc107;
+            font-weight: 700;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+    </style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <h1><i class="fas fa-chart-bar me-3"></i>Produktstatistik</h1>
+    </div>
+        
+        <!-- Gesamtstatistiken -->
+        <div class="stats-overview">
+            <div class="stat-card revenue">
+                <i class="fas fa-euro-sign"></i>
+                <div class="stat-value">{{totalStats.totalRevenue}}€</div>
+                <div class="stat-label">Gesamtumsatz</div>
+            </div>
+            <div class="stat-card quantity">
+                <i class="fas fa-shopping-cart"></i>
+                <div class="stat-value">{{totalStats.totalQuantity}}</div>
+                <div class="stat-label">Verkaufte Artikel</div>
+            </div>
+            <div class="stat-card points">
+                <i class="fas fa-star"></i>
+                <div class="stat-value">{{totalStats.totalPoints}}</div>
+                <div class="stat-label">Gesamtpunkte</div>
+            </div>
+        </div>
+        
+        <!-- Produktverkaufsstatistiken -->
+        <div class="table-container">
+            <h2><i class="fas fa-box me-2"></i>Produktverkäufe</h2>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Produkt</th>
+                        <th>Kategorie</th>
+                        <th class="text-right">Verkauft</th>
+                        <th class="text-right">Einzelpreis</th>
+                        <th class="text-right">Punkte</th>
+                        <th class="text-right">Umsatz</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each productStats}}
+                    <tr>
+                        <td><strong>{{this.productName}}</strong></td>
+                        <td>
+                            <span class="category-badge {{this.category}}">
+                                {{#if (stringeq this.category 'drinks')}}
+                                    <i class="fas fa-glass-whiskey me-1"></i>Getränke
+                                {{else}}
+                                    <i class="fas fa-utensils me-1"></i>Essen
+                                {{/if}}
+                            </span>
+                        </td>
+                        <td class="text-right">{{this.totalQuantitySold}}x</td>
+                        <td class="text-right currency">{{this.price}}€</td>
+                        <td class="text-right">
+                            {{#if this.points}}
+                                <span class="points-cell">{{this.points}} <i class="fas fa-star"></i></span>
+                            {{else}}
+                                -
+                            {{/if}}
+                        </td>
+                        <td class="text-right currency"><strong>{{this.totalRevenue}}€</strong></td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            <div class="text-center mt-3">
+                <button class="btn btn-danger" onclick="if(confirm('Alle Produktverkäufe löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) { window.location.href='/cashier/reset-products'; }"><i class="fas fa-trash me-2"></i>Produktverkäufe zurücksetzen</button>
+            </div>
+        </div>
+        
+        <!-- Team Ranking -->
+        <div class="table-container">
+            <h2><i class="fas fa-trophy me-2"></i>Team Ranking</h2>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Platz</th>
+                        <th>Team</th>
+                        <th class="text-right">Weizen</th>
+                        <th class="text-right">Pils</th>
+                        <th class="text-right">Punkte</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each teamRanking}}
+                    <tr>
+                        <td>
+                            {{#if (eq @index 0)}}
+                                <span class="rank-badge rank-1">1</span>
+                            {{else if (eq @index 1)}}
+                                <span class="rank-badge rank-2">2</span>
+                            {{else if (eq @index 2)}}
+                                <span class="rank-badge rank-3">3</span>
+                            {{else}}
+                                <span class="rank-badge rank-other">{{add @index 1}}</span>
+                            {{/if}}
+                        </td>
+                        <td><strong>{{this.name}}</strong></td>
+                        <td class="text-right">{{this.drinksCount.weizen}}x</td>
+                        <td class="text-right">{{this.drinksCount.pils}}x</td>
+                        <td class="text-right points-cell">{{this.drinksCount.points}} <i class="fas fa-star"></i></td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            <div class="text-center mt-3">
+                <button class="btn btn-danger" onclick="if(confirm('Alle Team-Punktzahlen zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden!')) { window.location.href='/cashier/reset-rankings'; }"><i class="fas fa-trash me-2"></i>Team-Rankings zurücksetzen</button>
+            </div>        </div>        </div>
+    </div>

@@ -3,13 +3,27 @@
     .product-card {
         cursor: pointer;
         transition: all 0.2s;
-        border: 2px solid #dee2e6;
+        border: 3px solid #dee2e6;
+        min-height: 100px;
     }
     
-    .product-card:hover {
+    .product-card:hover, .product-card:active {
         transform: scale(1.02);
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         border-color: #0d6efd;
+    }
+    
+    .product-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .product-card h6 {
+        font-size: 1.3rem;
+        font-weight: bold;
+    }
+    
+    .product-card .text-primary {
+        font-size: 1.2rem;
     }
     
     .product-card.selected {
@@ -50,11 +64,22 @@
     
     .cart-item {
         border-bottom: 1px solid #dee2e6;
-        padding: 10px;
+        padding: 15px;
+        font-size: 1.1rem;
     }
     
     .cart-item:last-child {
         border-bottom: none;
+    }
+    
+    .cart-item strong {
+        font-size: 1.2rem;
+    }
+    
+    .cart-item .btn {
+        min-width: 45px;
+        min-height: 45px;
+        font-size: 1.3rem;
     }
     
     .team-select {
@@ -67,15 +92,25 @@
         max-width: 1200px;
     }
     
+    .team-selection-modal .modal-title {
+        font-size: 1.8rem;
+    }
+    
+    .team-selection-modal h6 {
+        font-size: 1.4rem;
+        font-weight: bold;
+    }
+    
     .team-card {
         cursor: pointer;
         transition: all 0.2s;
-        border: 3px solid #dee2e6;
-        margin-bottom: 15px;
-        font-size: 1.2rem;
-        min-height: 60px;
+        border: 4px solid #dee2e6;
+        margin-bottom: 20px;
+        font-size: 1.6rem;
+        min-height: 110px;
         display: flex;
         align-items: center;
+        justify-content: center;
     }
     
     .team-card:hover {
@@ -85,15 +120,19 @@
     }
     
     .team-card .card-body {
-        padding: 1rem 1.5rem;
+        padding: 1.5rem 2rem;
         width: 100%;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .no-team-card {
         background-color: #fff3cd;
         border-color: #ffc107;
         font-weight: bold;
-        min-height: 80px;
+        min-height: 130px;
     }
     
     .no-team-card:hover {
@@ -101,7 +140,8 @@
     }
     
     .no-team-card h5 {
-        font-size: 1.5rem;
+        font-size: 2.2rem;
+        margin: 0;
     }
     
     .selected-team-banner {
@@ -122,9 +162,131 @@
     .products-section.active {
         display: block;
     }
+    
+    .cart-container .p-3 h5 {
+        font-size: 1.5rem;
+    }
+    
+    .cart-container .p-3 p {
+        font-size: 1.3rem;
+    }
+    
+    #payButton {
+        font-size: 1.4rem;
+        padding: 15px;
+        min-height: 70px;
+    }
+    
+    .selected-team-banner h4 {
+        font-size: 1.5rem;
+    }
+    
+    .selected-team-banner .btn {
+        font-size: 1.1rem;
+        padding: 10px 20px;
+    }
+    
+    h1 {
+        font-size: 2.5rem;
+    }
+    
+    h3 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .cart-container {
+            position: relative;
+            margin-top: 30px;
+        }
+    }
+    
+    /* Custom Success Modal */
+    .success-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .success-modal-overlay.active {
+        display: flex;
+    }
+    
+    .success-modal {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        text-align: center;
+        animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .success-modal h2 {
+        color: #28a745;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+    
+    .success-modal p {
+        font-size: 1.5rem;
+        margin-bottom: 30px;
+        color: #333;
+    }
+    
+    .success-modal .modal-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .success-modal button {
+        font-size: 1.3rem;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 200px;
+    }
+    
+    .success-modal button:hover {
+        transform: scale(1.05);
+    }
+    
+    .btn-change-team {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+    }
+    
+    .btn-same-team {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
 </style>
 
-<div class="container-fluid mt-3">
+<div class="container-fluid">
     <h1 class="text-center mb-4">🍺 Kassen-System</h1>
     <hr>
     
@@ -145,9 +307,9 @@
         <div class="col-md-8">
             <!-- Getränke -->
             <h3>🍺 Getränke</h3>
-            <div class="row g-3 mb-4">
+            <div class="row g-4 mb-5">
                 {{#each products.drinks}}
-                <div class="col-md-4 col-lg-3">
+                <div class="col-sm-6 col-md-4 col-lg-3">
                     <div class="card product-card" data-product-id="{{this.id}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="{{this.points}}" onclick="selectProduct('{{this.id}}', '{{this.name}}', {{this.price}}, {{this.points}})">
                         <div class="card-body text-center p-3">
                             <h6 class="card-title mb-2">{{this.name}}</h6>
@@ -163,9 +325,9 @@
             
             <!-- Essen -->
             <h3>🍴 Essen</h3>
-            <div class="row g-3">
+            <div class="row g-4">
                 {{#each products.food}}
-                <div class="col-md-4 col-lg-3">
+                <div class="col-sm-6 col-md-4 col-lg-3">
                     <div class="card product-card" data-product-id="{{this.id}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="0" onclick="selectProduct('{{this.id}}', '{{this.name}}', {{this.price}}, 0)">
                         <div class="card-body text-center p-3">
                             <h6 class="card-title mb-2">{{this.name}}</h6>
@@ -198,11 +360,6 @@
             </div>
         </div>
     </div>
-    
-    <div class="text-center mt-4">
-        <a href="/cashier/ranking" class="btn btn-info me-2" target="_blank">📊 Bier-Ranking</a>
-        <a href="/" class="btn btn-secondary">← Zurück</a>
-    </div>
 </div>
 
 <!-- Team-Auswahl Modal -->
@@ -225,14 +382,12 @@
                 <!-- Teams nach Gruppen -->
                 <div class="row">
                     {{#each teamsByGroup}}
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <h6 class="text-center mb-3 text-primary">Gruppe {{@key}}</h6>
                         {{#each this}}
                         <div class="card team-card" onclick="selectTeam('{{this._id}}', '{{this.name}}', '{{this.group}}')">
-                            <div class="card-body py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>{{this.name}}</span>
-                                </div>
+                            <div class="card-body">
+                                <span>{{this.name}}</span>
                             </div>
                         </div>
                         {{/each}}
@@ -240,6 +395,19 @@
                     {{/each}}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="success-modal-overlay">
+    <div class="success-modal">
+        <h2 id="modalIcon">✅</h2>
+        <h3 id="modalTitle">Bestellung erfolgreich!</h3>
+        <p id="modalMessage"></p>
+        <div class="modal-buttons">
+            <button class="btn-change-team" onclick="changeTeamAfterOrder()">🔄 Team ändern</button>
+            <button class="btn-same-team" onclick="keepCurrentTeam()">✓ Bei Team <span id="modalTeamName"></span> bleiben</button>
         </div>
     </div>
 </div>
@@ -257,6 +425,30 @@
     socket.on('connect', () => {
         console.log('Socket connected to server');
     });
+    
+    // Modal Funktionen
+    function showSuccessModal(title, message) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalMessage').textContent = message;
+        document.getElementById('modalTeamName').textContent = '"' + currentTeam.name + '"';
+        document.getElementById('successModal').classList.add('active');
+    }
+    
+    function hideSuccessModal() {
+        document.getElementById('successModal').classList.remove('active');
+    }
+    
+    function changeTeamAfterOrder() {
+        hideSuccessModal();
+        currentTeam = { id: null, name: null, group: null };
+        document.getElementById('selectedTeamBanner').style.display = 'none';
+        document.getElementById('productsSection').classList.remove('active');
+        openTeamModal();
+    }
+    
+    function keepCurrentTeam() {
+        hideSuccessModal();
+    }
     
     // Zeige Modal beim Laden der Seite
     document.addEventListener('DOMContentLoaded', function() {
@@ -395,17 +587,14 @@
             const data = await response.json();
             
             if (data.success) {
-                alert(`Bestellung erfolgreich!\nGesamt: ${totalPrice.toFixed(2)} €`);
+                showSuccessModal(
+                    'Bestellung erfolgreich!',
+                    `Gesamt: ${totalPrice.toFixed(2)} €`
+                );
                 
                 // Warenkorb leeren
                 cart = [];
                 updateCartDisplay();
-                
-                // Team zurücksetzen und Modal öffnen
-                currentTeam = { id: null, name: null, group: null };
-                document.getElementById('selectedTeamBanner').style.display = 'none';
-                document.getElementById('productsSection').classList.remove('active');
-                openTeamModal();
             } else {
                 alert('Fehler beim Speichern: ' + data.message);
             }

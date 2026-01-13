@@ -27,28 +27,41 @@
     {{#if publicPageOptions.showRankingTable}}
     <div class="page-divider">
         <section class="text-center mt-2 mb-2">
-            <h1 class="mb-2">Rangliste</h1>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="thead-light bg-dark text-light">
+            <div class="ranking-header mb-4">
+                <h1 class="display-4 fw-bold mb-2">
+                    <i class="fas fa-trophy text-warning"></i> Rangliste <i class="fas fa-trophy text-warning"></i>
+                </h1>
+                <p class="lead text-muted">Die besten Teams des Turniers</p>
+            </div>
+            <div class="table-responsive" style="max-width: 900px; margin: auto;">
+                <table class="table table-hover ranking-table">
+                    <thead class="bg-dark text-light">
                         <tr>
-                            <th scope="col">Platz</th>
-                            <th scope="col">Team</th>
-                            <th scope="col">T</th>
+                            <th scope="col" style="width: 80px;">Platz</th>
+                            <th scope="col" class="text-start">Team</th>
+                            <th scope="col">Tore</th>
                             <th scope="col">TD</th>
-                            <th scope="col">Pkt</th>
-                            <th scope="col">Sekt</th>
+                            <th scope="col">Punkte</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{#each rankedTeams}}
-                        <tr>
-                            <td>{{this.finalPlacement}}</td>
-                            <td>{{this.name}}</td>
+                        <tr class="ranking-row ranking-place-{{this.finalPlacement}}">
+                            <td class="fw-bold">
+                                {{#if (eqref this.finalPlacement 1)}}
+                                    <span class="badge bg-warning text-dark fs-5">🥇 {{this.finalPlacement}}</span>
+                                {{else}}{{#if (eqref this.finalPlacement 2)}}
+                                    <span class="badge bg-secondary text-light fs-6">🥈 {{this.finalPlacement}}</span>
+                                {{else}}{{#if (eqref this.finalPlacement 3)}}
+                                    <span class="badge bg-danger text-light fs-6">🥉 {{this.finalPlacement}}</span>
+                                {{else}}
+                                    <span class="text-muted">{{this.finalPlacement}}.</span>
+                                {{/if}}{{/if}}{{/if}}
+                            </td>
+                            <td class="text-start fw-bold team-name">{{this.name}}</td>
                             <td><strong>{{this.goals.[0]}}</strong>:{{this.goals.[1]}}</td>
                             <td>{{this.goalsDifference}}</td>
-                            <td>{{this.points_General}}</td>
-                            <td>{{this.sektWon}}</td>
+                            <td><span class="badge bg-primary fs-6">{{this.points_General}}</span></td>
                         </tr>
                         {{/each}}
                     </tbody>
@@ -56,6 +69,80 @@
             </div>
         </section>
     </div>
+    
+    <style>
+        .ranking-header {
+            padding: 20px 0;
+        }
+        
+        .ranking-table {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 10px;
+            overflow: hidden;
+            border: none;
+        }
+        
+        .ranking-table thead th {
+            font-weight: bold;
+            padding: 15px 10px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .ranking-table tbody td {
+            padding: 15px 10px;
+            vertical-align: middle;
+            font-size: 1rem;
+        }
+        
+        .ranking-row {
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+        
+        .ranking-row:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .ranking-place-1 {
+            background: linear-gradient(to right, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.02));
+            border-left: 4px solid #ffd700;
+        }
+        
+        .ranking-place-2 {
+            background: linear-gradient(to right, rgba(192, 192, 192, 0.1), rgba(192, 192, 192, 0.02));
+            border-left: 4px solid #c0c0c0;
+        }
+        
+        .ranking-place-3 {
+            background: linear-gradient(to right, rgba(205, 127, 50, 0.1), rgba(205, 127, 50, 0.02));
+            border-left: 4px solid #cd7f32;
+        }
+        
+        .ranking-row:not(.ranking-place-1):not(.ranking-place-2):not(.ranking-place-3) {
+            border-left: 4px solid #e9ecef;
+        }
+        
+        .team-name {
+            font-size: 1.1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .ranking-table {
+                font-size: 0.9rem;
+            }
+            
+            .ranking-header h1 {
+                font-size: 2rem;
+            }
+            
+            .team-name {
+                font-size: 1rem;
+            }
+        }
+    </style>
     {{/if}}
     
 

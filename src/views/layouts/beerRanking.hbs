@@ -4,15 +4,27 @@
     .ranking-container {
         background: white;
         border-radius: 20px;
-        padding: 40px;
+        padding: 30px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        margin: 30px auto;
-        max-width: 1400px;
+        margin: 20px auto;
+        max-width: 1600px;
     }
     
     .trophy {
-        font-size: 4rem;
+        font-size: 3.5rem;
         animation: bounce 2s infinite;
+    }
+    
+    h1 {
+        font-size: 3rem !important;
+    }
+    
+    h2 {
+        font-size: 2.2rem !important;
+    }
+    
+    h4 {
+        font-size: 1.8rem !important;
     }
     
     @keyframes bounce {
@@ -21,10 +33,10 @@
     }
     
     .rank-badge {
-        font-size: 2rem;
+        font-size: 1.8rem;
         font-weight: bold;
-        width: 60px;
-        height: 60px;
+        width: 65px;
+        height: 65px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -39,11 +51,11 @@
     /* Bier-Balken Styling */
     .beer-chart-container {
         position: relative;
-        height: 600px;
+        height: 550px;
         display: flex;
         align-items: flex-end;
         justify-content: space-around;
-        padding: 60px 20px 20px 20px;
+        padding: 50px 20px 20px 20px;
         background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
         border-radius: 15px;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
@@ -64,10 +76,6 @@
         border-radius: 10px 10px 5px 5px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         transition: all 0.5s ease;
-    }
-    
-    .beer-bar:hover {
-        transform: scale(1.05);
     }
     
     .beer-liquid {
@@ -225,11 +233,92 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: 2rem;
+        font-size: 2.2rem;
         font-weight: bold;
         color: white;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         z-index: 10;
+    }
+    
+    /* Aufsteigende Blasen im Bier */
+    .beer-bubble {
+        position: absolute;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+        border-radius: 50%;
+        animation: bubble-rise-up 4s ease-in infinite;
+        opacity: 0;
+    }
+    
+    .beer-bubble:nth-child(1) {
+        left: 20%;
+        width: 8px;
+        height: 8px;
+        animation-delay: 0s;
+        animation-duration: 3s;
+    }
+    
+    .beer-bubble:nth-child(2) {
+        left: 40%;
+        width: 6px;
+        height: 6px;
+        animation-delay: 0.8s;
+        animation-duration: 3.5s;
+    }
+    
+    .beer-bubble:nth-child(3) {
+        left: 60%;
+        width: 10px;
+        height: 10px;
+        animation-delay: 1.5s;
+        animation-duration: 4s;
+    }
+    
+    .beer-bubble:nth-child(4) {
+        left: 75%;
+        width: 7px;
+        height: 7px;
+        animation-delay: 2.2s;
+        animation-duration: 3.2s;
+    }
+    
+    .beer-bubble:nth-child(5) {
+        left: 30%;
+        width: 9px;
+        height: 9px;
+        animation-delay: 2.8s;
+        animation-duration: 3.8s;
+    }
+    
+    .beer-bubble:nth-child(6) {
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        animation-delay: 1.2s;
+        animation-duration: 3.3s;
+    }
+    
+    @keyframes bubble-rise-up {
+        0% {
+            bottom: 0;
+            opacity: 0;
+            transform: translateX(0);
+        }
+        10% {
+            opacity: 0.7;
+        }
+        50% {
+            opacity: 0.8;
+            transform: translateX(10px);
+        }
+        90% {
+            opacity: 0.3;
+        }
+        100% {
+            bottom: 100%;
+            opacity: 0;
+            transform: translateX(-5px);
+        }
     }
     
     .beer-label {
@@ -240,11 +329,16 @@
     .beer-label h4 {
         font-weight: bold;
         margin-bottom: 5px;
+        font-size: 1.5rem !important;
+    }
+    
+    .beer-label p {
+        font-size: 1.1rem;
     }
     
     .beer-label .badge {
-        font-size: 1rem;
-        padding: 8px 15px;
+        font-size: 1.1rem;
+        padding: 8px 16px;
     }
     
     .no-data {
@@ -252,13 +346,60 @@
         padding: 50px;
         color: #6c757d;
     }
+    
+    .count-update {
+        animation: countPulse 0.8s ease-in-out;
+    }
+    
+    @keyframes countPulse {
+        0% {
+            transform: translate(-50%, -50%) scale(1);
+            color: #ffffff;
+        }
+        10% {
+            transform: translate(-50%, -50%) scale(1.5);
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700, 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        90% {
+            transform: translate(-50%, -50%) scale(1.5);
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700, 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(1);
+            color: #ffffff;
+        }
+    }
+    
+    .connection-status {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+    
+    .status-connected {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .status-disconnected {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+    }
 </style>
 
 <div class="ranking-container">
     <div class="text-center mb-4">
         <span class="trophy">🏆</span>
         <h1 class="display-3 fw-bold mb-2">Bier-Ranking</h1>
-        <p class="lead text-muted">Top 5 Teams mit dem höchsten Weizen-Konsum</p>
+        <p class="lead text-muted">Top 5 Teams (Weizen 3 Pkt und Pils 2 Pkt)</p>
     </div>
     
     <hr>
@@ -279,9 +420,9 @@
                     </div>
                     <div class="text-end">
                         <h2 class="mb-0" style="color: #ffa500;">
-                            � <span id="count-{{this._id}}">{{this.drinksCount.points}}</span> Pkt
+                            🏆 <span id="count-{{this._id}}">{{this.drinksCount.points}}</span> Pkt
                         </h2>
-                        <small class="text-muted">(🍺{{this.drinksCount.weizen}} / 🍻{{this.drinksCount.pils}})</small>
+                        <small class="text-muted">(🍺{{this.drinksCount.weizen}} / 🍄‍🟫{{this.drinksCount.pils}})</small>
                     </div>
                 </div>
             </div>
@@ -297,12 +438,18 @@
                     <div class="beer-bar" style="height: {{#if this.drinksCount.points}}{{math this.drinksCount.points '*' 20}}{{else}}20{{/if}}px; min-height: 50px; max-height: 400px;">
                         <div class="beer-liquid">
                             <div class="beer-foam"></div>
-                            <div class="beer-count">{{this.drinksCount.points}}</div>
+                            <div class="beer-count" id="bar-count-{{this._id}}">{{this.drinksCount.points}}</div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
                         </div>
                     </div>
                     <div class="beer-label">
                         <h4>{{this.name}}</h4>
-                        <p class="mb-1"><small>(🍺{{this.drinksCount.weizen}} / 🍻{{this.drinksCount.pils}})</small></p>
+                        <p class="mb-1"><small>(🍺{{this.drinksCount.weizen}} / 🍄‍🟫{{this.drinksCount.pils}})</small></p>
                         <span class="badge {{#if (eqref @index 0)}}bg-warning{{else}}{{#if (eqref @index 1)}}bg-secondary{{else}}bg-danger{{/if}}{{/if}}">
                             #{{math @index '+' 1}}
                         </span>
@@ -335,12 +482,53 @@
     {{/if}}
 </div>
 
+<!-- Verbindungsstatus -->
+<div id="connectionStatus" class="connection-status status-disconnected">
+    🔴 Nicht verbunden
+</div>
+
 <script>
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
     
+    const connectionStatus = document.getElementById('connectionStatus');
+    
     socket.on('connect', () => {
         console.log('Socket connected to server');
+        connectionStatus.className = 'connection-status status-connected';
+        connectionStatus.innerHTML = '🟢 Verbunden';
     });
+    
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        connectionStatus.className = 'connection-status status-disconnected';
+        connectionStatus.innerHTML = '🔴 Verbindung verloren';
+    });
+    
+    // Count-Up Animation Funktion
+    function animateCount(element, start, end, duration) {
+        if (start === end) return;
+        
+        const range = end - start;
+        const increment = range / (duration / 16); // 60fps
+        let current = start;
+        
+        element.classList.add('count-update');
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                current = end;
+                clearInterval(timer);
+                setTimeout(() => {
+                    element.classList.remove('count-update');
+                }, 200); // Kurze Verzögerung nach Count-Up bevor Animation endet
+            }
+            element.textContent = Math.round(current);
+        }, 16);
+    }
+    
+    // Zähle aktuell angezeigte Teams
+    let currentTeamCount = document.querySelectorAll('[id^="count-"]').length;
     
     // Live-Update des Rankings
     socket.on('drinksCountUpdated', async (data) => {
@@ -352,51 +540,48 @@
             const result = await response.json();
             
             if (result.success) {
-                // Update individual counts
+                // Prüfe ob sich die Anzahl der Teams mit Punkten geändert hat
+                const newTeamCount = result.teams.length;
+                
+                if (newTeamCount !== currentTeamCount) {
+                    // Neues Team hat Punkte bekommen oder Team hat alle Punkte verloren
+                    console.log('Team count changed, reloading page...');
+                    window.location.reload();
+                    return;
+                }
+                
+                // Update individual counts with animation
                 result.teams.forEach(team => {
                     const countElement = document.getElementById(`count-${team._id}`);
                     if (countElement) {
-                        countElement.textContent = team.drinksCount.points;
+                        const oldValue = parseInt(countElement.textContent) || 0;
+                        const newValue = team.drinksCount.points;
+                        animateCount(countElement, oldValue, newValue, 800);
                     }
                 });
                 
                 // Update beer bars for top 3
                 if (result.topThree && result.topThree.length > 0) {
-                    const container = document.getElementById('beerChartContainer');
-                    if (container) {
-                        // Rebuild the beer bars
-                        let html = '';
-                        result.topThree.forEach((team, index) => {
-                            const height = team.drinksCount.points ? Math.min(team.drinksCount.points * 20, 400) : 20;
-                            const badgeClass = index === 0 ? 'bg-warning' : (index === 1 ? 'bg-secondary' : 'bg-danger');
+                    // Update existing bars instead of rebuilding
+                    result.topThree.forEach((team, index) => {
+                        const barCountElement = document.getElementById(`bar-count-${team._id}`);
+                        if (barCountElement) {
+                            const oldValue = parseInt(barCountElement.textContent) || 0;
+                            const newValue = team.drinksCount.points;
+                            animateCount(barCountElement, oldValue, newValue, 800);
                             
-                            html += `
-                                <div class="beer-bar-wrapper">
-                                    <div class="beer-bar" style="height: ${height}px; min-height: 50px; max-height: 400px;">
-                                        <div class="beer-liquid">
-                                            <div class="beer-foam"></div>
-                                            <div class="beer-count">${team.drinksCount.points}</div>
-                                        </div>
-                                    </div>
-                                    <div class="beer-label">
-                                        <h4>${team.name}</h4>
-                                        <p class="mb-1"><small>(🍺${team.drinksCount.weizen} / 🍻${team.drinksCount.pils})</small></p>
-                                        <span class="badge ${badgeClass}">#${index + 1}</span>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        container.innerHTML = html;
-                    }
+                            // Update bar height with animation
+                            const barElement = barCountElement.closest('.beer-bar');
+                            if (barElement) {
+                                const newHeight = Math.min(newValue * 20, 400);
+                                barElement.style.height = `${newHeight}px`;
+                            }
+                        }
+                    });
                 }
             }
         } catch (err) {
             console.error('Error updating ranking:', err);
         }
     });
-    
-    // Auto-refresh alle 30 Sekunden
-    setInterval(() => {
-        window.location.reload();
-    }, 30000);
 </script>

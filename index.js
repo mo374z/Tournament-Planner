@@ -170,6 +170,9 @@ app.engine('hbs', exphbs.engine({
       if (denominator === 0) return 0;
       return Math.round((numerator / denominator) * 100 * 100) / 100; // Runde auf 2 Dezimalstellen
     },
+    add: function(a, b) {
+      return (a || 0) + (b || 0);
+    },
   }
 }));
 
