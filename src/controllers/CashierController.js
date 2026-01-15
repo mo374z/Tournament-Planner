@@ -7,7 +7,7 @@ const { updateSocketConfig } = require('../config/socketConfig');
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
 // Middleware to check if user is logged in
-const { verifyToken, authorizeRoles, checkLoginStatus } = require('../middleware/auth');
+const { verifyToken, authorizeRoles } = require('../middleware/auth');
 const cookieParser = require('cookie-parser');
 
 // Produktdefinitionen mit Preisen und Punkten
@@ -84,16 +84,43 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
         let points = 0;
         
         items.forEach(item => {
+            const productDetails = getProductDetails(item.id);
+            // Fallback auf 0 Punkte, falls nicht definiert
+            const itemPoints = productDetails && typeof productDetails.points === 'number'
+                ? productDetails.points
+                : 0;
             if (item.id === 'weizen') {
                 weizenCount += item.quantity;
-                points += item.quantity * 2; // Weizen = 2 Punkte
             } else if (item.id === 'pils') {
                 pilsCount += item.quantity;
-                points += item.quantity * 1; // Pils = 1 Punkt
             }
+            points += item.quantity * itemPoints;
         });
 
-        // Nur updaten wenn ein echtes Team ausgewählt wurde (nicht "Kein Team")
+        // Update Produktstatistiken (IMMER, auch bei "Kein Team")
+        for (const item of items) {
+            const productDetails = getProductDetails(item.id);
+            if (productDetails) {
+                await ProductSales.findOneAndUpdate(
+                    { productId: item.id },
+                    {
+                        $inc: {
+                            totalQuantitySold: item.quantity,
+                            totalRevenue: item.quantity * productDetails.price
+                        },
+                        $set: {
+                            productName: productDetails.name,
+                            category: productDetails.category,
+                            price: productDetails.price,
+                            points: productDetails.points || 0
+                        }
+                    },
+                    { upsert: true, new: true }
+                );
+            }
+        }
+
+        // Nur Team-Counter updaten wenn ein echtes Team ausgewählt wurde (nicht "Kein Team")
         if (teamId !== 'no_team') {
             const team = await Team.findById(teamId);
             
@@ -101,7 +128,7 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
                 return res.status(404).json({ success: false, message: 'Team nicht gefunden' });
             }
 
-            // Update drinksCount
+            // Update drinksCount (nur für Teams)
             if (!team.drinksCount) {
                 team.drinksCount = { weizen: 0, pils: 0, points: 0 };
             }
@@ -111,29 +138,6 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
             team.drinksCount.points = (team.drinksCount.points || 0) + points;
             
             await team.save();
-
-            // Update Produktstatistiken
-            for (const item of items) {
-                const productDetails = getProductDetails(item.id);
-                if (productDetails) {
-                    await ProductSales.findOneAndUpdate(
-                        { productId: item.id },
-                        {
-                            $inc: {
-                                totalQuantitySold: item.quantity,
-                                totalRevenue: item.quantity * productDetails.price
-                            },
-                            $set: {
-                                productName: productDetails.name,
-                                category: productDetails.category,
-                                price: productDetails.price,
-                                points: productDetails.points || 0
-                            }
-                        },
-                        { upsert: true, new: true }
-                    );
-                }
-            }
 
             // Emit socket event für Live-Updates
             if (global.io) {
@@ -150,7 +154,7 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
                 drinksCount: team.drinksCount
             });
         } else {
-            // "Kein Team" - nur Bestätigung ohne DB-Update
+            // "Kein Team" - nur Produktstatistiken (wurden schon oben aktualisiert)
             res.json({ 
                 success: true, 
                 message: 'Bestellung erfolgreich (Kein Team)'
