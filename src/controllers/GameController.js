@@ -26,8 +26,8 @@ if (useHttps) {
   const fs = require("fs");
   server = https.createServer(
     {
-      key: fs.readFileSync("./private-key.pem"),
-      cert: fs.readFileSync("./certificate.pem"),
+      key: fs.readFileSync('privkey1.pem'),
+      cert: fs.readFileSync('cert1.pem'),
     },
     app
   );
