@@ -1,6 +1,7 @@
 /node_modules
 *backup/*
 *.pem
+*.log
 *OneDrive
 /public/teampictures/*
 /public/teamlogos/*
@@ -9,3 +10,4 @@
 !/public/teampictures/default.jpg
 /public/certificates/*
 /keytokens.yaml
+/mongo_backups/*

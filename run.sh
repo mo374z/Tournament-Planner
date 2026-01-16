@@ -1,2 +1,1 @@
-node index.js --https
- 
+node index.js --https > app.log 2>&1 
