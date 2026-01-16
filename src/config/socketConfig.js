@@ -8,7 +8,7 @@ function updateSocketConfig(args) {
     
     socketConfig = {
         protocol: useHttps ? 'https' : 'http',
-        host: useHttps ? 'budescharfeseck.de' : 'localhost',
+        host: useHttps ? 'budescharfeseck.de' : 'budescharfeseck.de',
         port: port,
         socketPort: socketPort
     };
