@@ -41,7 +41,7 @@ commonMiddleware(router, ['admin']); // Only admins have access to the team mana
 // Generate unique access code for teams
 async function generateUniqueAccessCode() {
   const codeLength = 6; // Length of the access code
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Characters to use in the code
+  const chars = 'ABCDEFGHJKLMNOPQRSTUVWXYZ0123456789'; // Characters to use in the code (no I to avoid confusion with 1 and L)
   let accessCode;
   let isUnique = false;
 
@@ -535,6 +535,31 @@ router.get("/deleteAll", authorizeRoles('admin'), async (req, res) => {
     res.redirect("/team/list");
   } catch (err) {
     console.log("Error during deleting all teams: " + err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Download all team names and access codes as CSV (grouped by group)
+router.get("/downloadAccessCodesCSV", authorizeRoles('admin'), async (req, res) => {
+  try {
+    const teams = await Team.find({}).sort({ group: 1, name: 1 }).exec();
+    
+    let csvContent = "Index;Gruppe;Teamname;Zugangscode\n";
+    
+    teams.forEach((team, index) => {
+      const nr = index + 1;
+      const group = team.group || 'Keine Gruppe';
+      const name = (team.name || 'Unbenannt').replace(/;/g, ','); // Replace semicolons to avoid CSV issues
+      const code = team.accessCode || '-';
+      
+      csvContent += `${nr};${group};${name};${code}\n`;
+    });
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="team_zugangscodes.csv"');
+    res.send('\uFEFF' + csvContent); // BOM for proper Excel encoding
+  } catch (err) {
+    console.log("Error during downloading access codes CSV: " + err);
     res.status(500).send("Internal Server Error");
   }
 });

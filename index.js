@@ -23,6 +23,7 @@ const PlayerController = require("./src/controllers/PlayerController");
 const CertificateController = require("./src/controllers/CertificateController");
 const FeedbackController = require("./src/controllers/FeedbackController");
 const MyTeamController = require("./src/controllers/MyTeamController");
+const CashierController = require("./src/controllers/CashierController").router;
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -169,6 +170,9 @@ app.engine('hbs', exphbs.engine({
       if (denominator === 0) return 0;
       return Math.round((numerator / denominator) * 100 * 100) / 100; // Runde auf 2 Dezimalstellen
     },
+    add: function(a, b) {
+      return (a || 0) + (b || 0);
+    },
   }
 }));
 
@@ -247,6 +251,7 @@ app.use("/player", PlayerController);
 app.use("/certificate", CertificateController);
 app.use("/feedback", FeedbackController);
 app.use("/myteam", MyTeamController);
+app.use("/cashier", CashierController);
 
 app.use("/user", AuthenticationController);
 

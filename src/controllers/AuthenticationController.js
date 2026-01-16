@@ -168,6 +168,8 @@ router.post('/login', async (req, res) => {
         // Redirect based on user role
         if (user.role === 'beamer') {
             res.redirect('/game/live'); // Redirect beamer users to Live Game page
+        } else if (user.role === 'cashier') {
+            res.redirect('/cashier/order'); // Redirect cashier to order page
         } else {
             res.redirect('/'); // Redirect other users to main page
         }
@@ -198,7 +200,7 @@ router.get('/deleteAdmin', verifyToken, isAdmin, async (req, res) => {
 });
 
 // Route zum Löschen eines Benutzers
-router.post('/user/delete', verifyToken, isAdmin, async (req, res) => {
+router.post('/delete', verifyToken, isAdmin, async (req, res) => {
     try {
         const { username } = req.body;
         if (username !== req.username) {

@@ -45,6 +45,7 @@ require('./GeneralCounters');
 require('./Player');
 require('./User');
 require('./Feedback');
+require('./ProductSales');
 
 
 async function createDb(dbName) {   // Create a new database for the tournament

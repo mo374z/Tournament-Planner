@@ -23,11 +23,12 @@
             -ms-text-size-adjust: 100%;
         }
         
-        {{#if (or (eqref userrole "beamer") (eqref userrole "TV"))}} 
+        {{#if (or (eqref userrole "beamer") (or (eqref userrole "TV") (eqref userrole "cashier")))}} 
         .navbar {
             display: none;
         }
-        .container-fluid:hover .navbar {
+        .container-fluid:hover .navbar,
+        .navbar.show-navbar {
             display: flex;
         }
         {{/if}}
@@ -40,6 +41,48 @@
 
 <body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+    {{#if (or (eqref userrole "beamer") (or (eqref userrole "TV") (eqref userrole "cashier")))}}
+    <script>
+        // Touch-Handler für Navbar
+        document.addEventListener('DOMContentLoaded', function() {
+            let navbarTimeout;
+            const navbar = document.querySelector('.navbar');
+            const container = document.querySelector('.container-fluid');
+            
+            if (navbar && container) {
+                container.addEventListener('touchstart', function(e) {
+                    navbar.classList.add('show-navbar');
+                    
+                    // Lösche vorherigen Timer
+                    if (navbarTimeout) {
+                        clearTimeout(navbarTimeout);
+                    }
+                    
+                    // Verstecke Navbar nach 5 Sekunden
+                    navbarTimeout = setTimeout(function() {
+                        navbar.classList.remove('show-navbar');
+                    }, 5000);
+                });
+                
+                // Auch bei Klick funktionieren lassen
+                container.addEventListener('click', function(e) {
+                    if (!navbar.contains(e.target)) {
+                        navbar.classList.add('show-navbar');
+                        
+                        if (navbarTimeout) {
+                            clearTimeout(navbarTimeout);
+                        }
+                        
+                        navbarTimeout = setTimeout(function() {
+                            navbar.classList.remove('show-navbar');
+                        }, 5000);
+                    }
+                });
+            }
+        });
+    </script>
+    {{/if}}
 
  
     <div class="container-fluid bg-dark text-light p-3 mb-3">
@@ -58,13 +101,17 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
                  {{#if myTeamEnabled}}
+                    {{#unless (or (eqref userrole "cashier") (eqref userrole "TV"))}}
                         <li class="nav-item">
                             <a class="nav-link ms-5" href="/myteam/login">MyTeam</a>
                         </li>
+                    {{/unless}}
                 {{/if}}
                     {{#if username}}
 
                     {{#unless (eqref userrole "beamer")}}
+                    {{#unless (eqref userrole "cashier")}}
+                    {{#unless (eqref userrole "TV")}}
 
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle ms-5" href="#" id="anzeigeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -75,33 +122,53 @@
                                 <li><a class="dropdown-item" href="/game/live">Live Game</a></li>
                             </ul>
                         </li>                    
+                    {{/unless}}
+                    {{/unless}}
 
                         {{#unless (eqref userrole "TV")}}                        
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/team/list">Mannschaften</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/schedule/list">Spielplan</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
-                            </li>                     
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle ms-5" href="#" id="spielerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Spieler
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="spielerDropdown">
-                                    <li><a class="dropdown-item" href="/player">Spielerverwaltung</a></li>
-                                    <li><a class="dropdown-item" href="/scorer">Torschützen</a></li>
-                                </ul>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/certificate">Urkunden</a>
-                            </li>
+                            {{#if (eqref userrole "cashier")}}
+                                {{!-- cashier sieht nur Bestellseite --}}
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/cashier/order">🍺 Bestellseite</a>
+                                </li>
+                            {{else}}
+                                {{!-- Admin sieht alles --}}
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/team/list">Mannschaften</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/schedule/list">Spielplan</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/team/grouplist">Gruppen</a>
+                                </li>                     
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle ms-5" href="#" id="spielerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Spieler
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="spielerDropdown">
+                                        <li><a class="dropdown-item" href="/player">Spielerverwaltung</a></li>
+                                        <li><a class="dropdown-item" href="/scorer">Torschützen</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/certificate">Urkunden</a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle ms-5" href="#" id="kassierDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        🍺 Kassier
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="kassierDropdown">
+                                        <li><a class="dropdown-item" href="/cashier/order">Bestellseite</a></li>
+                                        <li><a class="dropdown-item" href="/cashier/ranking" target="_blank">Ranking</a></li>
+                                        <li><a class="dropdown-item" href="/cashier/statistics">Statistiken</a></li>
+                                    </ul>
+                                </li>
 
-                            <li class="nav-item">
-                                <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
-                            </li>
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/mainSettings"><i class="fas fa-cogs"></i></a>
+                                </li>
+                            {{/if}}
                             {{/unless}}
 
                         {{/unless}}
@@ -110,6 +177,12 @@
                         {{#if (eqref userrole "beamer")}}
                               <li class="nav-item">
                                 <a class="nav-link ms-5" href="/game/live">Live Game</a>
+                            </li>
+                        {{/if}}
+                        
+                        {{#if (eqref userrole "TV")}}
+                              <li class="nav-item">
+                                <a class="nav-link ms-5" href="/TV">TV Anzeige</a>
                             </li>
                         {{/if}}
                         
