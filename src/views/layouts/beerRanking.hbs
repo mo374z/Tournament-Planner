@@ -432,10 +432,10 @@
         <!-- Rechte Seite: Bier-Balkendiagramm -->
         <div class="col-md-7">
             <h3 class="mb-4">🍺 Top 3 Visualisierung</h3>
-            <div class="beer-chart-container" id="beerChartContainer">
+            <div class="beer-chart-container" id="beerChartContainer" data-max-points="{{maxPoints}}">
                 {{#each topThree}}
                 <div class="beer-bar-wrapper">
-                    <div class="beer-bar" style="height: {{#if this.drinksCount.points}}{{math this.drinksCount.points '*' 20}}{{else}}20{{/if}}px; min-height: 50px; max-height: 400px;">
+                    <div class="beer-bar" style="height: {{this.barHeight}}px; min-height: 50px;" data-points="{{this.drinksCount.points}}">
                         <div class="beer-liquid">
                             <div class="beer-foam"></div>
                             <div class="beer-count" id="bar-count-{{this._id}}">{{this.drinksCount.points}}</div>
@@ -562,6 +562,13 @@
                 
                 // Update beer bars for top 3
                 if (result.topThree && result.topThree.length > 0) {
+                    // Find max points for proportional scaling
+                    const maxPoints = Math.max(...result.topThree.map(t => t.drinksCount.points));
+                    const chartContainer = document.getElementById('beerChartContainer');
+                    if (chartContainer) {
+                        chartContainer.dataset.maxPoints = maxPoints;
+                    }
+                    
                     // Update existing bars instead of rebuilding
                     result.topThree.forEach((team, index) => {
                         const barCountElement = document.getElementById(`bar-count-${team._id}`);
@@ -570,11 +577,12 @@
                             const newValue = team.drinksCount.points;
                             animateCount(barCountElement, oldValue, newValue, 800);
                             
-                            // Update bar height with animation
+                            // Update bar height with animation (proportional to max)
                             const barElement = barCountElement.closest('.beer-bar');
                             if (barElement) {
-                                const newHeight = Math.min(newValue * 20, 400);
+                                const newHeight = maxPoints > 0 ? (newValue / maxPoints) * 400 : 50;
                                 barElement.style.height = `${newHeight}px`;
+                                barElement.dataset.points = newValue;
                             }
                         }
                     });

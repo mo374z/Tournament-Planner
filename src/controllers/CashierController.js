@@ -177,9 +177,24 @@ router.get('/ranking', async (req, res) => {
         // Top 3 für Balkendiagramm
         const topThree = teams.slice(0, 3);
         
+        // Calculate max points for proportional scaling
+        const maxPoints = topThree.length > 0 ? Math.max(...topThree.map(t => t.drinksCount.points)) : 1;
+        
+        // Add calculated height to each team
+        const topThreeWithHeight = topThree.map(team => {
+            const points = team.drinksCount.points || 0;
+            const barHeight = maxPoints > 0 ? Math.max(Math.round((points / maxPoints) * 400), 50) : 50;
+            console.log(`Team: ${team.name}, Points: ${points}, BarHeight: ${barHeight}`);
+            return {
+                ...team.toObject(),
+                barHeight: barHeight
+            };
+        });
+        
         res.render('layouts/beerRanking', {
             teams: teams,
-            topThree: topThree,
+            topThree: topThreeWithHeight,
+            maxPoints: maxPoints,
             socketConfig: socketConfig,
             title: 'Bier-Ranking'
         });
