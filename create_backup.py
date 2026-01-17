@@ -22,7 +22,7 @@ MONGO_URI = "mongodb://127.0.0.1:27017"  # adjust if needed
 # ==================
 
 # Load password from keytokens.yaml
-with open('keytokens.yaml', 'r') as f:
+with open('/home/bude/Tournament-Planner/keytokens.yaml', 'r') as f:
     tokens = yaml.safe_load(f)
     mail_password = tokens['mailpassword']
 
@@ -111,7 +111,7 @@ def send_account_overview(sender_email, receiver_email, password, zip_path):
 
 send_account_overview(
     sender_email="info@gretzinger.net",
-    receiver_email=["schlager.mo.home@gmail.com"],
+    receiver_email=["schlager.mo.home@gmail.com","marc.gretzinger@gmail.com"],
     password=mail_password,
     zip_path=archive
 )

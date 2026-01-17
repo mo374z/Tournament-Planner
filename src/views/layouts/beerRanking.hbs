@@ -433,6 +433,7 @@
         <div class="col-md-7">
             <h3 class="mb-4">🍺 Top 3 Visualisierung</h3>
             <div class="beer-chart-container" id="beerChartContainer" data-max-points="{{maxPoints}}">
+            <div class="beer-chart-container" id="beerChartContainer" data-max-points="{{maxPoints}}">
                 {{#each topThree}}
                 <div class="beer-bar-wrapper">
                     <div class="beer-bar" style="height: {{this.barHeight}}px; min-height: 50px;" data-points="{{this.drinksCount.points}}">
@@ -530,6 +531,79 @@
     // Zähle aktuell angezeigte Teams
     let currentTeamCount = document.querySelectorAll('[id^="count-"]').length;
     
+    // Store current top 3 team IDs in order
+    let currentTopThree = [];
+    
+    // Initialize beer bars on page load
+    async function initializeBeerBars() {
+        const response = await fetch('/cashier/api/ranking');
+        const result = await response.json();
+
+        const chartContainer = document.getElementById('beerChartContainer');
+        if (!chartContainer) return;
+        
+        // Store initial top 3 order
+        if (result.topThree && result.topThree.length > 0) {
+            currentTopThree = result.topThree.map(t => t._id);
+        }
+        
+        const maxPoints = Math.max(...result.topThree.map(t => t.drinksCount.points));
+        if (maxPoints === 0) return;
+        
+        // Update all beer bars with proper heights
+        document.querySelectorAll('.beer-bar').forEach(barElement => {
+            const points = parseInt(barElement.dataset.points) || 0;
+            const newHeight = maxPoints > 0 ? (points / maxPoints) * 400 : 50;
+            barElement.style.height = `${newHeight}px`;
+        });
+    }
+    
+    // Function to rebuild bar chart with new order
+    function rebuildBarChart(topThree, maxPoints) {
+        const chartContainer = document.getElementById('beerChartContainer');
+        if (!chartContainer) return;
+        
+        chartContainer.dataset.maxPoints = maxPoints;
+        chartContainer.innerHTML = '';
+        
+        topThree.forEach((team, index) => {
+            const barHeight = maxPoints > 0 ? (team.drinksCount.points / maxPoints) * 400 : 50;
+            const badgeClass = index === 0 ? 'bg-warning' : index === 1 ? 'bg-secondary' : 'bg-danger';
+            
+            const barHtml = `
+                <div class="beer-bar-wrapper">
+                    <div class="beer-bar" style="height: ${barHeight}px; min-height: 50px;" data-points="${team.drinksCount.points}">
+                        <div class="beer-liquid">
+                            <div class="beer-foam"></div>
+                            <div class="beer-count" id="bar-count-${team._id}">${team.drinksCount.points}</div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                            <div class="beer-bubble"></div>
+                        </div>
+                    </div>
+                    <div class="beer-label">
+                        <h4>${team.name}</h4>
+                        <p class="mb-1"><small>(🍺${team.drinksCount.weizen} / 🍄‍🟫${team.drinksCount.pils})</small></p>
+                        <span class="badge ${badgeClass}">
+                            #${index + 1}
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            chartContainer.insertAdjacentHTML('beforeend', barHtml);
+        });
+        
+        // Update stored top 3 order
+        currentTopThree = topThree.map(t => t._id);
+    }
+    
+    // Call initialization when page loads
+    window.addEventListener('DOMContentLoaded', initializeBeerBars);
+    
     // Live-Update des Rankings
     socket.on('drinksCountUpdated', async (data) => {
         console.log('Beer count updated, refreshing ranking...');
@@ -584,8 +658,8 @@
                                 barElement.style.height = `${newHeight}px`;
                                 barElement.dataset.points = newValue;
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
         } catch (err) {
