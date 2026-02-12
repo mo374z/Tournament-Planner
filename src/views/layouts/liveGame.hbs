@@ -156,7 +156,12 @@
 
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <script>
+    // In production (behind Nginx), connect to same origin. In development, use explicit port.
+    {{#if socketConfig.useExplicitPort}}
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
+    {{else}}
+    const socket = io();  // Connect to same origin (Nginx will proxy /socket.io/ to port 2053)
+    {{/if}}
 
     socket.on('connect', () => {
         console.log('Socket connected');

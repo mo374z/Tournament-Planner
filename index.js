@@ -32,6 +32,9 @@ const useHttps = socketConfig.protocol === 'https';
 
 console.log('Starting server with the following configuration:', socketConfig);
 
+// Trust Nginx reverse proxy
+app.set('trust proxy', 1);
+
 app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 app.set('views', path.join(__dirname, '/src/views/'));
@@ -241,6 +244,24 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Health check endpoint for Docker
+app.get('/health', (req, res) => {
+  // Check MongoDB connection
+  const dbState = mongoose.connection.readyState;
+  if (dbState !== 1) {
+    return res.status(503).json({ 
+      status: 'unhealthy', 
+      database: 'disconnected' 
+    });
+  }
+  
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 app.use("/", PublicPageController);
 app.use("/team", TeamController);
 app.use("/schedule", ScheduleController);
@@ -267,23 +288,29 @@ if (!fs.existsSync(uploadDir)) {
 
 
 // Server configuration
-if (useHttps) {
+// In Docker, we always use HTTP (Nginx handles HTTPS)
+// For local development without Docker, support both HTTP and HTTPS
+const PORT = process.env.PORT || port;
+
+if (useHttps && !process.env.PORT) {
+  // Only use HTTPS if explicitly requested and NOT running in Docker
   try {
     const httpsServer = https.createServer({
       key: fs.readFileSync('privkey1.pem'),
       cert: fs.readFileSync('cert1.pem'),
     }, app);
     
-    httpsServer.listen(port, () => {
-      console.log(`HTTPS server running on port ${port}`);
+    httpsServer.listen(PORT, () => {
+      console.log(`HTTPS server running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start HTTPS server:', error.message);
     process.exit(1);
   }
 } else {
-  app.listen(port, () => {
-    console.log(`HTTP server started at localhost port ${port}`);
+  // HTTP mode (default for Docker)
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`HTTP server started at 0.0.0.0:${PORT}`);
   });
 }
 

@@ -11,3 +11,12 @@
 /public/certificates/*
 /keytokens.yaml
 /mongo_backups/*
+
+# Docker secrets (NEVER commit these!)
+/docker/secrets/*.txt
+!/docker/secrets/*.example
+
+# Environment files with sensitive data
+.env
+.env.local
+.env.production

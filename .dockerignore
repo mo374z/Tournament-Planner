@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+docker-compose*.yml
+Dockerfile
+docker/
+mongo_backups/
+*.md
+.vscode/
+.idea/
+*.log
+keytokens.yaml
+privkey1.pem
+cert1.pem

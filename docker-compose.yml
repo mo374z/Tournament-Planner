@@ -1,0 +1,62 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: tournament-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_dev:/data/db
+      - mongodb_backups_dev:/backups
+    networks:
+      - backend
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: tournament-app-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "2053:2053"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/TournamentDB
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+      - app_uploads_dev:/usr/src/app/public/teamlogos
+      - app_uploads_dev:/usr/src/app/public/teampictures
+      - app_logs_dev:/usr/src/app/logs
+      - app_backups_dev:/usr/src/app/backup
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - backend
+      - frontend
+
+volumes:
+  mongodb_data_dev:
+    driver: local
+  mongodb_backups_dev:
+    driver: local
+  app_uploads_dev:
+    driver: local
+  app_logs_dev:
+    driver: local
+  app_backups_dev:
+    driver: local
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge

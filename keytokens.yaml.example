@@ -1,0 +1,5 @@
+# JWT Secret Key Configuration
+# Copy this file to keytokens.yaml and replace with your actual secret key
+# NEVER commit keytokens.yaml to version control!
+
+jwtSecretkey: your-super-secret-jwt-key-here-change-me-in-production

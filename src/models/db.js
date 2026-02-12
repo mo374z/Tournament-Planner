@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
-const mongoURI = "mongodb://0.0.0.0:27017/TournamentDB";
+// Support both Docker and local development
+const mongoURI = process.env.MONGODB_URI || "mongodb://0.0.0.0:27017/TournamentDB";
 
 
 const connectToMongo = async () => {
