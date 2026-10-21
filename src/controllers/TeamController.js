@@ -270,7 +270,8 @@ router.get("/list", async (req, res) => {
 router.post("/add", async (req, res) => {
   try {
     const { name, group, newGroup } = req.body;
-    const teamGroup = group === "Neu" ? newGroup : group;
+    let teamGroup = group === "Neu" ? newGroup : group;
+    if (!teamGroup || teamGroup === "__none__") teamGroup = "";
 
     // Generate unique access code
     const accessCode = await generateUniqueAccessCode();
@@ -301,54 +302,28 @@ router.post("/add", async (req, res) => {
   }
 });
 
-router.get("/createMultiple", async (req, res) => {
+router.post("/assignGroup", async (req, res) => {
   try {
+    const { teamId, group } = req.body;
     const mainSettings = await MainSettings.findOne({});
     const groups = mainSettings ? mainSettings.groups : [];
-
-    if (groups.length === 0) {
-      return res.status(400).send("Keine Gruppen in den MainSettings gefunden. Bitte fügen Sie Gruppen hinzu und versuchen Sie es erneut.");
+    if (!teamId || !groups.includes(group)) {
+      return res.status(400).send("Ungültiges Team oder ungültige Gruppe");
     }
-
-    const teams = [];
-    const teamCount = 16;
-
-    for (let i = 1; i <= teamCount; i++) {
-      const groupIndex = Math.floor((i - 1) / 4) % groups.length;
-      const accessCode = await generateUniqueAccessCode();
-      const accessCodeHash = await bcrypt.hash(accessCode, 10);
-      
-      teams.push({
-        name: `Team ${i}`,
-        group: groups[groupIndex] || 'default',
-        gamesPlayed: 0,
-        gamesWon: 0,
-        gamesLost: 0,
-        gamesDraw: 0,
-        goals: [0, 0],
-        goalsGroupStage: [0, 0],
-        sektWon: 0,
-        points_Group_Stage: 0,
-        points_General: 0,
-        gamesPlayed_Group_Stage: 0,
-        accessCode: accessCode,
-        accessCodeHash: accessCodeHash,
-      });
-    }
-    await Team.insertMany(teams);
+    await Team.findByIdAndUpdate(teamId, { group: group });
     res.redirect("/team/list");
   } catch (err) {
-    console.log("Error during multiple team creation: " + err);
+    console.log("Error during group assignment: " + err);
     res.status(500).send("Internal Server Error");
   }
 });
 
-router.post("/createMultiple", async (req, res) => {
+async function createMultipleTeams(req, res, groupMode) {
   try {
     const mainSettings = await MainSettings.findOne({});
     const groups = mainSettings ? mainSettings.groups : [];
 
-    if (groups.length === 0) {
+    if (groupMode !== "none" && groups.length === 0) {
       return res.status(400).send("Keine Gruppen in den MainSettings gefunden. Bitte fügen Sie Gruppen hinzu und versuchen Sie es erneut.");
     }
 
@@ -356,13 +331,13 @@ router.post("/createMultiple", async (req, res) => {
     const teamCount = 16;
 
     for (let i = 1; i <= teamCount; i++) {
-      const groupIndex = Math.floor((i - 1) / 4) % groups.length;
       const accessCode = await generateUniqueAccessCode();
       const accessCodeHash = await bcrypt.hash(accessCode, 10);
+      const groupIndex = groupMode === "none" ? null : Math.floor((i - 1) / 4) % groups.length;
       
       teams.push({
         name: `Team ${i}`,
-        group: groups[groupIndex] || 'default',
+        group: groupMode === "none" ? "" : groups[groupIndex],
         gamesPlayed: 0,
         gamesWon: 0,
         gamesLost: 0,
@@ -383,6 +358,14 @@ router.post("/createMultiple", async (req, res) => {
     console.log("Error during multiple team creation: " + err);
     res.status(500).send("Internal Server Error");
   }
+}
+
+router.get("/createMultiple", async (req, res) => {
+  await createMultipleTeams(req, res, req.query.groupMode === "none" ? "none" : "groups");
+});
+
+router.post("/createMultiple", async (req, res) => {
+  await createMultipleTeams(req, res, req.body.groupMode === "none" ? "none" : "groups");
 });
 
 router.get("/grouplist", async (req, res) => {
@@ -560,6 +543,41 @@ router.get("/downloadAccessCodesCSV", authorizeRoles('admin'), async (req, res) 
     res.send('\uFEFF' + csvContent); // BOM for proper Excel encoding
   } catch (err) {
     console.log("Error during downloading access codes CSV: " + err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Download the team list as CSV, optionally including final placements
+router.get("/downloadTeamListCSV", authorizeRoles('admin'), async (req, res) => {
+  try {
+    const withRanks = req.query.withRanks === "1";
+    if (withRanks) await updateFinalRanks();
+
+    const teams = await Team.find({}).exec();
+    const hasRank = t => t.finalPlacement !== null && t.finalPlacement !== undefined;
+    const cleanCell = v => String(v ?? '').replace(/[;\r\n]+/g, ' ');
+
+    if (withRanks) {
+      teams.sort((a, b) => (hasRank(a) ? a.finalPlacement : Infinity) - (hasRank(b) ? b.finalPlacement : Infinity)
+        || (a.name || '').localeCompare(b.name || ''));
+    } else {
+      teams.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+
+    let csvContent = withRanks ? "Platzierung;Teamname;Gruppe\n" : "Teamname;Gruppe\n";
+    teams.forEach(team => {
+      const name = cleanCell(team.name || 'Unbenannt');
+      const group = cleanCell(team.group || 'Keine Gruppe');
+      csvContent += withRanks
+        ? `${hasRank(team) ? team.finalPlacement : '-'};${name};${group}\n`
+        : `${name};${group}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${withRanks ? 'teamliste_mit_platzierungen.csv' : 'teamliste.csv'}"`);
+    res.send('\uFEFF' + csvContent); // BOM for proper Excel encoding
+  } catch (err) {
+    console.log("Error during downloading team list CSV: " + err);
     res.status(500).send("Internal Server Error");
   }
 });

@@ -3,6 +3,8 @@
     <hr>
 </div>
 <div class="container">
+  <div class="row">
+    <div class="col-lg-6 mb-4">
     <h2>Neues Team hinzufügen</h2>
     <form action="/team/add" method="POST" onsubmit="return validateForm()">
         <div class="form-group">
@@ -12,6 +14,7 @@
         <div class="form-group">
             <label for="group">Gruppe auswählen (Gruppen sind in der <a href="/mainSettings">Einstellungen</a> verwaltbar):</label>
             <select class="form-control" id="group" name="group" required>
+                <option value="__none__">Keine (None)</option>
                 {{#each groups}}
                     <option value="{{this}}">{{this}}</option>
                 {{/each}}
@@ -19,7 +22,79 @@
         </div>
         <button type="submit" class="btn btn-primary mt-3">Hinzufügen</button>
     </form>
+    </div>
+    <div class="col-lg-6 mb-4">
+    <h2>Team einer Gruppe zuordnen</h2>
+    <form action="/team/assignGroup" method="POST" onsubmit="return validateAssign()" autocomplete="off">
+        <input type="hidden" id="assignTeamId" name="teamId" value="">
+        <div class="form-group position-relative">
+            <label for="teamSearch">Team suchen (Anfangsbuchstaben tippen):</label>
+            <input type="text" class="form-control" id="teamSearch" placeholder="Teamname">
+            <div id="teamSuggestions" class="list-group position-absolute w-100" style="z-index: 1000; max-height: 220px; overflow-y: auto;"></div>
+        </div>
+        <div class="form-group">
+            <label for="assignGroup">Gruppe:</label>
+            <select class="form-control" id="assignGroup" name="group" required>
+                {{#each groups}}
+                    <option value="{{this}}">{{this}}</option>
+                {{/each}}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Team Gruppe zuordnen</button>
+    </form>
+    </div>
+  </div>
 </div>
+<script>
+const assignableTeams = [
+    {{#each list}}{ id: "{{this.id}}", name: "{{this.name}}", group: "{{this.group}}" },
+    {{/each}}
+];
+
+function validateAssign() {
+    if (!document.getElementById('assignTeamId').value) {
+        alert('Bitte ein Team aus den Vorschlägen auswählen.');
+        return false;
+    }
+    return true;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('teamSearch');
+    const box = document.getElementById('teamSuggestions');
+    const idField = document.getElementById('assignTeamId');
+
+    function render() {
+        const q = input.value.trim().toLowerCase();
+        idField.value = '';
+        box.innerHTML = '';
+        if (!q) return;
+        assignableTeams
+            .filter(t => t.name.toLowerCase().startsWith(q))
+            .sort((a, b) => (a.group ? 1 : 0) - (b.group ? 1 : 0)) // Teams ohne Gruppe zuerst
+            .slice(0, 20)
+            .forEach(t => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action';
+            btn.textContent = t.name + ' (' + (t.group || 'keine Gruppe') + ')';
+            btn.addEventListener('click', function () {
+                input.value = t.name;
+                idField.value = t.id;
+                box.innerHTML = '';
+                const sel = document.getElementById('assignGroup');
+                if (t.group && Array.from(sel.options).some(o => o.value === t.group)) sel.value = t.group;
+            });
+            box.appendChild(btn);
+        });
+    }
+    input.addEventListener('input', render);
+    document.addEventListener('click', function (e) {
+        if (e.target !== input) box.innerHTML = '';
+    });
+});
+</script>
+
 <div class="container-fluid text-center">
     <hr>
     <h2 >Liste der Teams:</h2>
@@ -84,14 +159,35 @@
         </tbody>
     </table>
 
-    <a href="/team/createMultiple" onclick="return confirm('Sind Sie sicher, dass Sie 16 Teams erstellen möchten?');" class="btn btn-danger mt-3" role="button">Erstelle 16 Teams</a>
+    <a href="/team/createMultiple" onclick="return chooseTeamCreationMode();" class="btn btn-danger mt-3" role="button">Erstelle 16 Teams</a>
     <a href="/team/deleteAll" onclick="return confirm('Sind Sie sicher, dass Sie alle Teams löschen möchten?');" class="btn btn-danger mt-3" role="button">Alle Teams löschen</a>
     <a href="/team/clearTeamCounters" onclick="return confirm('Are you sure you want to clear all team counters?');" class="btn btn-primary mt-3" role="button">Clear All Team Counters</a>
     <a href="/team/downloadAccessCodesCSV" class="btn btn-success mt-3" role="button">Zugangscodes herunterladen</a>
-    
+        <a href="/team/downloadTeamListCSV" onclick="return downloadTeamList(this);" class="btn btn-success mt-3" role="button">Teamliste als CSV herunterladen</a>    
 </div>
 
 <script>
+function downloadTeamList(link) {
+    const withRanks = confirm('Teamliste mit Platzierungen herunterladen?\nOK = mit Platzierungen, Abbrechen = ohne Platzierungen');
+    window.location.href = '/team/downloadTeamListCSV?withRanks=' + (withRanks ? '1' : '0');
+    return false;
+}
+
+function chooseTeamCreationMode() {
+    const choice = prompt('Wie sollen die 16 Teams erstellt werden?\n1 = Mit den vorhandenen Gruppen\n2 = Ohne Gruppe (None)');
+    if (choice === null) return false;
+    const mode = choice.trim() === '1' ? 'groups' : choice.trim() === '2' ? 'none' : null;
+    if (!mode) {
+        alert('Bitte 1 für Teams mit Gruppen oder 2 für Teams ohne Gruppe eingeben.');
+        return false;
+    }
+    if (!confirm('Sind Sie sicher, dass Sie 16 Teams ' + (mode === 'none' ? 'ohne Gruppe' : 'mit Gruppen') + ' erstellen möchten?')) {
+        return false;
+    }
+    window.location.href = '/team/createMultiple?groupMode=' + mode;
+    return false;
+}
+
 let sortDirections = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]; // Track sort directions for each column
 
 function validateForm() {

@@ -7,7 +7,7 @@ var TeamSchema = new mongoose.Schema({
     },
     group: {
         type: String,
-        required: 'This field is required'
+        default: ''
     },
     gamesPlayed: {
         type: Number,

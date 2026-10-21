@@ -25,6 +25,20 @@ const { ScheduleGenerator } = require("./ScheduleGenerator");
 
 router.get("/generate", async (req, res) => {
   try {
+      const teamsWithoutGroup = await Team.find({ $or: [{ group: "" }, { group: null }, { group: { $exists: false } }] });
+      if (teamsWithoutGroup.length > 0) {
+        const escapedTeams = teamsWithoutGroup.map(t =>
+          String(t.name).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        );
+        return res.status(400).send(
+          `<div style="max-width: 800px; margin: 10vh auto; padding: 24px; border: 1px solid #333; text-align: center; font-size: 1.4em;">` +
+          `<h1>Der Spielplan kann nicht generiert werden</h1>` +
+          `<p>Folgende Teams sind keiner Gruppe zugeordnet:</p>` +
+          `<ul style="display: inline-block; text-align: left;">${escapedTeams.map(name => `<li>${name}</li>`).join("")}</ul>` +
+          `<p><a href="/team/list">Zur Teamverwaltung</a></p>` +
+          `</div>`
+        );
+      }
       const scheduleGenerator = await getScheduleGenerator();
       await scheduleGenerator.generateFullSchedule();
 
