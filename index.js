@@ -178,7 +178,7 @@ app.engine('hbs', exphbs.engine({
 
 app.set('view engine', 'hbs');
 app.use(express.static(__dirname + '/public'))
-app.use(express.static(path.join(__dirname, 'src/public')));
+app.use(express.static(path.join(__dirname, 'src/static')));
 
 app.use((req, res, next) => {
   res.locals.path = req.path;
@@ -296,5 +296,4 @@ checkForMainSettings();
 checkForUsers();
 
 console.log('Tournament Planner is running...');
-
 
