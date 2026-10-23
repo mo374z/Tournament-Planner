@@ -35,6 +35,9 @@ var GameSchema = new mongoose.Schema({
     gameDisplayName: {
       type: String,
     },
+    extraTimeSeconds: { // played extra time (Nachspielzeit) in seconds
+      type: Number, default: 0
+    },
     finalPlacement:{
       type: Number, default: null
     }

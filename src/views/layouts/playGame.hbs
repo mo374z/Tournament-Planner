@@ -18,6 +18,7 @@
         --play-sekt-border: #c9a227;
         --play-sekt-text: #ffe9a8;
         --play-sekt-heading: #ffd95e;
+        --play-overtime: #ffd95e;
         background: var(--play-page-background);
     }
 
@@ -39,6 +40,7 @@
         --play-sekt-border: #c9a227;
         --play-sekt-text: #594815;
         --play-sekt-heading: #795b00;
+        --play-overtime: #b07d00;
     }
 
     .play-game-page {
@@ -189,24 +191,57 @@
         min-height: 46px;
     }
 
-    .playback-controls {
+    .extra-time-actions {
         display: flex;
-        align-items: center;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 1.25rem;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
     }
 
-    .playback-controls input {
-        width: 76px;
-        min-height: 40px;
-        padding: 0.35rem;
+    .extra-time-actions .btn {
+        min-width: 220px;
+        min-height: 46px;
+    }
+
+    .overtime-notice {
+        margin: 0.25rem 0 0;
+        color: var(--play-overtime);
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .timer-display.overtime-active {
+        color: var(--play-overtime) !important;
+    }
+
+    .pause-box {
+        display: inline-flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.35rem 1rem;
+        margin-top: 1.25rem;
+        padding: 0.6rem 1rem;
         border: 1px solid var(--play-panel-border);
-        border-radius: 6px;
-        background: var(--play-input-background);
-        color: var(--play-input-text);
-        text-align: center;
+        border-radius: 10px;
+        background: var(--play-card-background);
+        color: var(--play-muted);
+    }
+
+    .pause-box .pause-value {
+        color: var(--play-text);
+        font-size: 1.5rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+    }
+
+    .pause-box.running .pause-value {
+        color: var(--play-overtime);
+    }
+
+    .pause-box .pause-total {
+        font-size: 0.95rem;
     }
 
     .team-score-card {
@@ -390,7 +425,7 @@
                 </div>
                 <div class="game-details">
                     <div><span class="game-detail-label">Startzeit</span><span class="game-detail-value">{{formatTime game.time }}</span></div>
-                    <div><span class="game-detail-label">Voraussichtliches Ende</span><span id="gameEndTime" class="game-detail-value"></span></div>
+                    <div><span class="game-detail-label">Geplantes Ende</span><span id="gameEndTime" class="game-detail-value"></span></div>
                     <div><span class="game-detail-label">Aktuelle Uhrzeit</span><span id="currentTime" class="game-detail-value"></span></div>
                     <div><span class="game-detail-label">Spieldauer</span><span class="game-detail-value">{{ game.duration }} Minuten</span></div>
                     <div class="game-detail-full"><span class="game-detail-label">Spielname</span><span class="game-detail-value">{{ game.gameDisplayName }}</span></div>
@@ -408,15 +443,19 @@
                 </div>
                 <div id="activeGameControls">
                     <span id="countdownTimer" class="timer-display">{{ game.duration }}:00</span>
+                    <p id="overtimeNotice" class="overtime-notice d-none"></p>
                     <div class="timer-actions">
                         <button id="startButton" class="btn btn-primary">Timer starten</button>
                         <button id="resetButton" class="btn btn-outline-secondary">Timer zurücksetzen</button>
                     </div>
-                    <div class="playback-controls">
-                        <label for="playbackTime">Nachspielzeit</label>
-                        <input type="number" id="playbackTime" name="playbackTime" min="-10" max="10" value="1">
-                        <span>Minuten</span>
-                        <button onclick="addPlaybackTime()" class="btn btn-dark">Übernehmen</button>
+                    <div class="extra-time-actions">
+                        <button id="toggleOvertimeButton" class="btn btn-outline-secondary">Nachspielzeit aktivieren</button>
+                        <button id="endOvertimeButton" class="btn btn-danger d-none">Nachspielzeit beenden</button>
+                    </div>
+                    <div id="pauseBox" class="pause-box">
+                        <span>Akt. Unterbrechung</span>
+                        <span id="pauseCurrent" class="pause-value">00:00</span>
+                        <span class="pause-total">Gesamt <span id="pauseTotal">00:00</span></span>
                     </div>
                 </div>
                 <div id="inactiveGameWarning" class="alert alert-warning mt-3 mb-0" role="alert">
@@ -527,11 +566,6 @@
         localStorage.setItem('playGameTheme', nextTheme);
         setPlayGameTheme(nextTheme);
     });
-
-    // add playback time to the timer
-    function addPlaybackTime() {
-        socket.emit('addPlaybackTime', document.getElementById('playbackTime').value);
-    }
 
     // update the date and time
     function updateDateTime() {
@@ -657,20 +691,57 @@
 
     socket.emit('getData'); //Call for game data when page loads
 
+    function formatClock(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
     socket.on('timerUpdate', (timerValue, isPaused, timerStatus, lastMin) => {
-        const minutes = Math.floor(timerValue / 60);
-        const seconds = timerValue % 60;
-        const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const isOvertime = timerStatus === 'Overtime';
         const countdownTimer = document.getElementById('countdownTimer');
-        countdownTimer.innerText = formattedTime;
+        countdownTimer.innerText = (isOvertime ? '+' : '') + formatClock(timerValue);
         const timerStatusLabels = { Running: 'Läuft', Paused: 'Pausiert', Ended: 'Beendet' };
-        document.getElementById('timerStatus').innerText = timerStatusLabels[timerStatus] || (isPaused ? 'Pausiert' : 'Läuft');
-        document.getElementById('startButton').textContent = isPaused ? 'Timer starten' : 'Timer pausieren';
-        if (lastMin) {
-            countdownTimer.classList.add('text-danger');
+        if (isOvertime) {
+            document.getElementById('timerStatus').innerText = isPaused ? 'Nachspielzeit pausiert' : 'Nachspielzeit';
         } else {
-            countdownTimer.classList.remove('text-danger');
+            document.getElementById('timerStatus').innerText = timerStatusLabels[timerStatus] || (isPaused ? 'Pausiert' : 'Läuft');
         }
+        const startButton = document.getElementById('startButton');
+        startButton.textContent = isPaused ? 'Timer starten' : 'Timer pausieren';
+        startButton.disabled = timerStatus === 'Ended';
+        countdownTimer.classList.toggle('overtime-active', isOvertime);
+        countdownTimer.classList.toggle('text-danger', Boolean(lastMin) && !isOvertime);
+    });
+
+    socket.on('timerExtraUpdate', (state) => {
+        document.getElementById('pauseCurrent').textContent = formatClock(state.pauseCurrent);
+        document.getElementById('pauseTotal').textContent = formatClock(state.pauseTotal);
+        document.getElementById('pauseBox').classList.toggle('running', state.pauseRunning);
+
+        const notice = document.getElementById('overtimeNotice');
+        const toggleButton = document.getElementById('toggleOvertimeButton');
+        const endButton = document.getElementById('endOvertimeButton');
+        const overtimeRunning = state.overtimeStarted && !state.overtimeFinished;
+
+        if (state.overtimeFinished) {
+            notice.textContent = 'Nachspielzeit beendet: ' + formatClock(state.overtimeSeconds);
+        } else {
+            notice.textContent = 'Nachspielzeit aktiviert';
+        }
+        notice.classList.toggle('d-none', !state.overtimeEnabled && !state.overtimeFinished);
+
+        toggleButton.textContent = state.overtimeEnabled ? 'Nachspielzeit deaktivieren' : 'Nachspielzeit aktivieren';
+        toggleButton.classList.toggle('d-none', state.overtimeStarted);
+        endButton.classList.toggle('d-none', !overtimeRunning);
+    });
+
+    document.getElementById('toggleOvertimeButton').addEventListener('click', () => {
+        socket.emit('toggleOvertime');
+    });
+
+    document.getElementById('endOvertimeButton').addEventListener('click', () => {
+        socket.emit('endOvertime');
     });
 
     document.getElementById('resetButton').addEventListener('click', () => {

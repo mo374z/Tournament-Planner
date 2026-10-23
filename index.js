@@ -45,6 +45,17 @@ app.engine('hbs', exphbs.engine({
       const formattedTime = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       return formattedTime;
     },
+    formatExtraTime: function (seconds) {
+      const totalSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+      if (totalSeconds === 0) return '';
+
+      const minutes = Math.floor(totalSeconds / 60);
+      const remainingSeconds = totalSeconds % 60;
+      const parts = [];
+      if (minutes > 0) parts.push(`${minutes} min`);
+      if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+      return ` +${parts.join(' ')}`;
+    },
     formatDateTime: function (time) {
       time.setHours(time.getHours() + 1);
       const formattedTime = new Date(time).toISOString().slice(0, 16);
@@ -296,4 +307,3 @@ checkForMainSettings();
 checkForUsers();
 
 console.log('Tournament Planner is running...');
-

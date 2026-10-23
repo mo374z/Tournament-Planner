@@ -90,33 +90,118 @@ app.use(cors());
 let timerInterval = null;
 let timer = 0;
 let isPaused = true;
+let countdownEnded = false;
+
+// Extra time ("Nachspielzeit"): counts upwards after the regular countdown reached 0
+const extraTime = { enabled: false, started: false, finished: false, seconds: 0 };
+
+// Interruption timer: runs while the game is paused (lives on the server so it survives page reloads)
+const pauseState = { current: 0, total: 0, running: false, interval: null };
 
 let infoBannerMessage = ""; // Variable to store the info banner message
+
+function emitExtraState(target = io) {
+  target.emit("timerExtraUpdate", {
+    pauseCurrent: pauseState.current,
+    pauseTotal: pauseState.total,
+    pauseRunning: pauseState.running,
+    overtimeEnabled: extraTime.enabled,
+    overtimeStarted: extraTime.started,
+    overtimeFinished: extraTime.finished,
+    overtimeSeconds: extraTime.seconds,
+  });
+}
+
+function emitTimerState(target = io) {
+  if (extraTime.started && !extraTime.finished) {
+    target.emit("timerUpdate", extraTime.seconds, isPaused, "Overtime", false);
+  } else if (timer === 0) {
+    target.emit("timerUpdate", timer, isPaused, "Ended", false);
+  } else if (isPaused) {
+    target.emit("timerUpdate", timer, isPaused, "Paused", false);
+  } else {
+    target.emit("timerUpdate", timer, isPaused, "Running", timer <= 60);
+  }
+  emitExtraState(target);
+}
+
+function startPauseTimer() {
+  if (pauseState.running) return;
+  pauseState.running = true;
+  pauseState.current = 0;
+  pauseState.interval = setInterval(() => {
+    pauseState.current++;
+    pauseState.total++;
+    emitExtraState();
+  }, 1000);
+  emitExtraState();
+}
+
+function stopPauseTimer() {
+  clearInterval(pauseState.interval);
+  pauseState.interval = null;
+  pauseState.running = false;
+}
+
+//Timer resolution is 1 second !! (timer variable is in seconds)
+function startTimerInterval() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (isPaused) return;
+    if (extraTime.started) {
+      extraTime.seconds++;
+      io.emit("timerUpdate", extraTime.seconds, isPaused, "Overtime", false);
+      emitExtraState();
+    } else if (timer > 0) {
+      timer--;
+      if (timer === 0 && extraTime.enabled) {
+        extraTime.started = true;
+        extraTime.seconds = 0;
+        io.emit("timerUpdate", extraTime.seconds, isPaused, "Overtime", false);
+        emitExtraState();
+      } else {
+        io.emit("timerUpdate", timer, isPaused, "Running", timer <= 60);
+      }
+    } else if (extraTime.enabled) {
+      extraTime.started = true;
+      extraTime.seconds = 0;
+      io.emit("timerUpdate", extraTime.seconds, isPaused, "Overtime", false);
+      emitExtraState();
+    } else {
+      clearInterval(timerInterval);
+      countdownEnded = true;
+      io.emit("playSound");
+      io.emit("timerUpdate", timer, isPaused, "Ended", false);
+    }
+  }, 1000);
+}
+
+// Stops the running overtime and the countdown for good, returns the played overtime in seconds
+function finishOvertime() {
+  clearInterval(timerInterval);
+  stopPauseTimer();
+  isPaused = true;
+  countdownEnded = true;
+  extraTime.finished = true;
+  return extraTime.seconds;
+}
 
 // WebSocket logic
 io.on('connection', (socket) => {
 
     socket.on('playPauseGame', () => {
+        if (countdownEnded) return;
         if (isPaused) {
             isPaused = false;
+            stopPauseTimer();
             io.emit('playSound');
-            timerInterval = setInterval(() => {             //Timer resuluion is 1 second !! (timer Variable is in seconds)
-                if (timer > 0 && !isPaused) {
-                    timer--;
-                    const lastMin = timer <= 60;
-                    io.emit('timerUpdate', timer, isPaused, 'Running', lastMin);
-                } else if (timer === 0) {
-                    clearInterval(timerInterval);
-
-          io.emit("playSound");
-
-                    io.emit('timerUpdate', timer, isPaused, 'Ended', false);
-                }
-            }, 1000);
+            startTimerInterval();
+            emitExtraState();
         } else {
             clearInterval(timerInterval);
             isPaused = true;
-            io.emit('timerUpdate', timer, isPaused, 'Paused', false);
+            startPauseTimer();
+            emitTimerState();
         }
 });
 
@@ -125,20 +210,22 @@ io.on('connection', (socket) => {
     resetTimer(duration);
   });
 
-  socket.on("addPlaybackTime", minutesToAdd => {
-    if (timer + minutesToAdd * 60 > 0) {
-      timer = timer + minutesToAdd * 60;
-      if (!isPaused && timer > 0)
-        io.emit("timerUpdate", timer, isPaused, "Running");
-      if (isPaused) io.emit("timerUpdate", timer, isPaused, "Paused");
-    }
+  socket.on("toggleOvertime", () => {
+    // Can only be (de)activated while the regular countdown is still pending
+    if (countdownEnded || extraTime.started) return;
+    extraTime.enabled = !extraTime.enabled;
+    emitExtraState();
+  });
+
+  socket.on("endOvertime", () => {
+    if (!extraTime.started || extraTime.finished) return;
+    finishOvertime();
+    io.emit("playSound");
+    emitTimerState();
   });
 
   socket.on("getData", () => {
-    if (isPaused) io.emit("timerUpdate", timer, isPaused, "Paused");
-    if (!isPaused && timer > 0)
-      io.emit("timerUpdate", timer, isPaused, "Running");
-    if (timer === 0) io.emit("timerUpdate", timer, isPaused, "Ended");
+    emitTimerState();
   });
 
   socket.on("disconnect", () => {
@@ -189,16 +276,19 @@ io.on('connection', (socket) => {
 
 function resetTimer(duration) {
     clearInterval(timerInterval);
+    stopPauseTimer();
     console.log('Resetting timer to: ', duration);
     timer = duration;
     isPaused = true;
-    
-    if (duration === 0) {                                //if duration is 0, the game is ended
-        io.emit('timerUpdate', timer, isPaused, 'Ended', false);
-    }
-    else {                                              //if duration is not 0, the game is ready to start and is paused                   
-        io.emit('timerUpdate', timer, isPaused, 'Paused', false);
-    }
+    countdownEnded = false;
+    extraTime.enabled = false;
+    extraTime.started = false;
+    extraTime.finished = false;
+    extraTime.seconds = 0;
+    pauseState.current = 0;
+    pauseState.total = 0;
+
+    emitTimerState();
 }
 
 // Render the game play page
@@ -346,7 +436,7 @@ router.post("/:id/updateLivePage", async (req, res) => {
     const game = await Game.findById(req.params.id).exec();
     res.status(200).send("Game send to Live page successfully");
     io.emit("updateLiveGame", game);
-    io.emit("timerUpdate", timer, isPaused);
+    emitTimerState();
   } catch (err) {
     console.error("Error Updatng Live Page: ", err);
     res.status(500).send("Internal Server Error");
@@ -361,7 +451,16 @@ router.get("/:id/endGame", async (req, res) => {
 
     // Set the game status to "Ended" only if the status is "active"
     if (game.status == "active") {
-      await Game.findByIdAndUpdate(gameId, { status: "Ended" });
+      // Stop the timer right away (also while it is running) and keep the played extra time
+      const playedExtraTime = extraTime.started ? extraTime.seconds : 0;
+      clearInterval(timerInterval);
+      stopPauseTimer();
+      isPaused = true;
+
+      await Game.findByIdAndUpdate(gameId, {
+        status: "Ended",
+        extraTimeSeconds: playedExtraTime,
+      });
 
       // Update the team data with the game results
       await writeGameDataToTeams(game);

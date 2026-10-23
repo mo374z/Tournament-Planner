@@ -128,6 +128,10 @@
         .live-countdown-timer.last-minute {
             color: #dc3545 !important;
         }
+
+        .live-countdown-timer.overtime {
+            color: #f2b705 !important;
+        }
         
         {{!-- /* Grid Debug Styles - für Testzwecke */
         .grid-debug {
@@ -176,10 +180,12 @@
         const minutes = Math.floor(timerValue / 60);
         const seconds = timerValue % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const isOvertime = timerStatus === 'Overtime';
         const liveCountdownTimer = document.getElementById('liveCountdownTimer');
-        liveCountdownTimer.innerText = formattedTime;
+        liveCountdownTimer.innerText = (isOvertime ? '+' : '') + formattedTime;
         document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
-        if (lastMin) {
+        liveCountdownTimer.classList.toggle('overtime', isOvertime);
+        if (lastMin && !isOvertime) {
             liveCountdownTimer.classList.add('last-minute');
         } else {
             liveCountdownTimer.classList.remove('last-minute');
