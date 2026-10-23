@@ -1,133 +1,532 @@
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
-<div class="container text-center">
-    <h1>Spiel Verwaltung <span id="connectionStatusDot" style="display: inline-block; width: 25px; height: 25px; border-radius: 50%; background-color: green;"></span></h1>
-    <hr>
+<style>
+    body {
+        --play-page-background: #2f3742;
+        --play-text: #e6ebf2;
+        --play-muted: #a9b6c7;
+        --play-panel-background: #3b4553;
+        --play-panel-border: #4a5565;
+        --play-card-background: #343e4b;
+        --play-timer-background: #353f4c;
+        --play-input-background: #2f3742;
+        --play-input-text: #e6ebf2;
+        --play-outline-secondary: #8795a8;
+        --play-outline-secondary-text: #dce4ee;
+        --play-outline-danger: #ef6b78;
+        --play-outline-danger-text: #ff8f9a;
+        --play-sekt-background: #4d4326;
+        --play-sekt-border: #c9a227;
+        --play-sekt-text: #ffe9a8;
+        --play-sekt-heading: #ffd95e;
+        background: var(--play-page-background);
+    }
 
-    <div class="row mb-3">
-        <div class="col text-center">
-            <h2 class="text-decoration-underline">Spiel Nr. {{ game.number }}</h2>
-            <div class="mb-2 text-start text-justify d-inline-block">
-                <p><strong>Start Uhrzeit:</strong> {{formatTime game.time }}</p>
-                <p><strong>Endzeit:</strong> <span id="gameEndTime"></span></p>
-                <p><strong>Aktuelle Uhrzeit</strong> <span id="currentTime"></span></p>
-                <p><strong>Spieldauer:</strong> {{ game.duration }}:00 min</p>
-                <p><strong>Name:</strong> {{ game.gameDisplayName }}</p>
-                <p><strong>Status:</strong> {{ game.status }}</p>
-                <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger">Spiel aktiv setzen</button>
-                <div class="alert alert-success d-none mt-2" role="alert"> Game is now active and on Live Page.</div>
+    body.play-game-light {
+        --play-page-background: #f1f4f8;
+        --play-text: #263445;
+        --play-muted: #64748b;
+        --play-panel-background: #ffffff;
+        --play-panel-border: #d6dee8;
+        --play-card-background: #f1f4f8;
+        --play-timer-background: #e8edf3;
+        --play-input-background: #ffffff;
+        --play-input-text: #263445;
+        --play-outline-secondary: #64748b;
+        --play-outline-secondary-text: #475569;
+        --play-outline-danger: #dc3545;
+        --play-outline-danger-text: #c82333;
+        --play-sekt-background: #fff8df;
+        --play-sekt-border: #c9a227;
+        --play-sekt-text: #594815;
+        --play-sekt-heading: #795b00;
+    }
+
+    .play-game-page {
+        max-width: 1180px;
+        color: var(--play-text);
+    }
+
+    .play-game-page .text-muted {
+        color: var(--play-muted) !important;
+    }
+
+    .play-game-header,
+    .panel-heading,
+    .timer-actions,
+    .page-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .play-game-header {
+        margin-bottom: 1.25rem;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+
+    .theme-toggle {
+        min-height: 42px;
+        border-color: var(--play-panel-border);
+        background: var(--play-panel-background);
+        color: var(--play-text);
+        white-space: nowrap;
+    }
+
+    .theme-toggle:hover {
+        border-color: var(--play-muted);
+        background: var(--play-card-background);
+        color: var(--play-text);
+    }
+
+    .play-game-header h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 3vw, 2.1rem);
+        font-weight: 700;
+    }
+
+    .page-kicker {
+        margin-bottom: 0.2rem;
+        color: var(--play-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+    }
+
+    .game-panel {
+        height: 100%;
+        padding: 1.25rem;
+        border: 1px solid var(--play-panel-border);
+        border-radius: 12px;
+        background: var(--play-panel-background);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-heading {
+        margin-bottom: 1rem;
+    }
+
+    .panel-heading h2,
+    .panel-heading h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .connection-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.75rem;
+        border: 1px solid var(--play-panel-border);
+        border-radius: 999px;
+        background: var(--play-panel-background);
+        font-size: 0.9rem;
+    }
+
+    .game-details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .game-detail-label,
+    .counter-label,
+    .next-game-label {
+        display: block;
+        margin-bottom: 0.15rem;
+        color: var(--play-muted);
+        font-size: 0.82rem;
+    }
+
+    .game-detail-value {
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .game-detail-full {
+        grid-column: 1 / -1;
+    }
+
+    .timer-panel {
+        background: var(--play-timer-background);
+        text-align: center;
+    }
+
+    .timer-display {
+        display: block;
+        margin: 0.5rem 0;
+        font-size: clamp(3.4rem, 8vw, 5.4rem);
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .timer-status {
+        min-height: 1.5rem;
+        color: var(--play-text);
+        font-size: 1.45rem;
+        font-weight: 700;
+    }
+
+    .timer-actions {
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+
+    .timer-actions .btn {
+        min-width: 145px;
+        min-height: 46px;
+    }
+
+    .playback-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+    }
+
+    .playback-controls input {
+        width: 76px;
+        min-height: 40px;
+        padding: 0.35rem;
+        border: 1px solid var(--play-panel-border);
+        border-radius: 6px;
+        background: var(--play-input-background);
+        color: var(--play-input-text);
+        text-align: center;
+    }
+
+    .team-score-card {
+        height: 100%;
+        min-width: 0;
+        padding: 1rem;
+        border: 1px solid var(--play-panel-border);
+        border-radius: 10px;
+        background: var(--play-card-background);
+    }
+
+    .team-score-card h3 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 4.2rem;
+        margin: 0;
+        font-size: clamp(1.15rem, 2.4vw, 1.6rem);
+        font-weight: 700;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+        hyphens: auto;
+    }
+
+    .team-score {
+        margin: 0.5rem 0 0.8rem;
+        font-size: clamp(3rem, 7vw, 4.5rem);
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .score-controls {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+
+    .score-controls .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 70px;
+        height: 60px;
+        padding: 0;
+        font-size: 1.9rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .counter-card {
+        height: 100%;
+        padding: 0.85rem;
+        border-radius: 9px;
+        background: var(--play-card-background);
+    }
+
+    .counter-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .next-game-details {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .next-game-opponents {
+        font-weight: 700;
+    }
+
+    #endGameButton {
+        min-width: 240px;
+        padding-right: 2rem;
+        padding-left: 2rem;
+    }
+
+    .play-game-page .btn-outline-secondary {
+        border-color: var(--play-outline-secondary);
+        color: var(--play-outline-secondary-text);
+    }
+
+    .play-game-page .btn-outline-secondary:hover {
+        background: var(--play-outline-secondary);
+        color: var(--play-text);
+    }
+
+    .play-game-page .btn-outline-danger {
+        border-color: var(--play-outline-danger);
+        color: var(--play-outline-danger-text);
+    }
+
+    .play-game-page .btn-outline-danger:hover {
+        background: #dc3545;
+        color: #fff;
+    }
+
+    .play-game-page .alert-info.sekt-alert {
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--play-sekt-border);
+        border-left-width: 6px;
+        border-radius: 10px;
+        background: var(--play-sekt-background);
+        color: var(--play-sekt-text);
+    }
+
+    .sekt-alert .alert-heading {
+        margin-bottom: 0.25rem;
+        color: var(--play-sekt-heading);
+        font-weight: 700;
+    }
+
+    @media (max-width: 575.98px) {
+        .play-game-page {
+            padding-right: 0.75rem;
+            padding-left: 0.75rem;
+        }
+
+        .play-game-header,
+        .page-actions {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .header-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .game-details {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .next-game-details {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .timer-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .timer-actions .btn {
+            width: 100%;
+        }
+
+        #endGameButton {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container play-game-page py-3">
+    <header class="play-game-header">
+        <div>
+            <p class="page-kicker">Spielverwaltung</p>
+            <h1>Spiel Nr. {{ game.number }}</h1>
+        </div>
+        <div class="header-actions">
+            <button id="themeToggle" class="btn theme-toggle" type="button" aria-label="Zum hellen Modus wechseln">
+                <span aria-hidden="true">☀</span> Heller Modus
+            </button>
+            <div class="connection-pill">
+                <span id="connectionStatusDot" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #198754;"></span>
+                <span id="connectionStatusText" class="text-success">Verbinde...</span>
             </div>
         </div>
-        <div class="col" id="timerContainer">
-            <h2 class="text-decoration-underline">Timer</h2>
-            <div id="activeGameControls">
-                <div>
-                    <span id="countdownTimer" class="display-4">{{ game.duration }}:00 min</span>
-                </div>
-                <div class="mt-2">
-                    <button id="startButton" class="btn btn-primary me-2">Play/Pause</button>
-                    <button id="resetButton" class="btn btn-secondary" onclick="return confirm('Are you sure you want to reset the timer?')">Reset Timer</button>
-                    <br>
-                    <span id="timerStatus" class="ms-2"></span>
-                </div>
-                <div class="mt-3">
-                    <input type="number" id="playbackTime" name="playbackTime" min="-10" max="10" value="1" style="width: 50px;">
-                    <label for="playbackTime">min</label><br>
-                    <button onclick="addPlaybackTime()" class="btn btn-dark btn-sm">Nachspielzeit hinzufügen</button>
-                </div>
-            </div>
-            <div id="inactiveGameWarning" class="alert alert-warning mt-2" role="alert">
-                This game is not active. <br>Please set the game to active.
-            </div>
-            <div id="otherGameActiveWarning" class="alert alert-danger mt-2" role="alert">
-                There is another game active.<br> Please end the active Game with the "End Game Button".
-            </div>
-        </div>
-    </div>
+    </header>
+
     <div id="connectionStatus" class="alert alert-warning d-none" role="alert">
         Verbindung zum Server verloren.
     </div>
-    <hr>
 
-    <div class="row mb-3">
-        <div class="col">
-            <h2 class="text-decoration-underline">Teams</h2>
-            <div class="row">
-                <div class="col">
-                    <h3>{{ game.opponents.[0] }}</h3>
-                    <p class="display-5"><strong><span id="team1Score">{{ game.goals.[0] }}</span></strong></p>
-                    <div id="team1Controls">
-                        <button onclick="changeScore(1,1)" class="btn btn-success me-2">+</button>
-                        <button onclick="changeScore(1,-1)" class="btn btn-danger">-</button>
+    <div class="row g-3 mb-3">
+        <section class="col-lg-5">
+            <div class="game-panel">
+                <div class="panel-heading">
+                    <h2>Spielinformationen</h2>
+                    <span class="badge bg-secondary">{{ game.status }}</span>
+                </div>
+                <div class="game-details">
+                    <div><span class="game-detail-label">Startzeit</span><span class="game-detail-value">{{formatTime game.time }}</span></div>
+                    <div><span class="game-detail-label">Voraussichtliches Ende</span><span id="gameEndTime" class="game-detail-value"></span></div>
+                    <div><span class="game-detail-label">Aktuelle Uhrzeit</span><span id="currentTime" class="game-detail-value"></span></div>
+                    <div><span class="game-detail-label">Spieldauer</span><span class="game-detail-value">{{ game.duration }} Minuten</span></div>
+                    <div class="game-detail-full"><span class="game-detail-label">Spielname</span><span class="game-detail-value">{{ game.gameDisplayName }}</span></div>
+                </div>
+                <button id="updateLivePageButton" onclick="SetGameToActive()" class="btn btn-danger w-100">Spiel aktiv setzen</button>
+                <div class="alert alert-success d-none mt-2 mb-0" role="alert">Spiel ist jetzt aktiv.</div>
+            </div>
+        </section>
+
+        <section class="col-lg-7" id="timerContainer">
+            <div class="game-panel timer-panel">
+                <div class="panel-heading">
+                    <h2>Spielzeit</h2>
+                    <span id="timerStatus" class="timer-status">Bereit</span>
+                </div>
+                <div id="activeGameControls">
+                    <span id="countdownTimer" class="timer-display">{{ game.duration }}:00</span>
+                    <div class="timer-actions">
+                        <button id="startButton" class="btn btn-primary">Timer starten</button>
+                        <button id="resetButton" class="btn btn-outline-secondary">Timer zurücksetzen</button>
+                    </div>
+                    <div class="playback-controls">
+                        <label for="playbackTime">Nachspielzeit</label>
+                        <input type="number" id="playbackTime" name="playbackTime" min="-10" max="10" value="1">
+                        <span>Minuten</span>
+                        <button onclick="addPlaybackTime()" class="btn btn-dark">Übernehmen</button>
                     </div>
                 </div>
-                <div class="col">
-                    <h3>{{ game.opponents.[1] }}</h3>
-                    <p class="display-5"><strong><span id="team2Score">{{ game.goals.[1] }}</span></strong></p>
-                    <div id="team2Controls">
-                        <button onclick="changeScore(2,1)" class="btn btn-success me-2">+</button>
-                        <button onclick="changeScore(2,-1)" class="btn btn-danger">-</button>
+                <div id="inactiveGameWarning" class="alert alert-warning mt-3 mb-0" role="alert">
+                    Dieses Spiel ist noch nicht aktiv. Bitte zuerst aktiv setzen.
+                </div>
+                <div id="otherGameActiveWarning" class="alert alert-danger mt-3 mb-0" role="alert">
+                    Ein anderes Spiel ist noch aktiv. Bitte dieses zuerst beenden.
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <section class="col-lg-7">
+            <div class="game-panel">
+                <div class="panel-heading">
+                    <h2>Spielstand</h2>
+                    <span class="text-muted">Tore</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="team-score-card text-center">
+                            <h3>{{ game.opponents.[0] }}</h3>
+                            <p class="team-score"><span id="team1Score">{{ game.goals.[0] }}</span></p>
+                            <div id="team1Controls" class="score-controls">
+                                <button onclick="changeScore(1,1)" class="btn btn-success" aria-label="Tor für {{ game.opponents.[0] }} hinzufügen">+</button>
+                                <button onclick="changeScore(1,-1)" class="btn btn-outline-danger" aria-label="Tor für {{ game.opponents.[0] }} abziehen">−</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="team-score-card text-center">
+                            <h3>{{ game.opponents.[1] }}</h3>
+                            <p class="team-score"><span id="team2Score">{{ game.goals.[1] }}</span></p>
+                            <div id="team2Controls" class="score-controls">
+                                <button onclick="changeScore(2,1)" class="btn btn-success" aria-label="Tor für {{ game.opponents.[1] }} hinzufügen">+</button>
+                                <button onclick="changeScore(2,-1)" class="btn btn-outline-danger" aria-label="Tor für {{ game.opponents.[1] }} abziehen">−</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col text-center">
-            <h2 class="text-decoration-underline">Zähler</h2>
-            <div class="text-start text-justify d-inline-block">
-                <p class="mb-2"><strong>Tore im Tunier:</strong> <span id="allGoalsCounter">{{ generalCounters.allGoals }}</span></p>
-                <p class="mb-2"><strong>Gespielte Spiele:</strong> <span id="gamesPlayedCounter">{{ generalCounters.gamesPlayed }}</span></p>
-                <p class="mb-2"><strong>Bisher gewonnene Sekt:</strong> <span id="wonSektBottlesCounter">{{ generalCounters.wonSektBottles }}</span></p>
-                <p class="mb-2"><strong>Tore bis zu Sekt:</strong> <span id="goalSektCounter">{{ generalCounters.goalSektCounter }}</span></p>
-                
+        </section>
 
-                <div class="alert alert-info d-none mt-2" role="alert">
-                    This is a info alert to show Sekt for a Team.
+        <section class="col-lg-5">
+            <div class="game-panel">
+                <div class="panel-heading">
+                    <h2>Turnier-Zähler</h2>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6"><div class="counter-card"><span class="counter-label">Tore im Turnier</span><span id="allGoalsCounter" class="counter-value">{{ generalCounters.allGoals }}</span></div></div>
+                    <div class="col-6"><div class="counter-card"><span class="counter-label">Spiele gespielt</span><span id="gamesPlayedCounter" class="counter-value">{{ generalCounters.gamesPlayed }}</span></div></div>
+                    <div class="col-6"><div class="counter-card"><span class="counter-label">Sekt gewonnen</span><span id="wonSektBottlesCounter" class="counter-value">{{ generalCounters.wonSektBottles }}</span></div></div>
+                    <div class="col-6"><div class="counter-card"><span class="counter-label">Tore bis zum Sekt</span><span id="goalSektCounter" class="counter-value">{{ generalCounters.goalSektCounter }}</span></div></div>
+                </div>
+                <div class="alert alert-info sekt-alert d-none mt-3 mb-0" role="alert">
+                    <h5 class="alert-heading">Sekt für ein Team!</h5>
                 </div>
             </div>
+        </section>
+    </div>
+
+    <div class="page-actions mb-3">
+        <a href="/schedule/list" class="btn btn-outline-secondary">Zurück zum Spielplan</a>
+        <a href="/game/{{ game._id }}/endGame" id="endGameButton" class="btn btn-danger" onclick="return confirm('Willst du wirklich das Spiel ({{ game.opponents.[0] }} vs. {{ game.opponents.[1] }}) beenden?');">Spiel beenden</a>
+    </div>
+
+    <section class="game-panel mb-3">
+        <div class="panel-heading">
+            <h2>Nächstes Spiel</h2>
         </div>
-    </div>
-
-    <hr>
-
-    <a href="/schedule/list" class="btn btn-secondary me-2 mt-3">Zurück zum Spielplan</a>
-
-    <a href="/game/{{ game._id }}/endGame" id="endGameButton" class="btn btn-danger mt-3" onclick="return confirm('Willst du wirklich das Spiel ({{ game.opponents.[0] }} vs {{ game.opponents.[1] }}) beenden ?');">Spiel beenden</a>
-    <hr>
-    <table class="table">
-        <thead>
-            <tr>
-                <td></td>
-                <th>Startzeit</th>
-                <th>Gegner</th>
-                <th>Spieldauer</th>
-                <th>Spielname</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <th>Nächstes Spiel: </th>
-                <td id="nextGameTime"></td>
-                <td id="nextGameOpponents" style="font-weight: bold;"></td>
-                <td id="nextGameDuration"></td>
-                <td id="nextGameDisplayName"></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <div class="container mt-5">
-        <h3 class="text-decoration-underline">Info-Banner</h3>
-        <div class="input-group mb-3">
-            <input type="text" id="infoBannerMessage" class="form-control" placeholder="Aktuell keine Nachricht !" autocomplete="off" style="border-width: 2px">
-            <button class="btn btn-primary" id="infoBannerButton" onclick="updateInfoBanner()">Infobanner updaten</button>
+        <div class="next-game-details">
+            <div><span class="next-game-label">Startzeit</span><span id="nextGameTime">–</span></div>
+            <div><span class="next-game-label">Begegnung</span><span id="nextGameOpponents" class="next-game-opponents">–</span></div>
+            <div><span class="next-game-label">Spieldauer</span><span id="nextGameDuration">–</span></div>
+            <div><span class="next-game-label">Spielname</span><span id="nextGameDisplayName">–</span></div>
         </div>
-    </div>
+    </section>
 
-    <div id="connectionIndicator" class="text-center">
-        <span id="connectionStatusText" class="text-success">Verbinde...</span>
-    </div>
+    <section class="game-panel">
+        <div class="panel-heading">
+            <h2>Info-Banner</h2>
+        </div>
+        <div class="input-group">
+            <input type="text" id="infoBannerMessage" class="form-control" placeholder="Aktuell keine Nachricht" autocomplete="off" style="border-width: 2px">
+            <button class="btn btn-primary" id="infoBannerButton" onclick="updateInfoBanner()">Infobanner aktualisieren</button>
+        </div>
+    </section>
 </div>
 
 <script>
     console.log('Game status: {{ areOtherGamesActiveBool }}');
+
+    const themeToggle = document.getElementById('themeToggle');
+
+    function setPlayGameTheme(theme) {
+        const isLight = theme === 'light';
+        document.body.classList.toggle('play-game-light', isLight);
+        themeToggle.innerHTML = isLight
+            ? '<span aria-hidden="true">☾</span> Dunkler Modus'
+            : '<span aria-hidden="true">☀</span> Heller Modus';
+        themeToggle.setAttribute('aria-label', isLight ? 'Zum dunklen Modus wechseln' : 'Zum hellen Modus wechseln');
+    }
+
+    setPlayGameTheme(localStorage.getItem('playGameTheme') || 'dark');
+    themeToggle.addEventListener('click', () => {
+        const nextTheme = document.body.classList.contains('play-game-light') ? 'dark' : 'light';
+        localStorage.setItem('playGameTheme', nextTheme);
+        setPlayGameTheme(nextTheme);
+    });
 
     // add playback time to the timer
     function addPlaybackTime() {
@@ -226,7 +625,10 @@
 
     function disableActiveGameButton(status) {
         const updateButton = document.getElementById('updateLivePageButton');
-        updateButton.disabled = status === 'active';
+        const isActive = status === 'active';
+        updateButton.disabled = isActive;
+        updateButton.classList.toggle('btn-danger', !isActive);
+        updateButton.classList.toggle('btn-secondary', isActive);
     }
     disableActiveGameButton('{{ game.status }}');
 
@@ -261,7 +663,9 @@
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         const countdownTimer = document.getElementById('countdownTimer');
         countdownTimer.innerText = formattedTime;
-        document.getElementById('timerStatus').innerText = `Status: ${timerStatus}`;
+        const timerStatusLabels = { Running: 'Läuft', Paused: 'Pausiert', Ended: 'Beendet' };
+        document.getElementById('timerStatus').innerText = timerStatusLabels[timerStatus] || (isPaused ? 'Pausiert' : 'Läuft');
+        document.getElementById('startButton').textContent = isPaused ? 'Timer starten' : 'Timer pausieren';
         if (lastMin) {
             countdownTimer.classList.add('text-danger');
         } else {
@@ -270,7 +674,9 @@
     });
 
     document.getElementById('resetButton').addEventListener('click', () => {
-        socket.emit('resetGame', durationInSeconds);
+        if (confirm('Möchtest du den Timer wirklich zurücksetzen?')) {
+            socket.emit('resetGame', durationInSeconds);
+        }
     });
 
     document.getElementById('startButton').addEventListener('click', async () => {
@@ -282,7 +688,7 @@
     socket.on('Sekt', (team) => {
         console.log('Sekt for Team: ' + team.name);
         const alert = document.querySelector('.alert-info');
-        alert.innerHTML = '<h5 class="alert-heading">Sekt für ' + team.name + ' !</h5><p class="mb-0">(' + team.sektWon + '. Sekt des Teams)</p>';
+        alert.innerHTML = '<h5 class="alert-heading">🍾 Sekt für ' + team.name + ' !</h5><p class="mb-0">' + team.sektWon + '. Sekt des Teams</p>';
         alert.classList.remove('d-none');
         setTimeout(() => {
             alert.classList.add('d-none');
@@ -352,8 +758,8 @@
         if (gameStatus === 'active') {
             activeGameControls.style.display = 'block';
             endGameButton.classList.remove('d-none');
-            team1Controls.style.display = 'block';
-            team2Controls.style.display = 'block';
+            team1Controls.style.display = 'flex';
+            team2Controls.style.display = 'flex';
             inactiveGameWarning.style.display = 'none';
             otherGameActiveWarning.style.display = 'none';
         } else {
