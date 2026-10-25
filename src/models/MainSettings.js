@@ -61,6 +61,12 @@ var MainSettingsSchema = new mongoose.Schema({
             default: false
         }
     },
+    soundOptions: {
+        start: { type: Boolean, default: true },
+        pause: { type: Boolean, default: true },
+        resume: { type: Boolean, default: true },
+        end: { type: Boolean, default: true }
+    },
     feedbackOptions: {
         enableFeedback: {
             type: Boolean,

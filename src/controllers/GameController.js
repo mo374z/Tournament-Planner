@@ -91,6 +91,7 @@ let timerInterval = null;
 let timer = 0;
 let isPaused = true;
 let countdownEnded = false;
+let gameStartedOnce = false; // false until the timer was started for the first time (start vs. resume sound)
 
 // Extra time ("Nachspielzeit"): counts upwards after the regular countdown reached 0
 const extraTime = { enabled: false, started: false, finished: false, seconds: 0 };
@@ -99,6 +100,17 @@ const extraTime = { enabled: false, started: false, finished: false, seconds: 0 
 const pauseState = { current: 0, total: 0, running: false, interval: null };
 
 let infoBannerMessage = ""; // Variable to store the info banner message
+
+// Emits playSound only if the sound type is enabled in the main settings (default: enabled)
+async function emitSound(type) {
+  try {
+    const settings = await MainSettings.findOne({}, "soundOptions").lean();
+    if (settings?.soundOptions?.[type] === false) return;
+  } catch (err) {
+    console.error("Could not read sound settings:", err.message);
+  }
+  io.emit("playSound", type);
+}
 
 function emitExtraState(target = io) {
   target.emit("timerExtraUpdate", {
@@ -170,7 +182,7 @@ function startTimerInterval() {
     } else {
       clearInterval(timerInterval);
       countdownEnded = true;
-      io.emit("playSound");
+      emitSound("end");
       io.emit("timerUpdate", timer, isPaused, "Ended", false);
     }
   }, 1000);
@@ -194,12 +206,14 @@ io.on('connection', (socket) => {
         if (isPaused) {
             isPaused = false;
             stopPauseTimer();
-            io.emit('playSound');
+            emitSound(gameStartedOnce ? 'resume' : 'start');
+            gameStartedOnce = true;
             startTimerInterval();
             emitExtraState();
         } else {
             clearInterval(timerInterval);
             isPaused = true;
+            emitSound('pause');
             startPauseTimer();
             emitTimerState();
         }
@@ -220,7 +234,7 @@ io.on('connection', (socket) => {
   socket.on("endOvertime", () => {
     if (!extraTime.started || extraTime.finished) return;
     finishOvertime();
-    io.emit("playSound");
+    emitSound("end");
     emitTimerState();
   });
 
@@ -281,6 +295,7 @@ function resetTimer(duration) {
     timer = duration;
     isPaused = true;
     countdownEnded = false;
+    gameStartedOnce = false;
     extraTime.enabled = false;
     extraTime.started = false;
     extraTime.finished = false;

@@ -49,6 +49,11 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="sounds-tab" data-bs-toggle="tab" data-bs-target="#sounds-tab-pane" type="button" role="tab" aria-controls="sounds-tab-pane" aria-selected="false">
+                <i class="fas fa-volume-up me-2"></i>Sounds
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats-tab-pane" type="button" role="tab" aria-controls="stats-tab-pane" aria-selected="false">
                 <i class="fas fa-chart-bar me-2"></i>Statistiken
             </button>
@@ -509,6 +514,64 @@
             </div>
         </div>
 
+        <!-- Sounds Tab -->
+        <div class="tab-pane fade" id="sounds-tab-pane" role="tabpanel" aria-labelledby="sounds-tab" tabindex="0">
+            <div class="card border border-secondary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-volume-up me-2"></i>Sounds für das Live-Game</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Nur MP3-Dateien (max. 10 MB). Ist kein Sound hochgeladen, wird der Standard-Horn-Sound abgespielt.</p>
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex justify-content-between"><h6>Spielstart <small class="text-muted">(startsound.mp3)</small></h6><div class="form-check form-switch"><input class="form-check-input sound-toggle" type="checkbox" data-type="start" {{#if mainSettings.soundOptions.start}}checked{{/if}}><label class="form-check-label">Aktiv</label></div></div>
+                                <div data-sound="start" data-when="exists" class="d-none mb-2"><span class="badge bg-success">Hochgeladen</span> <a class="btn btn-sm btn-outline-secondary" href="/mainSettings/sounds/download/start"><i class="fas fa-download me-1"></i>Herunterladen</a></div>
+                                <div data-sound="start" data-when="missing" class="mb-2"><span class="badge bg-secondary">Standard (Horn)</span></div>
+                                <form action="/mainSettings/sounds/upload/start" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                                    <input type="file" name="soundFile" accept=".mp3,audio/mpeg" class="form-control form-control-sm" required>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-upload me-1"></i>Hochladen</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex justify-content-between"><h6>Spiel pausieren <small class="text-muted">(pausesound.mp3)</small></h6><div class="form-check form-switch"><input class="form-check-input sound-toggle" type="checkbox" data-type="pause" {{#if mainSettings.soundOptions.pause}}checked{{/if}}><label class="form-check-label">Aktiv</label></div></div>
+                                <div data-sound="pause" data-when="exists" class="d-none mb-2"><span class="badge bg-success">Hochgeladen</span> <a class="btn btn-sm btn-outline-secondary" href="/mainSettings/sounds/download/pause"><i class="fas fa-download me-1"></i>Herunterladen</a></div>
+                                <div data-sound="pause" data-when="missing" class="mb-2"><span class="badge bg-secondary">Standard (Horn)</span></div>
+                                <form action="/mainSettings/sounds/upload/pause" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                                    <input type="file" name="soundFile" accept=".mp3,audio/mpeg" class="form-control form-control-sm" required>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-upload me-1"></i>Hochladen</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex justify-content-between"><h6>Spiel weiter <small class="text-muted">(resumesound.mp3)</small></h6><div class="form-check form-switch"><input class="form-check-input sound-toggle" type="checkbox" data-type="resume" {{#if mainSettings.soundOptions.resume}}checked{{/if}}><label class="form-check-label">Aktiv</label></div></div>
+                                <div data-sound="resume" data-when="exists" class="d-none mb-2"><span class="badge bg-success">Hochgeladen</span> <a class="btn btn-sm btn-outline-secondary" href="/mainSettings/sounds/download/resume"><i class="fas fa-download me-1"></i>Herunterladen</a></div>
+                                <div data-sound="resume" data-when="missing" class="mb-2"><span class="badge bg-secondary">Standard (Horn)</span></div>
+                                <form action="/mainSettings/sounds/upload/resume" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                                    <input type="file" name="soundFile" accept=".mp3,audio/mpeg" class="form-control form-control-sm" required>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-upload me-1"></i>Hochladen</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex justify-content-between"><h6>Spielende <small class="text-muted">(endsound.mp3)</small></h6><div class="form-check form-switch"><input class="form-check-input sound-toggle" type="checkbox" data-type="end" {{#if mainSettings.soundOptions.end}}checked{{/if}}><label class="form-check-label">Aktiv</label></div></div>
+                                <div data-sound="end" data-when="exists" class="d-none mb-2"><span class="badge bg-success">Hochgeladen</span> <a class="btn btn-sm btn-outline-secondary" href="/mainSettings/sounds/download/end"><i class="fas fa-download me-1"></i>Herunterladen</a></div>
+                                <div data-sound="end" data-when="missing" class="mb-2"><span class="badge bg-secondary">Standard (Horn)</span></div>
+                                <form action="/mainSettings/sounds/upload/end" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                                    <input type="file" name="soundFile" accept=".mp3,audio/mpeg" class="form-control form-control-sm" required>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-upload me-1"></i>Hochladen</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Statistics Tab -->
         <div class="tab-pane fade" id="stats-tab-pane" role="tabpanel" aria-labelledby="stats-tab" tabindex="0">
             <div class="row g-4">
@@ -645,5 +708,26 @@
         const dateFormatted = date.replace(/-/g, '.').replace(/_/g, ':');
         return confirm(`Bist du sicher, dass du das Backup vom ${dateFormatted} von ${time} wiederherstellen möchtest?\n\n` +
             `!! Das überschreibt die aktuelle DB in Mongo: ${dbName} mit den Daten aus dem Bakup!!!`);
+    }
+
+    // Sounds tab: show which sounds are uploaded, open tab via #sounds
+    fetch('/mainSettings/sounds/status').then(r => r.json()).then(status => {
+        Object.entries(status).forEach(([type, exists]) => {
+            document.querySelectorAll(`[data-sound="${type}"]`).forEach(el => {
+                el.classList.toggle('d-none', el.dataset.when === 'exists' ? !exists : exists);
+            });
+        });
+    });
+    document.querySelectorAll('.sound-toggle').forEach(box => {
+        box.addEventListener('change', () => {
+            fetch('/mainSettings/sounds/toggle/' + box.dataset.type, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: box.checked })
+            }).then(r => { if (!r.ok) { alert('Fehler beim Speichern'); box.checked = !box.checked; } });
+        });
+    });
+    if (location.hash === '#sounds') {
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('sounds-tab')).show();
     }
 </script>

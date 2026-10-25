@@ -601,7 +601,64 @@ async function checkForMainSettings() {
     }
 }
 
-//exort the router and the createMainSettings function
+// ---- Sound settings (stored as src/static/sounds/<name>.mp3) ----
+const multer = require('multer');
+const soundsDir = path.join(__dirname, '../static/sounds');
+const soundNames = { start: 'startsound', pause: 'pausesound', resume: 'resumesound', end: 'endsound' };
+const soundUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => cb(null, path.extname(file.originalname).toLowerCase() === '.mp3')
+});
+
+router.post('/sounds/upload/:type', soundUpload.single('soundFile'), (req, res) => {
+    const name = soundNames[req.params.type];
+    if (!name || !req.file) {
+        return res.redirect('/mainSettings?soundError=1#sounds');
+    }
+    fs.mkdirSync(soundsDir, { recursive: true });
+    fs.writeFileSync(path.join(soundsDir, `${name}.mp3`), req.file.buffer);
+    res.redirect('/mainSettings?soundSaved=1#sounds');
+});
+
+router.post('/sounds/toggle/:type', express.json(), async (req, res) => {
+    if (!soundNames[req.params.type]) return res.status(400).json({ ok: false });
+    try {
+        const mainSettings = (await MainSettings.findOne({})) || createDefaultMainSettings();
+        mainSettings.soundOptions[req.params.type] = req.body.enabled === true;
+        await mainSettings.save();
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('Error updating sound settings:', err);
+        res.status(500).json({ ok: false });
+    }
+});
+
+router.get('/sounds/download/:type', (req, res) => {
+    const name = soundNames[req.params.type];
+    const file = name && path.join(soundsDir, `${name}.mp3`);
+    if (!file || !fs.existsSync(file)) {
+        return res.status(404).send('Kein Sound hochgeladen');
+    }
+    res.download(file, `${name}.mp3`);
+});
+
+router.post('/sounds/delete/:type', (req, res) => {
+    const name = soundNames[req.params.type];
+    const file = name && path.join(soundsDir, `${name}.mp3`);
+    if (file && fs.existsSync(file)) fs.unlinkSync(file);
+    res.redirect('/mainSettings#sounds');
+});
+
+// Exposes which sounds exist so the settings page can show their state
+router.get('/sounds/status', (req, res) => {
+    const status = {};
+    for (const [type, name] of Object.entries(soundNames)) {
+        status[type] = fs.existsSync(path.join(soundsDir, `${name}.mp3`));
+    }
+    res.json(status);
+});
+
 module.exports = {
     router,
     checkForMainSettings 

@@ -197,10 +197,19 @@
         console.log('Game updated');
     });
 
-    const audio = new Audio('/sounds/Horn.mp3');       // Create an audio element
+    const soundFiles = { start: 'startsound', pause: 'pausesound', resume: 'resumesound', end: 'endsound' };
 
-    socket.on('playSound', (updatedGame) => {          
-        audio.play();
+    function playSoundFor(type) {
+        const name = soundFiles[type] || soundFiles.end;
+        const audio = new Audio('/sounds/' + name + '.mp3?t=' + Date.now());
+        audio.play().catch(() => {
+            // No custom sound uploaded -> fall back to default horn
+            new Audio('/sounds/Horn.mp3').play().catch(() => {});
+        });
+    }
+
+    socket.on('playSound', (type) => {
+        playSoundFor(type);
         const pageDivider = document.querySelector('.top-row');
         console.log('playSound');   
         pageDivider.classList.add('border-success');
