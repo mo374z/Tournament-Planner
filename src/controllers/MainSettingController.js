@@ -601,8 +601,44 @@ async function checkForMainSettings() {
     }
 }
 
-// ---- Sound settings (stored as src/static/sounds/<name>.mp3) ----
 const multer = require('multer');
+
+// ---- Advertising images management (public/images/carousel) ----
+const adsDir = path.join(__dirname, '../../public/images/carousel');
+const adExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg'];
+const adUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => { fs.mkdirSync(adsDir, { recursive: true }); cb(null, adsDir); },
+        filename: (req, file, cb) => {
+            const safe = path.basename(file.originalname).replace(/[^\w.\-äöüÄÖÜß]/g, '_');
+            cb(null, fs.existsSync(path.join(adsDir, safe)) ? `${Date.now()}_${safe}` : safe);
+        }
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => cb(null, adExtensions.includes(path.extname(file.originalname).toLowerCase()))
+});
+
+router.get('/ads', (req, res) => {
+    const images = fs.existsSync(adsDir)
+        ? fs.readdirSync(adsDir).filter(f => adExtensions.includes(path.extname(f).toLowerCase()))
+        : [];
+    res.render('layouts/manageAds', { images });
+});
+
+router.post('/ads/upload', adUpload.array('adImages', 20), (req, res) => {
+    res.redirect('/mainSettings/ads');
+});
+
+router.post('/ads/delete', (req, res) => {
+    const file = path.basename(req.body.filename || '');
+    const full = path.join(adsDir, file);
+    if (file && adExtensions.includes(path.extname(file).toLowerCase()) && fs.existsSync(full)) {
+        fs.unlinkSync(full);
+    }
+    res.redirect('/mainSettings/ads');
+});
+
+// ---- Sound settings (stored as src/static/sounds/<name>.mp3) ----
 const soundsDir = path.join(__dirname, '../static/sounds');
 const soundNames = { start: 'startsound', pause: 'pausesound', resume: 'resumesound', end: 'endsound' };
 const soundUpload = multer({

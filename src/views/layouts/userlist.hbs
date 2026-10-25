@@ -15,6 +15,7 @@
           <td>{{this.username}}</td>
           <td>{{this.role}}</td>
           <td>
+            <button type="button" class="btn btn-warning btn-sm" onclick="openPwModal('{{this.username}}')">Passwort ändern</button>
             {{#unless (eqref this.username ../username)}}
               <form action="/user/delete" method="POST" style="display:inline;" onsubmit="return confirm('Willst du wirklich diesen Benutzer löschen?');">
                 <input type="hidden" name="username" value="{{this.username}}">
@@ -29,7 +30,74 @@
     </tbody>
   </table>
 
+  <form action="/user/createDefaultUsers" method="POST" class="text-center mt-3" onsubmit="return confirm('Fehlende Standard-Benutzer (kassierer, beamer, tv) mit Passwort = Benutzername anlegen?');">
+    <button type="submit" class="btn btn-warning">Alle Standard-Benutzer erstellen (Kassierer, Beamer, TV)</button>
+  </form>
+
+  <div class="alert alert-info mt-4">
+    <strong>Rollen:</strong>
+    <ul class="mb-0">
+      <li>Kassierer: Kann Bestellungen im Kassenbereich aufnehmen.</li>
+      <li>Beamer: Kann das Live-Spiel auf dem Beamer anzeigen. (Navigationsbar wird ausgeblendet)</li>
+      <li>TV: Zeigt die TV Seite an. (Navigationsbar wird ausgeblendet)</li>
+    </ul>
+  </div>
+
   <div class="text-center mt-4">
     <a href="/mainSettings" class="btn btn-secondary">Zurück</a>
   </div>
 </div>
+
+<div class="modal fade" id="pwModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Passwort ändern: <span id="pwUser"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Neues Passwort</label>
+          <input type="password" id="pwNew" class="form-control" autocomplete="new-password">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Dein Admin-Passwort</label>
+          <input type="password" id="pwAdmin" class="form-control" autocomplete="current-password">
+        </div>
+        <div id="pwMsg" class="small"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="button" class="btn btn-primary" onclick="submitPw()">Passwort setzen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let pwTarget = '';
+  function openPwModal(username) {
+    pwTarget = username;
+    document.getElementById('pwUser').textContent = username;
+    document.getElementById('pwNew').value = '';
+    document.getElementById('pwAdmin').value = '';
+    document.getElementById('pwMsg').textContent = '';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('pwModal')).show();
+  }
+  async function submitPw() {
+    const msg = document.getElementById('pwMsg');
+    const res = await fetch('/user/changePassword', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: pwTarget,
+        newPassword: document.getElementById('pwNew').value,
+        adminPassword: document.getElementById('pwAdmin').value
+      })
+    });
+    const text = await res.text();
+    msg.className = 'small ' + (res.ok ? 'text-success' : 'text-danger');
+    msg.textContent = text;
+    if (res.ok) setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('pwModal')).hide(), 1200);
+  }
+</script>

@@ -215,6 +215,50 @@ router.post('/delete', verifyToken, isAdmin, async (req, res) => {
 
 
 
+// Change the password of a user; requires the password of the logged-in admin
+router.post('/changePassword', express.json(), verifyToken, isAdmin, async (req, res) => {
+    try {
+        const { username, newPassword, adminPassword } = req.body;
+        if (!username || !newPassword || !adminPassword) {
+            return res.status(400).send('Bitte alle Felder ausfüllen');
+        }
+        const admin = await User.findOne({ username: req.username });
+        if (!admin || !(await bcrypt.compare(adminPassword, admin.password))) {
+            return res.status(403).send('Admin-Passwort ist falsch');
+        }
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).send('Benutzer nicht gefunden');
+        }
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+        res.status(200).send('Passwort geändert');
+    } catch (err) {
+        console.error('Fehler beim Ändern des Passworts:', err);
+        res.status(500).send('Interner Serverfehler');
+    }
+});
+
+// Creates the standard users (username = password) if they don't exist yet
+router.post('/createDefaultUsers', verifyToken, isAdmin, async (req, res) => {
+    try {
+        const defaults = [
+            { username: 'kassierer', role: 'cashier' },
+            { username: 'beamer', role: 'beamer' },
+            { username: 'tv', role: 'TV' }
+        ];
+        for (const { username, role } of defaults) {
+            if (await User.findOne({ username })) continue;
+            const password = await bcrypt.hash(username, 10);
+            await new User({ username, password, role }).save();
+        }
+        res.redirect('/user/list');
+    } catch (err) {
+        console.error('Fehler beim Erstellen der Standard-Benutzer:', err);
+        res.status(500).send('Interner Serverfehler');
+    }
+});
+
 /* router.get('/protected', verifyToken, (req, res) => {
     if (req.userRole !== 'admin') {
         return res.status(403).send('Access denied. Requires admin role');

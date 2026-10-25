@@ -1,0 +1,39 @@
+<div class="container mt-5">
+  <h1 class="text-center">Werbung verwalten</h1>
+
+  <div class="card mt-4">
+    <div class="card-header bg-primary text-white">Neue Werbebilder hochladen</div>
+    <div class="card-body">
+      <form action="/mainSettings/ads/upload" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+        <input type="file" name="adImages" accept=".jpg,.jpeg,.png,.gif,.svg" multiple class="form-control" required>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i>Hochladen</button>
+      </form>
+      <small class="text-muted">JPG, PNG, GIF oder SVG, max. 10 MB pro Bild.</small>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    {{#each images}}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="card h-100 text-center">
+          <div class="d-flex align-items-center justify-content-center p-2" style="height:160px;">
+            <img src="/images/carousel/{{this}}" alt="{{this}}" style="max-width:100%; max-height:100%; object-fit:contain;">
+          </div>
+          <div class="card-body p-2">
+            <small class="text-break d-block mb-2">{{this}}</small>
+            <form action="/mainSettings/ads/delete" method="POST" onsubmit="return confirm('Dieses Bild wirklich löschen?');">
+              <input type="hidden" name="filename" value="{{this}}">
+              <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash me-1"></i>Löschen</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <p class="text-center text-muted">Keine Werbebilder vorhanden.</p>
+    {{/each}}
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="/mainSettings" class="btn btn-secondary">Zurück</a>
+  </div>
+</div>

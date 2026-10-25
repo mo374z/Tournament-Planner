@@ -334,8 +334,8 @@
         <!-- Display Tab -->
         <div class="tab-pane fade" id="display-tab-pane" role="tabpanel" aria-labelledby="display-tab" tabindex="0">
             <div class="row g-4">
-                <!-- Public Page Settings -->
                 <div class="col-lg-6">
+                    <!-- Public Page Settings -->
                     <div class="card border border-secondary shadow-sm">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Öffentliche Hauptseite</h5>
@@ -354,7 +354,7 @@
                                         <i class="fas fa-trophy me-2"></i>Rangliste anzeigen
                                     </label>
                                 </div>
-                                <div class="d-grid">
+                                <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save me-2"></i>Speichern
                                     </button>
@@ -362,38 +362,9 @@
                             </form>
                         </div>
                     </div>
-                </div>
 
-                <!-- Live Game Page Settings -->
-                <div class="col-lg-6">
-                    <div class="card border border-secondary shadow-sm">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="fas fa-tv me-2"></i>Live Game Seite</h5>
-                        </div>
-                        <div class="card-body">
-                            <form action="/mainSettings/liveGamePageSettings" method="POST" autocomplete="off">
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="showTeamLogos" name="showTeamLogos" {{#if mainSettings.liveGamePageOptions.showTeamLogos}}checked{{/if}}>
-                                    <label class="form-check-label" for="showTeamLogos">
-                                        <i class="fas fa-shield-alt me-2"></i>Team-Logos anzeigen
-                                    </label>
-                                </div>
-                                <small class="text-muted mb-3 d-block">
-                                    <i class="fas fa-info-circle me-1"></i>Bitte danach die Live Game Seite neu laden!
-                                </small>
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-success">
-                                        <i class="fas fa-save me-2"></i>Speichern
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Feedback Management -->
-                <div class="col-lg-6">
-                    <div class="card border border-secondary shadow-sm">
+                    <!-- Feedback Management -->
+                    <div class="card border border-secondary shadow-sm mt-4">
                         <div class="card-header bg-info text-white">
                             <h5 class="mb-0"><i class="fas fa-comment-dots me-2"></i>Feedback System</h5>
                         </div>
@@ -416,6 +387,47 @@
                                     <i class="fas fa-comments me-2"></i>Feedback verwalten
                                 </a>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <!-- Advertising Management -->
+                    <div class="card border border-secondary shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-images me-2"></i>Werbung</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid">
+                                <a href="/mainSettings/ads" class="btn btn-outline-warning">
+                                    <i class="fas fa-images me-2"></i>Werbung verwalten
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Game Page Settings -->
+                    <div class="card border border-secondary shadow-sm mt-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-tv me-2"></i>Live Game Seite</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/mainSettings/liveGamePageSettings" method="POST" autocomplete="off">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="showTeamLogos" name="showTeamLogos" {{#if mainSettings.liveGamePageOptions.showTeamLogos}}checked{{/if}}>
+                                    <label class="form-check-label" for="showTeamLogos">
+                                        <i class="fas fa-shield-alt me-2"></i>Team-Logos anzeigen
+                                    </label>
+                                </div>
+                                <small class="text-muted mb-3 d-block">
+                                    <i class="fas fa-info-circle me-1"></i>Bitte danach die Live Game Seite neu laden!
+                                </small>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save me-2"></i>Speichern
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
