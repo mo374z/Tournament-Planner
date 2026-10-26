@@ -46,6 +46,12 @@
                         </div>
                     </form>
                     
+                    {{#if isAdmin}}
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="/myteam/logos" class="btn btn-info">Teamlogos verwalten</a>
+                    </div>
+                    {{/if}}
+
                     <div class="text-center mt-3">
                         {{#if isAdmin}}
                         <small class="text-muted">

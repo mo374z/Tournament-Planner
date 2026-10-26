@@ -1,0 +1,32 @@
+<div class="container">
+    <div class="mb-3">
+        <h3 class="mb-0">Teamlogos verwalten</h3>
+    </div>
+
+    {{#if teams.length}}
+    <div class="row g-3">
+        {{#each teams}}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-2" style="height: 150px; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                        <img src="{{this.logo.path}}" alt="Logo {{this.name}}" style="max-width: 100%; max-height: 150px; object-fit: contain;">
+                    </div>
+                    <h6 class="mb-3">{{this.name}}</h6>
+                    <form action="/myteam/logos/{{this._id}}/delete" method="POST" class="mt-auto"
+                          onsubmit="return confirm('Logo von {{this.name}} wirklich löschen?');">
+                        <button type="submit" class="btn btn-danger btn-sm w-100">Löschen</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="alert alert-info">Es wurden noch keine Teamlogos hochgeladen.</div>
+    {{/if}}
+
+    <div class="mt-4">
+        <a href="/myteam/login" class="btn btn-outline-secondary">Zurück</a>
+    </div>
+</div>

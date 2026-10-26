@@ -6,7 +6,7 @@ const Team = mongoose.model('Team');
 const Player = mongoose.model('Player');
 const MainSettings = mongoose.model('MainSettings');
 const cookieParser = require('cookie-parser');
-const { checkLoginStatus } = require('../middleware/auth');
+const { checkLoginStatus, isAdmin } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -59,6 +59,40 @@ router.get("/login", checkLoginStatus, async (req, res) => {
     });
   } catch (err) {
     console.log("Error loading MyTeam login: " + err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+const DEFAULT_LOGO_PATH = '/teamlogos/default_logo.png';
+
+// Admin: manage uploaded team logos
+router.get("/logos", checkLoginStatus, isAdmin, async (req, res) => {
+  try {
+    const teams = await Team.find({ 'logo.path': { $exists: true, $ne: DEFAULT_LOGO_PATH } })
+      .select('name logo.path').sort({ name: 1 }).exec();
+    res.render("layouts/myTeamLogos", { teams: teams });
+  } catch (err) {
+    console.log("Error loading team logos: " + err);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Admin: delete an uploaded team logo (reset to default)
+router.post("/logos/:id/delete", checkLoginStatus, isAdmin, async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id).exec();
+    if (team && team.logo?.path && team.logo.path !== DEFAULT_LOGO_PATH) {
+      const filePath = path.join('public', 'teamlogos', path.basename(team.logo.path));
+      fs.unlink(filePath, () => {});
+      team.logo.path = DEFAULT_LOGO_PATH;
+      team.logo.position = { x: 0.5, y: 0.5 };
+      team.logo.scale = 0.5;
+      team.logo.backgroundColor = '#f8f9fa';
+      await team.save();
+    }
+    res.redirect('/myteam/logos');
+  } catch (err) {
+    console.log("Error deleting team logo: " + err);
     res.status(500).send("Internal Server Error");
   }
 });
