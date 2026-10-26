@@ -30,7 +30,7 @@ const logoStorage = multer.diskStorage({
     cb(null, "public/teamlogos/");
   },
   filename: function(req, file, cb) {
-    cb(null, req.body.teamId + "_logo" + path.extname(file.originalname));
+    cb(null, req.cookies.myTeamId + "_logo" + path.extname(file.originalname));
   },
 });
 
@@ -214,6 +214,20 @@ router.get("/dashboard", async (req, res) => {
     // Get players for this team
     const players = await Player.find({ team: team._id }).exec();
 
+    let beerRanking = null;
+    if (mainSettings.myTeamPageOptions?.showBeerRanking) {
+      const rankedTeams = await Team.find({ 'drinksCount.points': { $gt: 0 } })
+        .sort({ 'drinksCount.points': -1 })
+        .select('_id');
+      const rankIndex = rankedTeams.findIndex(rankedTeam => rankedTeam._id.equals(team._id));
+      beerRanking = {
+        rank: rankIndex === -1 ? null : rankIndex + 1,
+        points: team.drinksCount?.points || 0,
+        weizen: team.drinksCount?.weizen || 0,
+        pils: team.drinksCount?.pils || 0
+      };
+    }
+
     if(team.imagePath === undefined || team.imagePath === null){
       team.imagePath = '/teampictures/default.jpg';
     }
@@ -240,6 +254,7 @@ router.get("/dashboard", async (req, res) => {
         imagePath: team.imagePath,
         logo: team.logo || {},
         finalPlacement: team.finalPlacement,
+        beerRanking: beerRanking,
         _id: team._id // Add team ID for upload form
     };
 
@@ -312,10 +327,10 @@ router.post("/uploadLogo", uploadLogo.single("teamLogo"), async (req, res) => {
       });
     }
 
-    // Verify that the team in cookie matches the form teamId for security
-    if (teamId !== req.body.teamId) {
-      return res.status(403).render("layouts/error", {
-        message: "Keine Berechtigung für dieses Team."
+    // The team is identified by the login cookie, not by the form field
+    if (!req.file) {
+      return res.status(400).render("layouts/error", {
+        message: "Keine Datei hochgeladen."
       });
     }
 

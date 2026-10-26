@@ -45,7 +45,8 @@ function createDefaultMainSettings() {
         myTeamPageOptions: {
             myTeamEnabled: false,
             allowImageUpload: false,
-            allowLogoUpload: false
+            allowLogoUpload: false,
+            showBeerRanking: false
         }
     });
 }
@@ -314,7 +315,7 @@ router.post('/liveGamePageSettings', async (req, res) => {
 // POST route to handle MyTeam Settings
 router.post('/myTeamSettings', async (req, res) => {
     try {
-        const { myTeamEnabled, allowImageUpload, allowLogoUpload, allowPlayerAdd, allowCertificateDownload } = req.body;
+        const { myTeamEnabled, allowImageUpload, allowLogoUpload, allowPlayerAdd, allowCertificateDownload, showBeerRanking } = req.body;
 
         // Find the MainSettings document and update its values
         let mainSettings = await MainSettings.findOne({});
@@ -334,6 +335,7 @@ router.post('/myTeamSettings', async (req, res) => {
         mainSettings.myTeamPageOptions.allowLogoUpload = allowLogoUpload === 'on';
         mainSettings.myTeamPageOptions.allowPlayerAdd = allowPlayerAdd === 'on';
         mainSettings.myTeamPageOptions.allowCertificateDownload = allowCertificateDownload === 'on';
+        mainSettings.myTeamPageOptions.showBeerRanking = showBeerRanking === 'on';
 
         // Save the updated MainSettings
         await mainSettings.save();

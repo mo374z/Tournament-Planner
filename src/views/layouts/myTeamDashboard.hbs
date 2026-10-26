@@ -10,9 +10,127 @@
             </a>
         </div>
     </div>
+
+    {{!-- Tutorial steps: data-target is the section to scroll to (empty = scroll to top) --}}
+    <div id="myTeamTutorialSteps" class="d-none" data-team-id="{{team._id}}">
+        <div data-target="" data-title="Willkommen auf der MyTeam-Seite von {{team.name}}!">Hier findest du eure Teamstatistiken, Spiele und Spieler. Wir zeigen dir kurz die einzelnen Bereiche.</div>
+        <div data-target="myteam-stats" data-title="Statistiken und Spielergebnisse{{#if mainSettings.myTeamPageOptions.showBeerRanking}} & Bier-Ranking{{/if}}">Hier siehst du die Statistiken eurer Mannschaft: Gruppe, gespielte Spiele, Tore,         Sekt sowie Siege, Unentschieden und Niederlagen.{{#if mainSettings.myTeamPageOptions.showBeerRanking}} Außerdem seht ihr im Bier-Ranking eure Punkte, eure aktuelle Platzierung sowie die Anzahl an Weizen und Pils.{{/if}}</div>
+        {{#if team.logo.path}}
+        <div data-target="myteam-logo" data-title="Team-Logo">{{#if mainSettings.myTeamPageOptions.allowLogoUpload}}Hier könnt ihr ein Logo für eure Mannschaft hochladen und bearbeiten. Es wird bei der Spielstandsanzeige verwendet.{{else}}Hier seht ihr euer Team-Logo. Es wird bei der Spielstandsanzeige verwendet.{{/if}}</div>
+        {{/if}}
+        {{#if team.imagePath}}
+        <div data-target="myteam-image" data-title="Team-Bild">{{#if mainSettings.myTeamPageOptions.allowImageUpload}}Hier könnt ihr euer Mannschaftsbild hochladen oder euer aktuelles Bild herunterladen.{{else}}Hier könnt ihr euer Mannschaftsbild ansehen und herunterladen.{{/if}}</div>
+        {{/if}}
+        <div data-targets="myteam-upcoming,myteam-past" data-title="Kommende und bisherige Spiele">Hier siehst du deine kommenden Spiele mit Uhrzeit und Gegner. Direkt darunter findest du deine bisherigen Spiele mit Ergebnissen.</div>
+        <div data-target="myteam-players" data-title="Eure Spieler">{{#if mainSettings.myTeamPageOptions.allowPlayerAdd}}Hier kannst du die Namen und Trikotnummern deiner Spieler eintragen, damit wir geschossene Tore einfacher zuordnen können und so den besten Torschützen ermitteln können.{{else}}Hier siehst du die Spieler deiner Mannschaft.{{/if}}</div>
+        {{#if mainSettings.myTeamPageOptions.allowCertificateDownload}}
+        <div data-target="myteam-certificate" data-title="Urkunde">Hier könnt ihr eure Urkunde herunterladen.</div>
+        {{/if}}
+    </div>
+
+    <div id="myTeamTutorialBackdrop" class="myteam-tutorial-backdrop" style="display: none;" aria-hidden="true"></div>
+    <div id="myTeamTutorial" class="card shadow-lg" style="display: none;">
+        <div class="card-header text-white">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h5 mb-0" id="myTeamTutorialTitle"><i class="fas fa-compass me-2"></i></h2>
+                <span class="badge rounded-pill bg-light text-primary" id="myTeamTutorialCounter"></span>
+            </div>
+            <div class="progress myteam-tutorial-progress" role="progressbar" aria-label="Tutorial-Fortschritt">
+                <div id="myTeamTutorialProgress" class="progress-bar"></div>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="mb-4" id="myTeamTutorialText"></p>
+            <div class="d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-outline-secondary" id="myTeamTutorialSkip">Überspringen</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" id="myTeamTutorialPrev"><i class="fas fa-arrow-left me-1"></i>Zurück</button>
+                    <button type="button" class="btn btn-primary fw-bold" id="myTeamTutorialNext">Weiter<i class="fas fa-arrow-right ms-2"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .myteam-tutorial-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1040;
+            background: rgba(12, 22, 40, 0.68);
+            backdrop-filter: blur(2px);
+        }
+
+        #myTeamTutorial {
+            position: fixed;
+            left: 50%;
+            bottom: 1.25rem;
+            transform: translateX(-50%);
+            width: min(640px, calc(100% - 2rem));
+            z-index: 1055;
+            overflow: hidden;
+            border: 2px solid #0d6efd;
+            border-radius: 1rem;
+            animation: myteam-tutorial-appear 250ms ease-out;
+        }
+
+        #myTeamTutorial .card-header {
+            padding: 1rem 1.25rem 0.85rem;
+            border: 0;
+            background: linear-gradient(120deg, #0d6efd, #5b36a8);
+        }
+
+        #myTeamTutorial .card-body {
+            padding: 1.25rem;
+        }
+
+        #myTeamTutorialText {
+            min-height: 3.5rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .myteam-tutorial-progress {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        #myTeamTutorialProgress {
+            background-color: #ffc107;
+            transition: width 250ms ease;
+        }
+
+        .myteam-tutorial-highlight {
+            position: relative;
+            z-index: 1041;
+            outline: 4px solid #ffc107;
+            outline-offset: 4px;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 0 8px rgba(255, 193, 7, 0.3);
+        }
+
+        @keyframes myteam-tutorial-appear {
+            from { opacity: 0; margin-bottom: -1rem; }
+            to { opacity: 1; margin-bottom: 0; }
+        }
+
+        @media (max-width: 576px) {
+            #myTeamTutorial {
+                bottom: 0.5rem;
+                width: calc(100% - 1rem);
+            }
+
+            #myTeamTutorial .card-body {
+                padding: 1rem;
+            }
+
+            #myTeamTutorialText {
+                font-size: 1rem;
+            }
+        }
+    </style>
     
     <!-- Team Info Section -->
-    <div class="page-divider">
+    <div class="page-divider" id="myteam-stats" style="scroll-margin-top: 1rem;">
         <div class="row g-4">
             <div class="col-lg-8">
                 <!-- Team Basic Info -->
@@ -86,6 +204,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                             <div class="col-6 col-md-3">
                                 <div class="result-card draw-card">
@@ -121,7 +240,7 @@
                                         <i class="fas fa-medal"></i>
                                     </div>
                                     <div class="result-number">{{#if team.finalPlacement}}{{team.finalPlacement}}{{else}}-{{/if}}</div>
-                                    <div class="result-label">Platzierung</div>
+                                    <div class="result-label">Akt. Platzierung</div>
                                     <div class="result-progress">
                                         <div class="progress">
                                             <div class="progress-bar bg-info" style="width: 100%"></div>
@@ -132,13 +251,64 @@
                         </div>
                     </div>
                 </div>
+                {{#if mainSettings.myTeamPageOptions.showBeerRanking}}
+                <div class="card shadow-sm mt-3" id="myteam-beer" style="scroll-margin-top: 1rem;">
+                    <div class="card-header bg-warning text-dark">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-beer me-2"></i>Bier-Ranking
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="result-card placement-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="result-number">
+                                        {{#if team.beerRanking.rank}}{{team.beerRanking.rank}}{{else}}-{{/if}}
+                                    </div>
+                                    <div class="result-label">Platzierung</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="result-card placement-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <div class="result-number">{{team.beerRanking.points}}</div>
+                                    <div class="result-label">Punkte</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="result-card win-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-beer"></i>
+                                    </div>
+                                    <div class="result-number">{{team.beerRanking.weizen}}</div>
+                                    <div class="result-label">Weizen</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="result-card draw-card">
+                                    <div class="result-icon">
+                                        <i class="fas fa-beer"></i>
+                                    </div>
+                                    <div class="result-number">{{team.beerRanking.pils}}</div>
+                                    <div class="result-label">Pils</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{/if}}
             </div>
             
             <div class="col-lg-4">
                 <div class="row g-3">
                     <!-- Team Logo (jetzt zuerst) -->
                     {{#if team.logo.path}}
-                    <div class="col-12">
+                    <div class="col-12" id="myteam-logo" style="scroll-margin-top: 1rem;">
                         <div class="card h-100 shadow-sm">
                             <div class="card-header bg-info text-white">
                                 <h2 class="card-title mb-0">
@@ -171,7 +341,7 @@
                     
                     <!-- Team Image (jetzt nach dem Logo) -->
                     {{#if team.imagePath}}
-                    <div class="col-12">
+                    <div class="col-12" id="myteam-image" style="scroll-margin-top: 1rem;">
                         <div class="card h-100 shadow-sm">
                             <div class="card-header bg-secondary text-white">
                                 <h2 class="card-title mb-0">
@@ -213,7 +383,7 @@
     </div>
     
     <!-- Upcoming Games Section -->
-    <div class="page-divider">
+    <div class="page-divider" id="myteam-upcoming" style="scroll-margin-top: 1rem;">
         <div class="card shadow-sm">
             <div class="card-header bg-info text-white">
                 <h2 class="card-title mb-0">
@@ -255,7 +425,7 @@
     </div>
     
     <!-- Past Games Section -->
-    <div class="page-divider">
+    <div class="page-divider" id="myteam-past" style="scroll-margin-top: 1rem;">
         <div class="card shadow-sm">
             <div class="card-header bg-success text-white">
                 <h2 class="card-title mb-0">
@@ -319,7 +489,7 @@
     </div>
     
     <!-- Team Players Section -->
-    <div class="page-divider">
+    <div class="page-divider" id="myteam-players" style="scroll-margin-top: 1rem;">
         <div class="card shadow-sm">
             <div class="card-header bg-primary text-white">
                 <h2 class="card-title mb-0">
@@ -382,7 +552,7 @@
     
     <!-- Certificate Download Section -->
     {{#if mainSettings.myTeamPageOptions.allowCertificateDownload}}
-    <div class="page-divider">
+    <div class="page-divider" id="myteam-certificate" style="scroll-margin-top: 1rem;">
         <div class="card shadow-sm">
             <div class="card-header bg-warning text-dark">
                 <h2 class="card-title mb-0">
@@ -504,50 +674,40 @@
 
 <!-- Team Logo Modal -->
 <div class="modal fade" id="teamLogoModal" tabindex="-1" aria-labelledby="teamLogoModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header py-2">
                 <h5 class="modal-title" id="teamLogoModalLabel">
                     <i class="fas fa-shield-alt me-2"></i>Team Logo
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body py-2">
                 {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
                 <!-- Logo Upload -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h6><i class="fas fa-upload me-2"></i>Neues Logo hochladen</h6>
-                        <form id="logoUploadForm" action="/myteam/uploadLogo" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="teamId" id="logoTeamId">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="file" class="form-control" id="logoFileInput" name="teamLogo" accept="image/*" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-upload me-2"></i>Logo hochladen
-                                    </button>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">
-                                Unterstützte Formate: JPG, PNG, GIF (Max. 5MB)
-                            </small>
-                        </form>
-                    </div>
+                <div class="mb-2">
+                    <form id="logoUploadForm" action="/myteam/uploadLogo" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="teamId" id="logoTeamId">
+                        <label for="logoFileInput" class="form-label mb-1 small fw-bold"><i class="fas fa-upload me-1"></i>Neues Logo hochladen</label>
+                        <div class="input-group input-group-sm">
+                            <input type="file" class="form-control" id="logoFileInput" name="teamLogo" accept="image/*" required>
+                            <button type="submit" class="btn btn-primary">Hochladen</button>
+                        </div>
+                        <small class="form-text text-muted">JPG, PNG, GIF (Max. 5MB)</small>
+                    </form>
                 </div>
-                <hr>
+                <hr class="my-2">
                 {{/if}}
                 
                 <!-- Logo Bearbeitung - genau wie Team Details -->
-                <div class="team-logo" style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
-                    <p class="text-muted mb-4 text-center">
+                <div class="team-logo myteam-logo-editor">
+                    <p class="text-muted mb-2 text-center small">
                         <i class="fa fa-info-circle"></i> 
-                        <strong>Anleitung:</strong> Logo im Kreis an passende Position schieben und Größe anpassen. <br> Dann auf "Speichern" klicken !
+                        Logo im Kreis an passende Position schieben und Größe anpassen. Dann auf "Speichern" klicken!
                     </p>
                     
                     <!-- Logo Container - zentriert -->
-                    <div class="text-center mb-5" style="padding: 50px 60px;">
+                    <div class="text-center myteam-logo-stage">
                         <div style="position: relative; display: inline-block;">
                             <!-- Pfeil nach oben -->
                             <div style="position: absolute; top: -35px; left: 50%; transform: translateX(-50%);">
@@ -606,37 +766,26 @@
                     </div>
                     
                     {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
-                    <!-- Zentrieren Buttons -->
-                    <div class="text-center mb-4">
-                        <button type="button" id="myteam-center-horizontal" class="btn btn-outline-primary btn-sm mx-2">Horizontal zentrieren</button>
-                        <button type="button" id="myteam-center-vertical" class="btn btn-outline-primary btn-sm mx-2">Vertikal zentrieren</button>
+                    <!-- Zentrieren, Größe und Hintergrundfarbe kompakt -->
+                    <div class="text-center mb-2">
+                        <button type="button" id="myteam-center-horizontal" class="btn btn-outline-primary btn-sm mx-1">Horizontal zentrieren</button>
+                        <button type="button" id="myteam-center-vertical" class="btn btn-outline-primary btn-sm mx-1">Vertikal zentrieren</button>
                     </div>
                     
-                    <!-- Größe Regler -->
-                    <div class="text-center mb-4">
-                        <label for="myteam-logo-scale" class="form-label"><strong>Größe:</strong></label><br>
-                        <div style="display: inline-block; width: 300px;">
+                    <div class="row g-2 align-items-center justify-content-center">
+                        <div class="col-8">
+                            <label for="myteam-logo-scale" class="form-label mb-0 small"><strong>Größe:</strong> <span id="myteam-scale-value" style="font-weight: bold;">0.5</span></label>
                             <input type="range" id="myteam-logo-scale" min="0.05" max="1.5" step="0.05" 
                                    value="0.5" 
                                    class="form-range" style="width: 100%;">
-                            <div class="text-center mt-1">
-                                <span id="myteam-scale-value" style="font-weight: bold;">0.5</span>
-                            </div>
+                            <button type="button" id="myteam-reset-logo" class="btn btn-secondary btn-sm w-100">Zurücksetzen</button>
                         </div>
-                    </div>
-                    
-                    <!-- Hintergrundfarbe -->
-                    <div class="text-center mb-4">
-                        <label for="myteam-background-color" class="form-label"><strong>Hintergrundfarbe:</strong></label><br>
-                        <input type="color" id="myteam-background-color" 
-                               value="#f8f9fa"
-                               class="form-control" style="width: 100px; height: 40px; margin: 0 auto;">
-                    </div>
-                    
-                    <!-- Zurücksetzen und Speichern -->
-                    <div class="text-center mb-4">
-                        <button type="button" id="myteam-save-logo-position" class="btn btn-success btn-lg d-block w-100 mb-2">Speichern</button>
-                        <button type="button" id="myteam-reset-logo" class="btn btn-secondary d-block w-100">Zurücksetzen auf Standard</button>
+                        <div class="col-4 text-center">
+                            <label for="myteam-background-color" class="form-label mb-0 small"><strong>Hintergrund:</strong></label>
+                            <input type="color" id="myteam-background-color"
+                                   value="#f8f9fa"
+                                   class="form-control form-control-color mx-auto" style="width: 60px;">
+                        </div>
                     </div>
                     {{else}}
                     <div class="text-center">
@@ -646,14 +795,45 @@
                     {{/if}}
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen & Schließen</button>
+            <div class="modal-footer py-2 flex-nowrap">
+                {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}
+                <button type="button" id="myteam-save-logo-position" class="btn btn-success fw-bold flex-grow-1">Speichern</button>
+                {{/if}}
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Schließen</button>
             </div>
         </div>
     </div>
 </div>
 
 <style>
+    .myteam-logo-editor {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    .myteam-logo-stage {
+        padding: 40px 55px;
+        margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 576px) {
+        .myteam-logo-editor {
+            padding: 8px;
+        }
+
+        .myteam-logo-stage {
+            padding: 38px 50px;
+            margin-bottom: 0;
+        }
+    }
+
+    @media (max-height: 700px) {
+        .myteam-logo-stage {
+            padding: 32px 50px;
+        }
+    }
+
     .page-divider {
         margin-bottom: 2rem;
     }
@@ -1553,6 +1733,66 @@ function initAddPlayerModal() {
         addPlayerInfo.classList.add('d-none');
     }
 }
+</script>
+
+<script>
+(function() {
+    const stepsContainer = document.getElementById('myTeamTutorialSteps');
+    const steps = Array.from(stepsContainer.children);
+    const popup = document.getElementById('myTeamTutorial');
+    const backdrop = document.getElementById('myTeamTutorialBackdrop');
+    const storageKey = `myTeamTutorialDone-${stepsContainer.dataset.teamId}`;
+    const prevBtn = document.getElementById('myTeamTutorialPrev');
+    const nextBtn = document.getElementById('myTeamTutorialNext');
+    const progress = document.getElementById('myTeamTutorialProgress');
+    let current = 0;
+    let highlighted = [];
+
+    function finish() {
+        popup.style.display = 'none';
+        backdrop.style.display = 'none';
+        highlighted.forEach(target => target.classList.remove('myteam-tutorial-highlight'));
+        highlighted = [];
+        localStorage.setItem(storageKey, 'true');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showStep(index) {
+        current = index;
+        const step = steps[index];
+        document.getElementById('myTeamTutorialTitle').textContent = step.dataset.title;
+        document.getElementById('myTeamTutorialText').textContent = step.textContent.trim();
+        document.getElementById('myTeamTutorialCounter').textContent = `${index + 1} / ${steps.length}`;
+        progress.style.width = `${((index + 1) / steps.length) * 100}%`;
+        prevBtn.style.visibility = index === 0 ? 'hidden' : 'visible';
+        nextBtn.textContent = index === steps.length - 1 ? 'Fertig' : 'Weiter';
+
+        highlighted.forEach(target => target.classList.remove('myteam-tutorial-highlight'));
+        const targetIds = (step.dataset.targets || step.dataset.target || '')
+            .split(',')
+            .map(targetId => targetId.trim())
+            .filter(Boolean);
+        highlighted = targetIds
+            .map(targetId => document.getElementById(targetId))
+            .filter(Boolean);
+        if (highlighted.length) {
+            highlighted.forEach(target => target.classList.add('myteam-tutorial-highlight'));
+            highlighted[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    nextBtn.addEventListener('click', () => current === steps.length - 1 ? finish() : showStep(current + 1));
+    prevBtn.addEventListener('click', () => showStep(current - 1));
+    document.getElementById('myTeamTutorialSkip').addEventListener('click', finish);
+
+    if (localStorage.getItem(storageKey) !== 'true') {
+        backdrop.style.display = 'block';
+        popup.style.display = 'block';
+        showStep(0);
+    }
+})();
 </script>
 
 {{#if mainSettings.myTeamPageOptions.allowLogoUpload}}

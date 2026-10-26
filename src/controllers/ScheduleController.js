@@ -653,6 +653,29 @@ router.get('/:id/move/up', async (req, res) => {
     }
 });
 
+router.get('/:id/swap/:otherId', async (req, res) => {
+    try {
+        const game = await Game.findById(req.params.id);
+        const other = await Game.findById(req.params.otherId);
+        if (!game || !other || game._id.equals(other._id)) {
+            return res.status(400).send('Ungültige Spiele zum Tauschen');
+        }
+        if (game.status !== 'Scheduled' || other.status !== 'Scheduled') {
+            return res.status(400).send('Nur geplante Spiele (Scheduled) können getauscht werden');
+        }
+        [game.number, other.number] = [other.number, game.number];
+        [game.time, other.time] = [other.time, game.time];
+        await game.save();
+        await other.save();
+        const first = game.number < other.number ? game : other;
+        await updateSubsequentGamesTime(first._id, 0);
+        res.redirect('/schedule/list');
+    } catch (err) {
+        console.error('Error swapping games: ', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 router.get('/:id/move/down', async (req, res) => {
     try {
         const gameId = req.params.id;

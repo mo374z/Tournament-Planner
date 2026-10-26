@@ -21,7 +21,7 @@
                 </thead>
                 <tbody>
                     {{#each list}}
-                    <tr {{#streq this.gamePhase 'Group_Stage'}}  {{else}}class="table-secondary"{{/streq}}>
+                    <tr data-id="{{this.id}}" data-number="{{this.number}}" data-time="{{formatTime this.time}}" data-teams="{{this.opponents.[0]}} vs. {{this.opponents.[1]}}" data-groups="{{this.group.[0]}} / {{this.group.[1]}}" data-name="{{this.gameDisplayName}}" data-status="{{this.status}}" {{#streq this.gamePhase 'Group_Stage'}}  {{else}}class="table-secondary"{{/streq}}>
                         <td>{{this.number}}</td>
                         <td>{{formatTime this.time}}</td>
                         <td>{{this.opponents.[0]}}</td>
@@ -63,6 +63,11 @@
                                     <a href="/schedule/{{this.id}}/move/down" class="btn btn-info move-btn" style="display: none;" onclick="return confirm('Bist du sicher, dass du dieses Spiel Nr. {{this.number}}: \n{{this.opponents.[0]}} vs. {{this.opponents.[1]}} - akt. um {{formatTime this.time}} \n nach UNTEN verschieben möchtest?');">▼</a>
                                 {{/streq}}
                             {{/streq}}
+                            {{#streq this.status 'Scheduled'}}
+                                <button type="button" class="btn btn-info move-btn swap-btn" style="display: none;" onclick="openSwapDialog('{{this.id}}')">⇄</button>
+                            {{else}}
+                                <button type="button" class="btn btn-info move-btn swap-btn" style="display: none;" disabled>⇄</button>
+                            {{/streq}}
                             
                             </div>
                         </td>
@@ -96,7 +101,47 @@
     <br><br>
 </section>
 
-<script>console.log( this.isGamePlayable )</script>
+<div id="swapDialog" style="display:none; position:fixed; top:0; left:0; right:0; z-index:2000; background:#fff; border-bottom:2px solid #0dcaf0; box-shadow:0 4px 12px rgba(0,0,0,.3); padding:20px; text-align:center;">
+    <p>Mit welchem Spiel möchtest du das folgende Spiel tauschen? <br><strong id="swapSource"></strong>  <br>tauschen mit:</p>
+    <select id="swapTarget" class="form-select d-inline-block" style="max-width: 800px;"></select>
+    <div style="margin-top:10px;">
+        <button type="button" class="btn btn-primary" id="swapConfirm">Tauschen</button>
+        <button type="button" class="btn btn-secondary" id="swapCancel">Abbrechen</button>
+    </div>
+</div>
+
+<script>
+function gameLabel(row) {
+    const d = row.dataset;
+    return `Nr. ${d.number} | ${d.time} | ${d.teams} | ${d.groups} | ${d.name}`;
+}
+
+function openSwapDialog(id) {
+    const rows = Array.from(document.querySelectorAll('#scheduleTable tbody tr'));
+    const source = rows.find(r => r.dataset.id === id);
+    if (!source) return;
+    document.getElementById('swapSource').textContent = gameLabel(source);
+    const select = document.getElementById('swapTarget');
+    select.innerHTML = '';
+    rows.filter(r => r !== source && r.dataset.status === 'Scheduled').forEach(r => {
+        const option = document.createElement('option');
+        option.value = r.dataset.id;
+        option.textContent = gameLabel(r);
+        select.appendChild(option);
+    });
+    document.getElementById('swapConfirm').onclick = function() {
+        if (select.value && confirm('Spiele wirklich tauschen?')) {
+            window.location.href = `/schedule/${id}/swap/${select.value}`;
+        }
+    };
+    document.getElementById('swapDialog').style.display = 'block';
+    window.scrollTo(0, 0);
+}
+
+document.getElementById('swapCancel').addEventListener('click', function() {
+    document.getElementById('swapDialog').style.display = 'none';
+});
+</script>
 <script>
 document.getElementById('toggleEditMode').addEventListener('click', function() {
     const moveButtons = document.querySelectorAll('.move-btn');

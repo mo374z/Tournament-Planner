@@ -93,6 +93,10 @@ var MainSettingsSchema = new mongoose.Schema({
         allowCertificateDownload: {
             type: Boolean,
             default: false
+        },
+        showBeerRanking: {
+            type: Boolean,
+            default: false
         }
     }
 });
