@@ -75,103 +75,26 @@ var TeamSchema = new mongoose.Schema({
 
 const Team = mongoose.model('Team', TeamSchema);
 
-function rankTeams(teams, groupRank = false) {
-    if (groupRank) {
-        // For group ranking, use the existing logic
-        return teams.sort((a, b) => {
-            if (a.points_Group_Stage !== b.points_Group_Stage) {
-                return b.points_Group_Stage - a.points_Group_Stage;
-            } else {
-                const goalDifferenceA = a.goalsGroupStage[0] - a.goalsGroupStage[1];
-                const goalDifferenceB = b.goalsGroupStage[0] - b.goalsGroupStage[1];
-                if (goalDifferenceA !== goalDifferenceB) {
-                    return goalDifferenceB - goalDifferenceA;
-                } else {
-                    return b.goalsGroupStage[0] - a.goalsGroupStage[0];
-                }
-            }
-        });
-    } else {
-        // For overall ranking, first get qualified teams (top 2 from each group)
-        const groupedTeams = {};
-        const qualifiedTeams = [];
-        const nonQualifiedTeams = [];
-
-        // Group teams by their group
-        teams.forEach(team => {
-            if (!groupedTeams[team.group]) {
-                groupedTeams[team.group] = [];
-            }
-            groupedTeams[team.group].push(team);
-        });
-
-        // For each group, get top 2 teams
-        Object.values(groupedTeams).forEach(groupTeams => {
-            // Sort teams within group
-            const sortedGroupTeams = groupTeams.sort((a, b) => {
-                if (a.points_Group_Stage !== b.points_Group_Stage) {
-                    return b.points_Group_Stage - a.points_Group_Stage;
-                } else {
-                    const goalDifferenceA = a.goalsGroupStage[0] - a.goalsGroupStage[1];
-                    const goalDifferenceB = b.goalsGroupStage[0] - b.goalsGroupStage[1];
-                    if (goalDifferenceA !== goalDifferenceB) {
-                        return goalDifferenceB - goalDifferenceA;
-                    } else {
-                        return b.goalsGroupStage[0] - a.goalsGroupStage[0];
-                    }
-                }
-            });
-
-            // Add top 2 to qualified teams
-            qualifiedTeams.push(...sortedGroupTeams.slice(0, 2));
-            // Add rest to non-qualified teams
-            nonQualifiedTeams.push(...sortedGroupTeams.slice(2));
-        });
-
-        // Sort qualified teams based on overall performance, note that this is not necessarily equal to the final placement
-        const sortedQualifiedTeams = qualifiedTeams.sort((a, b) => {
-            if (a.points_General !== b.points_General) {
-                return b.points_General - a.points_General;
-            } else {
-                const goalDifferenceA = a.goals[0] - a.goals[1];
-                const goalDifferenceB = b.goals[0] - b.goals[1];
-                if (goalDifferenceA !== goalDifferenceB) {
-                    return goalDifferenceB - goalDifferenceA;
-                } else {
-                    return b.goals[0] - a.goals[0];
-                }
-            }
-        });
-
-        // Sort non-qualified teams based on group stage performance
-        const sortedNonQualifiedTeams = nonQualifiedTeams.sort((a, b) => {
-            if (a.points_Group_Stage !== b.points_Group_Stage) {
-                return b.points_Group_Stage - a.points_Group_Stage;
-            } else {
-                const goalDifferenceA = a.goalsGroupStage[0] - a.goalsGroupStage[1];
-                const goalDifferenceB = b.goalsGroupStage[0] - b.goalsGroupStage[1];
-                if (goalDifferenceA !== goalDifferenceB) {
-                    return goalDifferenceB - goalDifferenceA;
-                } else {
-                    return b.goalsGroupStage[0] - a.goalsGroupStage[0];
-                }
-            }
-        });
-
-        // Combine the sorted lists - qualified teams will always be ranked 1-8
-        return [...sortedQualifiedTeams, ...sortedNonQualifiedTeams];
-    }
-}
-
+// Rang eines Teams (in der Gruppe oder gesamt) nach den Regeln des gewählten Templates.
+// Gesamtrang ist erst nach der Gruppenphase bekannt, davor wird nach Gruppenwerten sortiert.
 async function getRank(team, groupRank = false) {
-    if (groupRank) {
-        allTeams = await Team.find({ group: team.group }).exec();
-    } else {
-        allTeams = await Team.find({}).exec();
+    const { loadTemplate } = require('../services/tournamentTemplate');
+    const rules = require('../services/tournamentRules');
+    const settings = await mongoose.model('MainSettings').findOne({}).lean().exec();
+    const template = loadTemplate(settings && settings.scheduleTemplate, { validate: false });
+    const teams = await Team.find({}).lean().exec();
+    const games = await mongoose.model('Game').find({}).lean().exec();
+    const decisions = await mongoose.model('Decision').find({ status: 'resolved' }).lean().exec();
+    const ctx = rules.buildContext(template, teams, games, decisions);
+
+    let list = groupRank ? ctx.tables[team.group] : ctx.overall;
+    if (!list) {
+        const points = (template.group_stage && template.group_stage.points) || { win: 3, draw: 1, loss: 0 };
+        const getStats = rules.computeStats(games, (template.group_stage || {}).game_phase_key, points);
+        list = rules.sortTeams(teams, ['points', 'goal_difference', 'goals_scored'], getStats, [], points);
     }
-    const sortedTeams = rankTeams(allTeams, groupRank);
-    const teamIndex = sortedTeams.findIndex(t => t._id.equals(team._id));
-    return teamIndex + 1;
+    const index = (list || []).findIndex(t => String(t._id) === String(team._id));
+    return index + 1;
 }
 
 async function updateFinalRanks() {
@@ -186,7 +109,7 @@ async function updateFinalRanks() {
     // Update finalPlacement for each team that participated in a placement game
     for (const game of placementGames) {
         // Determine winner and loser
-        const isTeam0Winner = game.goals[0] > game.goals[1];
+        const isTeam0Winner = game.goals[0] >= game.goals[1]; // bei Gleichstand gewinnt das erste Team (wie im Spielplan)
         const winnerId = isTeam0Winner ? game.opponents[0] : game.opponents[1];
         const loserId = isTeam0Winner ? game.opponents[1] : game.opponents[0];
 
@@ -216,7 +139,6 @@ function getAllTeamsInGroup(teams, group) {
 module.exports = {
     getRank,
     updateFinalRanks,
-    rankTeams,
     getAllGroupNames,
     getAllTeamsInGroup,
 }

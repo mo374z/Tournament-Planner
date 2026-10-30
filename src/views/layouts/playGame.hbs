@@ -549,6 +549,10 @@
 <script>
     console.log('Game status: {{ areOtherGamesActiveBool }}');
 
+    if (new URLSearchParams(window.location.search).get('error') === 'draw') {
+        alert('Dieses Spiel darf laut Turnier-Template nicht unentschieden enden. Bitte Nachspielzeit/Elfmeterschießen spielen und den Spielstand anpassen.');
+    }
+
     const themeToggle = document.getElementById('themeToggle');
 
     function setPlayGameTheme(theme) {

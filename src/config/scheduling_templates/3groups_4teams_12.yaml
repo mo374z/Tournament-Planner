@@ -1,0 +1,124 @@
+# =====================================================================
+# Turnier-Template "12 Teams": 3 Gruppen à 4 Teams
+#
+# Ablauf:
+#   1. Gruppenphase: 3 Gruppen (A, B, C) à 4 Teams, jeder gegen jeden (18 Spiele).
+#   2. Die besten 2 jeder Gruppe (6 Teams) + die 2 besten Gruppendritten kommen weiter (8 Teams).
+#   3. Viertelfinale nach Gesamtwertung: 1-8, 4-5, 2-7, 3-6.
+#   4. Halbfinale, Spiel um Platz 3, Finale (Platz 1-4).
+#   5. Die Verlierer der Viertelfinals spielen die Plätze 5-8 aus.
+#   6. Die 4 nicht weitergekommenen Teams spielen die Plätze 9-12 aus.
+#   7. Bei den Platzierungsspielen werden Gegner getauscht, damit möglichst keine Teams
+#      aus derselben Gruppe gegeneinander spielen.
+#
+# Insgesamt 30 Spiele. Teams müssen den Gruppen A, B und C (je 4 Teams) zugeordnet sein.
+# Spieldauern und Pausen kommen aus den Haupteinstellungen (MainSettings).
+# Aufbau und Bedeutung aller Felder: siehe 4groups_4teams_v4.yaml.
+# =====================================================================
+
+schema_version: 4
+
+meta:
+  name: "12 Teams: 3 Gruppen à 4 Teams, Viertelfinale, Platzierungsspiele"
+  description: >-
+    12 Teams in 3 Gruppen (jeder gegen jeden). Die besten 2 jeder Gruppe und die 2 besten Gruppendritten
+    (8 Teams) spielen Viertelfinale, Halbfinale, Spiel um Platz 3 und Finale. Die Viertelfinal-Verlierer
+    spielen die Plätze 5-8 aus, die 4 ausgeschiedenen Teams die Plätze 9-12. Bei den Platzierungsspielen
+    werden Gegner so getauscht, dass möglichst keine Teams aus derselben Gruppe gegeneinander spielen.
+    Insgesamt 30 Spiele.
+  total_teams: 12
+
+group_stage:
+  enabled: true
+  game_phase_key: "Group_Stage"
+  display_name: "Gruppenspiel"
+  duration_setting: "gameDurationGroupStage"
+  groups:
+    - { name: "A", teams: 4 }
+    - { name: "B", teams: 4 }
+    - { name: "C", teams: 4 }
+  format:
+    type: "round_robin"
+    legs: 1
+    game_order: "by_round"
+    group_order: "sequential"
+    seeding: "sequential"
+  points:
+    win: 3
+    draw: 1
+    loss: 0
+  ranking:
+    tiebreakers: ["points", "goal_difference", "goals_scored", "head_to_head"]
+    final_tiebreak: "manual"
+  advancement:
+    spots_per_group: 2
+    # Zusätzlich kommen die 2 besten Gruppendritten weiter
+    best_of_rank:
+      rank: 3
+      count: 2
+
+pools:
+  qf_losers:
+    display_name: "Viertelfinale"
+    teams_from: { type: "losers_of_phase", phase: "quarterfinals" }
+    then: ["points", "goal_difference", "goals_scored"]
+
+opponent_swap:
+  enabled: true
+  manual_confirmation: true
+  blocks:
+    - id: "ranks_5_8"
+      matches: ["P5", "P7"]
+    - id: "ranks_9_12"
+      matches: ["P9", "P11"]
+  strategy: "minimal_swap"
+
+knockout_stage:
+  enabled: true
+  draw_resolution:
+    order: ["extra_time", "penalties"]
+    require_winner: true
+  phases:
+    - id: "quarterfinals"
+      enabled: true
+      game_phase_key: "Quarterfinals"
+      display_name: "Viertelfinale"
+      duration_setting: "gameDurationQuarterfinals"
+      matches:
+        - { id: "QF1", home: { type: overall_rank, rank: 1 }, away: { type: overall_rank, rank: 8 } }
+        - { id: "QF2", home: { type: overall_rank, rank: 4 }, away: { type: overall_rank, rank: 5 } }
+        - { id: "QF3", home: { type: overall_rank, rank: 2 }, away: { type: overall_rank, rank: 7 } }
+        - { id: "QF4", home: { type: overall_rank, rank: 3 }, away: { type: overall_rank, rank: 6 } }
+    - id: "semifinals"
+      enabled: true
+      game_phase_key: "Semifinals"
+      display_name: "Halbfinale"
+      duration_setting: "gameDurationSemifinals"
+      matches:
+        - { id: "SF1", home: { type: winner, match: "QF1" }, away: { type: winner, match: "QF2" } }
+        - { id: "SF2", home: { type: winner, match: "QF3" }, away: { type: winner, match: "QF4" } }
+    - id: "finals"
+      enabled: true
+      game_phase_key: "Finals"
+      duration_setting: "gameDurationFinal"
+      matches:
+        - { id: "P11", display_name: "Platzierungsspiel 11-12", final_placement: 11, home: { type: overall_rank, rank: 11 }, away: { type: overall_rank, rank: 12 } }
+        - { id: "P9", display_name: "Platzierungsspiel 9-10", final_placement: 9, home: { type: overall_rank, rank: 9 }, away: { type: overall_rank, rank: 10 } }
+        - { id: "P7", display_name: "Platzierungsspiel 7-8", final_placement: 7, home: { type: pool_rank, pool: "qf_losers", rank: 3 }, away: { type: pool_rank, pool: "qf_losers", rank: 4 } }
+        - { id: "P5", display_name: "Platzierungsspiel 5-6", final_placement: 5, home: { type: pool_rank, pool: "qf_losers", rank: 1 }, away: { type: pool_rank, pool: "qf_losers", rank: 2 } }
+        - { id: "BRONZE", display_name: "Spiel um Platz 3", final_placement: 3, home: { type: loser, match: "SF1" }, away: { type: loser, match: "SF2" } }
+        - { id: "FINAL", display_name: "Finale", final_placement: 1, home: { type: winner, match: "SF1" }, away: { type: winner, match: "SF2" } }
+
+final_ranking:
+  overall_rank_mode: "qualified_first"
+  qualified_sort: ["points_general", "goal_difference_general", "goals_scored_general"]
+  non_qualified_sort: ["points", "goal_difference", "goals_scored"]
+  placement_source: "match_final_placement"
+
+display:
+  placeholders:
+    group_rank: "{rank}. aus Gruppe {group}"
+    winner: "Sieger {match_name}"
+    loser: "Verlierer {match_name}"
+    overall_rank: "{rank}. Gesamtwertung"
+    pool_rank: "{rank}. Verlierer {pool_name}"

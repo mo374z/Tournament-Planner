@@ -1,225 +1,160 @@
 const mongoose = require('mongoose');
 const Game = mongoose.model('Game');
 const Team = mongoose.model('Team');
-const yaml = require('js-yaml');
-const fs = require('fs');
 
-const { getAllGroupNames, getAllTeamsInGroup, rankTeams, getRank } = require('../models/Team');
+const { loadTemplate, validateTemplate } = require('../services/tournamentTemplate');
+const rules = require('../services/tournamentRules');
+const { syncDecisions, getAllDecisions } = require('../services/decisions');
 
+const MINUTE = 60 * 1000;
+
+// Erzeugt den kompletten Spielplan aus einem Schedule-Template (YAML) und belegt Platzhalter-Spiele
+// im Turnierverlauf neu. Alle Regeln stammen aus dem Template, siehe src/services/tournamentRules.js.
 class ScheduleGenerator {
     constructor(config, settings) {
         this.config = config;
         this.settings = settings;
         this.gameNumber = 1;
-        this.currentTime = new Date(settings.TornamentStartTime - 60 * 60 * 1000);
+        this.currentTime = new Date(settings.TornamentStartTime);
+    }
+
+    static fromSettings(settings) {
+        return new ScheduleGenerator(loadTemplate(settings.scheduleTemplate), settings);
     }
 
     async generateFullSchedule() {
         try {
-            await this.clearGamesCollection();
-            
+            const errors = validateTemplate(this.config);
+            if (errors.length) throw new Error(`Das gewählte Schedule-Template ist fehlerhaft und kann nicht verwendet werden:\n- ${errors.join('\n- ')}`);
+
+            const teams = await Team.find({}).exec();
+            this.checkTeams(teams);
+
+            await Game.deleteMany({});
+            await mongoose.model('Decision').deleteMany({});
+            this.gameNumber = 1;
+            this.currentTime = new Date(this.settings.TornamentStartTime);
+
             let lastGameEndTime = this.currentTime;
-            
-            if (this.config.group_stage.enabled) {
-                lastGameEndTime = await this.generateGroupStage();
-                this.currentTime = new Date(lastGameEndTime.getTime() + this.settings.timeBetweenGamePhases);
+            const gs = this.config.group_stage;
+            const ko = this.config.knockout_stage;
+            const phases = (ko && ko.enabled !== false ? ko.phases : []).filter(p => p.enabled !== false);
+
+            const steps = [];
+            if (gs.enabled !== false) steps.push(() => this.generateGroupStage(teams));
+            for (const phase of phases) steps.push(() => this.generateKnockoutPhase(phase, teams));
+
+            for (let i = 0; i < steps.length; i++) {
+                lastGameEndTime = await steps[i]();
+                if (i < steps.length - 1) {
+                    this.currentTime = new Date(lastGameEndTime.getTime() + this.settings.timeBetweenGamePhases);
+                }
             }
 
-            if (this.config.knockout_stage.quarterfinals.enabled) {
-                lastGameEndTime = await this.generateQuarterFinals();
-                this.currentTime = new Date(lastGameEndTime.getTime() + this.settings.timeBetweenGamePhases);
-            }
-
-            if (this.config.knockout_stage.semifinals.enabled) {
-                lastGameEndTime = await this.generateSemiFinals();
-                this.currentTime = new Date(lastGameEndTime.getTime() + this.settings.timeBetweenGamePhases);
-            }
-
-            if (this.config.knockout_stage.finals.enabled) {
-                lastGameEndTime = await this.generateFinals();
-            }
-
-            return {
-                success: true,
-                lastGameEndTime: lastGameEndTime
-            };
+            return { success: true, lastGameEndTime };
         } catch (error) {
             console.error('Error generating schedule:', error);
-            return {
-                success: false,
-                error: error.message
-            };
+            return { success: false, error: error.message };
         }
     }
 
-    async generateGroupStage() {
-        const groups = this.config.group_stage.groups;
-        const n = groups[0][1];
-        
-        const rounds = n - 1;
-        const matchesPerRound = Math.floor(n / 2);
-        const schedule = [];
-        
-        for (let round = 0; round < rounds; round++) {
-            const roundMatches = [];
-            for (let match = 0; match < matchesPerRound; match++) {
-                const home = (round + match) % (n - 1);
-                const away = (n - 1 - match + round) % (n - 1);
-                
-                if (match === 0) {
-                    roundMatches.push([n - 1, away]);
-                } else {
-                    roundMatches.push([home, away]);
-                }
-            }
-            schedule.push(roundMatches);
+    // Teamanzahl pro Gruppe muss zum Template passen; sammelt alle Probleme in einer verständlichen Meldung
+    checkTeams(teams) {
+        const gs = this.config.group_stage;
+        if (gs.enabled === false) return;
+        const name = (this.config.meta && this.config.meta.name) || 'Template';
+        const expectedTotal = gs.groups.reduce((s, g) => s + g.teams, 0);
+        const groupList = gs.groups.map(g => `${g.name} (${g.teams} Teams)`).join(', ');
+        const known = gs.groups.map(g => g.name);
+        const problems = [];
+
+        if (teams.length !== expectedTotal) {
+            const diff = teams.length - expectedTotal;
+            problems.push(`Das Template erwartet ${expectedTotal} Teams in ${gs.groups.length} Gruppen, es sind aber ${teams.length} Teams angelegt (${diff > 0 ? `${diff} zu viele` : `${-diff} zu wenige`}).`);
         }
-    
-        const groupTeams = {};
-        for (const [groupName, _] of groups) {
-            groupTeams[groupName] = await Team.find({ group: groupName }).exec();
+
+        const stray = teams.filter(t => !known.includes(t.group));
+        if (stray.length) {
+            const usedGroups = [...new Set(teams.map(t => t.group || '-'))];
+            problems.push(`Das Template hat nur die Gruppen ${known.join(', ')}, die Teams sind aber auf ${usedGroups.length} Gruppen verteilt (${usedGroups.join(', ')}). Diese Teams gehören zu einer Gruppe, die es im Template nicht gibt: ${stray.map(t => `${t.name} (Gruppe ${t.group || '-'})`).join(', ')}.`);
         }
-    
-        for (let round = 0; round < schedule.length; round++) {
-            for (const [home, away] of schedule[round]) {
-                for (const [groupName, _] of groups) {
-                    await this.createGame({
-                        opponents: [
-                            groupTeams[groupName][home]._id,
-                            groupTeams[groupName][away]._id
-                        ],
-                        gamePhase: 'Group_Stage',
-                        displayName: this.config.display.game_phase_names.group_stage,
-                        duration: this.settings.gameDurationGroupStage / (1000 * 60),
-                        round: round + 1
-                    });
-                }
+
+        for (const g of gs.groups) {
+            const count = teams.filter(t => t.group === g.name).length;
+            if (count !== g.teams) {
+                problems.push(`Gruppe ${g.name}: erwartet ${g.teams} Teams, vorhanden ${count} (${count > g.teams ? `${count - g.teams} zu viele` : `${g.teams - count} zu wenige`}).`);
             }
         }
-    
-        return this.getCurrentEndTime();
-    }
-    async generateQuarterFinals() {
-        const matchups = this.config.knockout_stage.quarterfinals.matchups;
-        let quarterFinalNumber = 1;
 
-        for (const [[group1, pos1], [group2, pos2]] of matchups) {
-            const team1 = await this.createDummyTeam(`${pos1}. aus Gruppe ${group1}`, group1);
-            const team2 = await this.createDummyTeam(`${pos2}. aus Gruppe ${group2}`, group2);
-
-            await this.createGame({
-                opponents: [team1, team2],
-                gamePhase: `Quarterfinals ${quarterFinalNumber}`,
-                displayName: `${this.config.display.game_phase_names.quarterfinals} ${quarterFinalNumber}`,
-                duration: this.settings.gameDurationQuarterfinals / (1000 * 60)
-            });
-            quarterFinalNumber++;
+        if (problems.length) {
+            throw new Error(`Die Teams passen nicht zum gewählten Schedule-Template "${name}" (${groupList}). ${problems.join(' ')} Bitte Teams/Gruppen anpassen oder in den Main Settings ein anderes Template wählen.`);
         }
-
-        return this.getCurrentEndTime();
     }
 
-    async generateSemiFinals() {
-        const matchups = this.config.knockout_stage.semifinals.matchups;
-        let semiFinalNumber = 1;
-
-        for (const [[phase1, num1], [phase2, num2]] of matchups) {
-            let phase1Display = phase1;
-            let phase2Display = phase2;
-            if(phase1 === 'Quarterfinals' && phase2 === 'Quarterfinals') {
-                phase1Display = this.config.display.game_phase_names.quarterfinals;
-                phase2Display = this.config.display.game_phase_names.quarterfinals;
-            }
-            // const team1 = await this.createDummyTeam(`Sieger ${phase1} ${num1}`, "-");
-            const team1 = await this.createDummyTeam(`Sieger ${phase1Display} ${num1}`, "-");
-            // const team2 = await this.createDummyTeam(`Sieger ${phase2} ${num2}`, "-");
-            const team2 = await this.createDummyTeam(`Sieger ${phase2Display} ${num2}`, "-");
-
-            await this.createGame({
-                opponents: [team1, team2],
-                gamePhase: `Semifinals ${semiFinalNumber}`,
-                displayName: `${this.config.display.game_phase_names.semifinals} ${semiFinalNumber}`,
-                duration: this.settings.gameDurationSemifinals / (1000 * 60)
-            });
-            semiFinalNumber++;
-        }
-
-        return this.getCurrentEndTime();
-    }
-
-    async generateFinals() {    
-        // Generate placement matches if enabled (13-14, 11-12, 9-10, 7-8, 5-6)
-        if (this.config.knockout_stage.finals.placement_matches.enabled) {
-            const positions = this.config.knockout_stage.finals.placement_matches.positions;
-            let matchNumber = positions.length + 2; // Start after bronze medal match
-    
-            for (const position of positions) {
-                await this.createGame({
-                    opponents: [
-                        await this.createDummyTeam(`${position}. Gesamtwertung`, "-"),
-                        await this.createDummyTeam(`${position + 1}. Gesamtwertung`, "-")
-                    ],
-                    gamePhase: `Finals ${matchNumber}`,
-                    displayName: `${this.config.display.game_phase_names.placement} ${position}-${position + 1}`,
-                    duration: this.settings.gameDurationFinal / (1000 * 60),
-                    finalPlacement: position
-                });
-                matchNumber--;
-            }
-        }
-    
-        // Generate bronze medal match (3rd-4th place)
-        if (this.config.knockout_stage.finals.bronze_medal_match) {
-            await this.createGame({
-                opponents: [
-                    await this.createDummyTeam("Verlierer Halbfinale 1", "-"),
-                    await this.createDummyTeam("Verlierer Halbfinale 2", "-")
-                ],
-                gamePhase: "Finals 2",
-                displayName: this.config.display.game_phase_names.bronze_medal,
-                duration: this.settings.gameDurationFinal / (1000 * 60),
-                finalPlacement: 3
-            });
-        }
-        
-        // Generate last position match first (15th-16th place)
-        if (this.config.knockout_stage.finals.last_position_match) {
-            await this.createGame({
-                opponents: [
-                    await this.createDummyTeam("15. Gesamtwertung", "-"),
-                    await this.createDummyTeam("16. Gesamtwertung", "-")
-                ],
-                gamePhase: "Finals Last",
-                displayName: this.config.display.game_phase_names.last_position_match,
-                duration: this.settings.gameDurationFinal / (1000 * 60),
-                finalPlacement: 15
-            });
-        }
-
-        // Generate final match (1st-2nd place)
-        await this.createGame({
-            opponents: [
-                await this.createDummyTeam("Sieger Halbfinale 1", "-"),
-                await this.createDummyTeam("Sieger Halbfinale 2", "-")
-            ],
-            gamePhase: "Finals 1",
-            displayName: this.config.display.game_phase_names.finals,
-            duration: this.settings.gameDurationFinal / (1000 * 60),
-            finalPlacement: 1
+    async generateGroupStage(teams) {
+        const gs = this.config.group_stage;
+        const fmt = gs.format || {};
+        const groups = gs.groups.map(g => {
+            let members = teams.filter(t => t.group === g.name);
+            if (fmt.seeding === 'random') members = members.sort(() => Math.random() - 0.5);
+            return { name: g.name, members, rounds: rules.buildRoundRobin(g.teams, fmt.legs || 1) };
         });
-    
+        const roundCount = Math.max(...groups.map(g => g.rounds.length));
+        const slotCount = Math.max(...groups.flatMap(g => g.rounds.map(r => r.length)));
+        const duration = this.settings[gs.duration_setting] / MINUTE;
+
+        const create = (group, home, away) => this.createGame({
+            opponents: [group.members[home]._id, group.members[away]._id],
+            gamePhase: gs.game_phase_key,
+            displayName: gs.display_name,
+            duration
+        });
+
+        if (fmt.game_order === 'by_group') {
+            for (const group of groups) {
+                for (const round of group.rounds) {
+                    for (const [home, away] of round) await create(group, home, away);
+                }
+            }
+        } else {
+            for (let round = 0; round < roundCount; round++) {
+                for (let slot = 0; slot < slotCount; slot++) {
+                    for (const group of groups) {
+                        const pair = group.rounds[round] && group.rounds[round][slot];
+                        if (pair) await create(group, pair[0], pair[1]);
+                    }
+                }
+            }
+        }
         return this.getCurrentEndTime();
     }
 
-    async createGame({ opponents, gamePhase, displayName, duration, finalPlacement = null }) {
+    async generateKnockoutPhase(phase, teams) {
+        const ctx = rules.buildContext(this.config, teams, []);
+        const duration = this.settings[phase.duration_setting] / MINUTE;
+        for (let i = 0; i < phase.matches.length; i++) {
+            const match = phase.matches[i];
+            const opponents = [match.home, match.away].map(src => {
+                const team = rules.resolveSource(src, ctx);
+                return team ? team._id : rules.placeholderTeam(src, this.config);
+            });
+            await this.createGame({
+                opponents,
+                gamePhase: `${phase.game_phase_key} ${i + 1}`,
+                displayName: rules.matchDisplayName(match, phase, i),
+                duration,
+                finalPlacement: match.final_placement || null,
+                matchId: match.id
+            });
+        }
+        return this.getCurrentEndTime();
+    }
+
+    async createGame({ opponents, gamePhase, displayName, duration, finalPlacement = null, matchId = null }) {
         const gameStartTime = new Date(this.currentTime);
-        
+
         if (this.gameNumber > 1) {
-            // Add time between games to the current time
-            gameStartTime.setMinutes(
-                gameStartTime.getMinutes() + 
-                (this.settings.timeBetweenGames / (1000 * 60))
-            );
+            gameStartTime.setMinutes(gameStartTime.getMinutes() + this.settings.timeBetweenGames / MINUTE);
         }
 
         const newGame = new Game({
@@ -231,273 +166,47 @@ class ScheduleGenerator {
             goals: [0, 0],
             gamePhase: gamePhase,
             gameDisplayName: displayName,
-            finalPlacement: finalPlacement
+            finalPlacement: finalPlacement,
+            matchId: matchId
         });
 
         await newGame.save();
-        
-        // Update current time to be the end of this game
-        this.currentTime = new Date(gameStartTime.getTime() + (duration * 60 * 1000));
-        this.gameNumber++;
-        
-        return newGame;
-    }
 
-    createDummyTeam(name, group) {
-        return {
-            name: name,
-            group: group,
-            isDummy: true,
-            gamesPlayed: 0
-        };
+        this.currentTime = new Date(gameStartTime.getTime() + duration * MINUTE);
+        this.gameNumber++;
+        return newGame;
     }
 
     getCurrentEndTime() {
         const lastGame = new Date(this.currentTime);
-        lastGame.setMinutes(lastGame.getMinutes() + this.settings.gameDurationFinal / (1000 * 60));
+        lastGame.setMinutes(lastGame.getMinutes() + this.settings.gameDurationFinal / MINUTE);
         return lastGame;
     }
 
-    async clearGamesCollection() {
-        await Game.deleteMany({});
-    }
-
-    // Update functions for knockout stages
-    async updateQuarterFinals() {
-        try {            
-            const groupedTeams = {};
-            const allTeams = await Team.find({}).exec();
-            
-            for (const group of getAllGroupNames(allTeams)) {
-                groupedTeams[group] = rankTeams(getAllTeamsInGroup(allTeams, group), true);
-            }
-
-            const games = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
-
-            for (const game of games) {
-                if (game.status === 'Ended') continue;
-
-                const matchup = this.findMatchupForGame(game, 'quarterfinals');
-                if (matchup) {
-                    const [[group1, pos1], [group2, pos2]] = matchup;
-                    const team1 = groupedTeams[group1][pos1 - 1];
-                    const team2 = groupedTeams[group2][pos2 - 1];
-
-                    if (team1 && team2) {
-                        await Game.findByIdAndUpdate(game._id, {
-                            opponents: [team1._id, team2._id]
-                        });
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error updating quarter finals:', error);
-        }
-    }
-
-    async updateGeneralKnockout(phase) {
+    // Belegt Platzhalter-Spiele neu, sobald die benötigten Ergebnisse vorliegen (Gruppenplätze, Sieger, Pools,
+    // Gesamtwertung, Gegnertausch). Gibt die Anzahl aktualisierter Spiele zurück.
+    // Verlangt das Template manuelle Entscheidungen, werden diese als offene Anfragen gespeichert und die betroffenen
+    // Spiele bleiben unbelegt. Mit autoResolve (nur für Tests/Autoplay) wird jeweils die erste Option gewählt.
+    async updateSchedule({ autoResolve = false } = {}) {
         try {
-            // Handle main games (semifinals, finals)
-            const games = await Game.find({ gamePhase: { $regex: `^${phase}` } });
-            
-            for (const game of games) {
-                if (game.status === 'Ended') continue;
-
-                if (phase === 'Semifinals') {
-                    const matchup = this.findMatchupForGame(game, 'semifinals');
-                    await this.updateGameWithMatchup(game, matchup);
-                } else if (phase === 'Finals') {
-                    if (game.gamePhase === 'Finals 1') {
-                        // Main final
-                        await this.updateWithPreviousWinners(game, 'Semifinals', [1, 2]);
-                    } else if (game.gamePhase === 'Finals 2' && this.config.knockout_stage.finals.bronze_medal_match) {
-                        // Bronze medal match
-                        await this.updateWithPreviousLosers(game, 'Semifinals', [1, 2]);
-                    } else {
-                        // Placement matches
-                        await this.updatePlacementMatch(game);
-                    }
-                }
+            const teams = await Team.find({}).exec();
+            const games = await Game.find({}).lean().exec();
+            let decisions = await getAllDecisions();
+            let plan = rules.computeSchedulePlan(this.config, teams, games, decisions);
+            for (let pass = 0; pass < 20; pass++) {
+                const resolvedAny = await syncDecisions(plan.requests, { autoResolve });
+                if (!autoResolve || !resolvedAny || !plan.requests.length) break;
+                decisions = await getAllDecisions();
+                plan = rules.computeSchedulePlan(this.config, teams, games, decisions);
             }
+            for (const u of plan.updates) {
+                await Game.updateOne({ _id: u.gameId }, { $set: { opponents: u.opponents } });
+            }
+            return plan.updates.length;
         } catch (error) {
-            console.error(`Error updating ${phase.toLowerCase()}:`, error);
+            console.error('Error updating schedule:', error);
+            return 0;
         }
-    }
-
-    async updateGameWithMatchup(game, matchup) {
-        if (!matchup) return;
-
-        const [[phase1, num1], [phase2, num2]] = matchup;
-        const sourceGame1 = await Game.findOne({ gamePhase: `${phase1} ${num1}` });
-        const sourceGame2 = await Game.findOne({ gamePhase: `${phase2} ${num2}` });
-
-        const updates = {};
-        if (sourceGame1?.status === 'Ended') {
-            updates['opponents.0'] = this.getWinner(sourceGame1);
-        }
-        if (sourceGame2?.status === 'Ended') {
-            updates['opponents.1'] = this.getWinner(sourceGame2);
-        }
-
-        if (Object.keys(updates).length > 0) {
-            await Game.findByIdAndUpdate(game._id, { $set: updates });
-        }
-    }
-
-    async updateWithPreviousWinners(game, previousPhase, gameNumbers) {
-        const previousGames = await Promise.all(
-            gameNumbers.map(num =>
-                Game.findOne({ gamePhase: `${previousPhase} ${num}` })
-            )
-        );
-        
-        const updates = {};
-        previousGames.forEach((g, index) => {
-            if (g?.status === 'Ended') {
-                updates[`opponents.${index}`] = this.getWinner(g);
-            }
-        });
-    
-        if (Object.keys(updates).length > 0) {
-            await Game.findByIdAndUpdate(game._id, { $set: updates });
-        }
-    }
-
-    async updateWithPreviousLosers(game, previousPhase, gameNumbers) {
-        const previousGames = await Promise.all(
-            gameNumbers.map(num => 
-                Game.findOne({ gamePhase: `${previousPhase} ${num}` })
-            )
-        );
-
-        if (previousGames.every(g => g?.status === 'Ended')) {
-            const losers = previousGames.map(g => this.getLoser(g));
-            await Game.findByIdAndUpdate(game._id, {
-                opponents: losers
-            });
-        }
-    }
-
-    async updatePlacementMatch(game) {
-        if (!this.config.knockout_stage.finals.placement_matches.enabled) return;
-    
-        // Handle last position match (15th-16th place)
-        if (game.gamePhase === 'Finals Last') {
-            const allTeams = await Team.find({ group: { $in: ['A', 'B', 'C', 'D'] } }).exec();
-            const teamsWithRanks = await Promise.all(
-                allTeams.map(async team => ({
-                    team,
-                    overallRank: await getRank(team, false) // Use overall ranking instead of group ranking
-                }))
-            );
-
-            //console.log(teamsWithRanks);
-    
-            // Sort by overall rank (descending) to get the two worst teams
-            const sortedTeams = teamsWithRanks
-                .sort((a, b) => b.overallRank - a.overallRank); // Higher rank number means worse position
-    
-            if (sortedTeams.length >= 2) {
-                await Game.findByIdAndUpdate(game._id, {
-                    opponents: [
-                        sortedTeams[0].team._id, // Worst team
-                        sortedTeams[1].team._id  // Second worst team
-                    ]
-                });
-            }
-            return;
-        }
-    
-        // Handle regular placement matches
-        const gameNumber = parseInt(game.gamePhase.split(' ')[1]);
-        const positions = this.config.knockout_stage.finals.placement_matches.positions;
-        const position = positions[positions.length - (gameNumber - 2)];
-    
-        if (position === undefined) return;
-    
-        // Get teams based on their position
-        if (position === 5) {
-            // 5-6th place: Best two quarterfinal losers
-            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
-            const quarterFinalLosers = quarterFinalGames
-                .filter(g => g.status === 'Ended')
-                .map(g => this.getLoser(g));
-    
-            if (quarterFinalLosers.length === 4) {
-                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
-                await Game.findByIdAndUpdate(game._id, {
-                    opponents: [sortedLosers[0], sortedLosers[1]]
-                });
-            }
-        } else if (position === 7) {
-            // 7-8th place: Remaining quarterfinal losers
-            const quarterFinalGames = await Game.find({ gamePhase: { $regex: /^Quarterfinals/ } });
-            const quarterFinalLosers = quarterFinalGames
-                .filter(g => g.status === 'Ended')
-                .map(g => this.getLoser(g));
-    
-            if (quarterFinalLosers.length === 4) {
-                const sortedLosers = await this.sortTeamsByPerformance(quarterFinalLosers);
-                await Game.findByIdAndUpdate(game._id, {
-                    opponents: [sortedLosers[2], sortedLosers[3]]
-                });
-            }
-        } else {
-            // 9th place and below: Use overall ranking
-            const allTeams = await Team.find({ group: { $in: ['A', 'B', 'C', 'D'] } }).exec();
-            const teamsWithRanks = await Promise.all(
-                allTeams.map(async team => ({
-                    team,
-                    overallRank: await getRank(team, false) // Use overall ranking
-                }))
-            );
-    
-            // Sort by overall rank to get teams in correct order
-            const sortedTeams = teamsWithRanks
-                .sort((a, b) => a.overallRank - b.overallRank) // Lower rank number is better
-                .slice(8); // Get teams from 9th place onwards
-    
-            // Find the two teams that should play for this position
-            const index = Math.floor((position - 9) / 2) * 2;
-            if (index >= 0 && index + 1 < sortedTeams.length) {
-                await Game.findByIdAndUpdate(game._id, {
-                    opponents: [
-                        sortedTeams[index].team._id,
-                        sortedTeams[index + 1].team._id
-                    ]
-                });
-            }
-        }
-    }
-
-    async sortTeamsByPerformance(teams) {
-        // Sort teams based on their group stage performance
-        const teamsWithStats = await Promise.all(teams.map(async team => {
-            const groupRank = await getRank(team, true);
-            return {
-                team,
-                groupRank,
-                // Add more criteria if needed (points, goal difference, etc.)
-            };
-        }));
-
-        return teamsWithStats
-            .sort((a, b) => a.groupRank - b.groupRank)
-            .map(t => t.team);
-    }
-
-    findMatchupForGame(game, phase) {
-        const matchups = this.config.knockout_stage[phase].matchups;
-        const gameNumber = parseInt(game.gamePhase.split(' ')[1]);
-        return matchups[gameNumber - 1];
-    }
-
-    getWinner(game) {
-        return game.goals[0] > game.goals[1] ? game.opponents[0] : game.opponents[1];
-    }
-
-    getLoser(game) {
-        return game.goals[0] > game.goals[1] ? game.opponents[1] : game.opponents[0];
     }
 }
 

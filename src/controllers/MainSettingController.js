@@ -6,6 +6,7 @@ const genCounters = mongoose.model('generalCounters');
 const { commonMiddleware } = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs');
+const { parseLocalInput } = require('../services/timezone');
 
 commonMiddleware(router, ['admin']); // Only admins can access the main settings page
 
@@ -20,6 +21,7 @@ const defaultgoalsforSekt = 10;
 
 
 const { listDbs, listBackups, backupDb, restoreDb, createDb, backupPathArchive, backupPathJSON } = require('../models/db'); // Import the listDbs function from the db.js file
+const { listTemplates } = require('../services/tournamentTemplate');
 
 function createDefaultMainSettings() {
     return new MainSettings({
@@ -87,7 +89,7 @@ router.get('/', async (req, res) => {
         const backupDbs = listBackups();  // Get a list of all backup databases
 
         // Render the edit page with the MainSettings data
-        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName, backupDbs });
+        res.render('layouts/editMainSettings', { mainSettings, generalCounters, dbs, dbName, backupDbs, scheduleTemplates: listTemplates() });
     } catch (err) {
         console.error('Error fetching MainSettings data:', err);
         res.status(500).send('Internal Server Error');
@@ -156,6 +158,7 @@ router.post('/restoreDB', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const {
+            scheduleTemplate,
             TornamentStartTime,
             timeBetweenGamesInMin,
             gameDurationGroupStageInMin,
@@ -182,7 +185,10 @@ router.post('/', async (req, res) => {
             mainSettings = createDefaultMainSettings();
         }
 
-        mainSettings.TornamentStartTime = TornamentStartTime;
+        mainSettings.TornamentStartTime = parseLocalInput(TornamentStartTime);
+        if (scheduleTemplate && listTemplates().some(t => t.file === scheduleTemplate)) {
+            mainSettings.scheduleTemplate = scheduleTemplate;
+        }
         mainSettings.timeBetweenGames = timeBetweenGames;
         mainSettings.gameDurationGroupStage = gameDurationGroupStage;
         mainSettings.gameDurationQuarterfinals = gameDurationQuarterfinals;

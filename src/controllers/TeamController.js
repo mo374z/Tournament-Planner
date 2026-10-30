@@ -628,7 +628,7 @@ router.get("/getTeamRank/:id", async (req, res) => {
     const team = await Team.findById(req.params.id).exec();
 
     if (team) {
-      res.status(200).send({ rank: getRank(team) });
+      res.status(200).send({ rank: await getRank(team) });
     } else {
       res.status(404).send("Team not found");
     }

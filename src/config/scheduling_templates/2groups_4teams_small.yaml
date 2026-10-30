@@ -1,0 +1,95 @@
+# =====================================================================
+# Turnier-Template "Kleines Turnier": 8 Teams in 2 Gruppen à 4 Teams
+# Halbfinale, Spiel um Platz 3, Finale und Platzierungsspiele für Platz 5-8
+# (mit Gegnertausch). Beispiel dafür, dass ein anderes Turnier nur durch Auswahl
+# einer anderen YAML-Datei in den Main Settings gespielt werden kann.
+#
+# Aufbau und Bedeutung aller Felder: siehe 4groups_4teams_v4.yaml.
+# Teams müssen in der Teamverwaltung den Gruppen A und B (je 4 Teams) zugeordnet sein.
+# Spieldauern und Pausen kommen aus den Haupteinstellungen (MainSettings).
+# =====================================================================
+
+schema_version: 4
+
+meta:
+  name: "8 Teams, Kleines Turnier: 2 Gruppen à 4 Teams (8 Teams)"
+  description: >-
+    8 Teams in 2 Gruppen (jeder gegen jeden). Die besten 2 jeder Gruppe spielen Halbfinale (A1-B2, B1-A2),
+    Spiel um Platz 3 und Finale. Die Teams auf Gruppenplatz 3 und 4 spielen die Plätze 5-8 aus, wobei die
+    Gegner so getauscht werden, dass möglichst keine Teams aus derselben Gruppe gegeneinander spielen.
+  total_teams: 8
+
+group_stage:
+  enabled: true
+  game_phase_key: "Group_Stage"
+  display_name: "Gruppenspiel"
+  duration_setting: "gameDurationGroupStage"
+  groups:
+    - { name: "A", teams: 4 }
+    - { name: "B", teams: 4 }
+  format:
+    type: "round_robin"
+    legs: 1
+    game_order: "by_round"
+    group_order: "sequential"
+    seeding: "sequential"
+  points:
+    win: 3
+    draw: 1
+    loss: 0
+  ranking:
+    tiebreakers: ["points", "goal_difference", "goals_scored", "head_to_head"]
+    final_tiebreak: "manual"
+  advancement:
+    spots_per_group: 2
+    best_of_rank:
+      rank: 3
+      count: 0
+
+pools: {}
+
+opponent_swap:
+  enabled: true
+  manual_confirmation: false # Gegnertausch wird automatisch durchgeführt (true = Admin bestätigt per Popup)
+  blocks:
+    - id: "ranks_5_8"
+      matches: ["P5", "P7"]
+  strategy: "minimal_swap"
+
+knockout_stage:
+  enabled: true
+  draw_resolution:
+    order: ["extra_time", "penalties"]
+    require_winner: true
+  phases:
+    - id: "semifinals"
+      enabled: true
+      game_phase_key: "Semifinals"
+      display_name: "Halbfinale"
+      duration_setting: "gameDurationSemifinals"
+      matches:
+        - { id: "SF1", home: { type: group_rank, group: "A", rank: 1 }, away: { type: group_rank, group: "B", rank: 2 } }
+        - { id: "SF2", home: { type: group_rank, group: "B", rank: 1 }, away: { type: group_rank, group: "A", rank: 2 } }
+    - id: "finals"
+      enabled: true
+      game_phase_key: "Finals"
+      duration_setting: "gameDurationFinal"
+      matches:
+        - { id: "P7", display_name: "Platzierungsspiel 7-8", final_placement: 7, home: { type: overall_rank, rank: 7 }, away: { type: overall_rank, rank: 8 } }
+        - { id: "P5", display_name: "Platzierungsspiel 5-6", final_placement: 5, home: { type: overall_rank, rank: 5 }, away: { type: overall_rank, rank: 6 } }
+        - { id: "BRONZE", display_name: "Spiel um Platz 3", final_placement: 3, home: { type: loser, match: "SF1" }, away: { type: loser, match: "SF2" } }
+        - { id: "FINAL", display_name: "Finale", final_placement: 1, home: { type: winner, match: "SF1" }, away: { type: winner, match: "SF2" } }
+
+final_ranking:
+  overall_rank_mode: "qualified_first"
+  qualified_sort: ["points_general", "goal_difference_general", "goals_scored_general"]
+  non_qualified_sort: ["points", "goal_difference", "goals_scored"]
+  placement_source: "match_final_placement"
+
+display:
+  placeholders:
+    group_rank: "{rank}. aus Gruppe {group}"
+    winner: "Sieger {match_name}"
+    loser: "Verlierer {match_name}"
+    overall_rank: "{rank}. Gesamtwertung"
+    pool_rank: "{rank}. Verlierer {pool_name}"

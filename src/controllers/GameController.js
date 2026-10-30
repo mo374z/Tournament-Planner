@@ -62,6 +62,9 @@ router.use((req, res, next) => {
 });
 
 const { ScheduleGenerator } = require("./ScheduleGenerator");
+const { loadTemplate } = require("../services/tournamentTemplate");
+const { phaseMatches, isDummy } = require("../services/tournamentRules");
+const { getPendingDecisions } = require("../services/decisions");
 const { removeLastGoalfromGameAndPlayer } = require("./ScorerController");
 
 // Start the Websocket server
@@ -306,11 +309,26 @@ function resetTimer(duration) {
     emitTimerState();
 }
 
+// Gesperrt, solange Teilnehmer nicht feststehen oder eine manuelle Entscheidung zum Spiel offen ist
+async function getBlockReason(game) {
+  if (game.opponents.some((o) => isDummy(o))) return "Die Teilnehmer dieses Spiels stehen noch nicht fest.";
+  if (game.matchId) {
+    const pending = await getPendingDecisions();
+    const decision = pending.find((d) => (d.blocksMatches || []).includes(game.matchId));
+    if (decision) return `Zuerst muss die Entscheidung "${decision.title}" getroffen werden.`;
+  }
+  return null;
+}
+
 // Render the game play page
 router.get("/:id/play", async (req, res) => {
   try {
     const gameId = req.params.id;
     const game = await Game.findById(gameId).exec();
+
+    if (await getBlockReason(game)) {
+      return res.redirect("/schedule/list?blocked=" + game.number);
+    }
 
     const team1 = await Team.findById(game.opponents[0]).exec();
     const team2 = await Team.findById(game.opponents[1]).exec();
@@ -348,6 +366,9 @@ router.post("/start/:id", async (req, res) => {
   try {
     const gameId = req.params.id;
     const game = await Game.findById(gameId).exec();
+
+    const blockReason = await getBlockReason(game);
+    if (blockReason) return res.status(409).send(blockReason);
 
     await Game.updateMany({ status: "active" }, { status: "ENDE" }); // Set other active games to END When new game starts
     await Game.findByIdAndUpdate(gameId, { status: "active" }); // Set the game status to "active"
@@ -466,6 +487,14 @@ router.get("/:id/endGame", async (req, res) => {
 
     // Set the game status to "Ended" only if the status is "active"
     if (game.status == "active") {
+      const mainSettings = await MainSettings.findOne();
+      const template = loadTemplate(mainSettings.scheduleTemplate);
+
+      // K.o.-Spiele dürfen laut Template nicht unentschieden enden
+      if (isKnockoutDrawNotAllowed(game, template)) {
+        return res.redirect(`/game/${gameId}/play?error=draw`);
+      }
+
       // Stop the timer right away (also while it is running) and keep the played extra time
       const playedExtraTime = extraTime.started ? extraTime.seconds : 0;
       clearInterval(timerInterval);
@@ -478,29 +507,12 @@ router.get("/:id/endGame", async (req, res) => {
       });
 
       // Update the team data with the game results
-      await writeGameDataToTeams(game);
+      await writeGameDataToTeams(game, template);
       await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } }); // Increment the overall gamesPlayed counter
 
-      const mainSettings = await MainSettings.findOne();
-      const tournamentConfig = yaml.load(
-          fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
-      );
-      
-      const scheduleGenerator = new ScheduleGenerator(tournamentConfig, mainSettings);
-      
-      const gamePhase = game.gamePhase;
-      if (gamePhase === "Group_Stage") {
-        const subsequentGame = await Game.findOne({
-          number: game.number + 1,
-        }).exec();
-        if (subsequentGame.gamePhase != "Group_Stage") {
-          await scheduleGenerator.updateQuarterFinals();
-        }
-      } else {
-        await scheduleGenerator.updateGeneralKnockout("Semifinals");
-        await scheduleGenerator.updateGeneralKnockout("Finals");
-        await updateFinalRanks();
-      }
+      // Folgespiele (Platzhalter) anhand des Templates neu belegen und Endplatzierungen aktualisieren
+      await new ScheduleGenerator(template, mainSettings).updateSchedule();
+      await updateFinalRanks();
 
       resetTimer(0); // Reset the timer to the value 0 in seconds
 
@@ -513,20 +525,32 @@ router.get("/:id/endGame", async (req, res) => {
   }
 });
 
-const updateTeam = async (team, game, isWinner) => {
+function isKnockoutDrawNotAllowed(game, template) {
+  const ko = template.knockout_stage || {};
+  const isKnockout = game.matchId && phaseMatches(template).some((m) => m.match.id === game.matchId);
+  const requireWinner = !ko.draw_resolution || ko.draw_resolution.require_winner !== false;
+  return Boolean(isKnockout && requireWinner && game.goals[0] === game.goals[1]);
+}
+
+const updateTeam = async (team, game, isWinner, template) => {
+  const groupKey = template.group_stage.game_phase_key || "Group_Stage";
+  const points = template.group_stage.points || { win: 3, draw: 1, loss: 0 };
+  const isGroup = game.gamePhase === groupKey;
   team.gamesPlayed += 1;
-  team.gamesPlayed_Group_Stage += game.gamePhase === "Group_Stage" ? 1 : 0;
+  team.gamesPlayed_Group_Stage += isGroup ? 1 : 0;
 
   if (isWinner) {
     team.gamesWon += 1;
-    team.points_Group_Stage += game.gamePhase === "Group_Stage" ? 3 : 0;
-    team.points_General += 3;
+    team.points_Group_Stage += isGroup ? points.win : 0;
+    team.points_General += points.win;
   } else if (game.goals[0] === game.goals[1]) {
     team.gamesDraw += 1;
-    team.points_Group_Stage += game.gamePhase === "Group_Stage" ? 1 : 0;
-    team.points_General += 1;
+    team.points_Group_Stage += isGroup ? points.draw : 0;
+    team.points_General += points.draw;
   } else {
     team.gamesLost += 1;
+    team.points_Group_Stage += isGroup ? points.loss : 0;
+    team.points_General += points.loss;
   }
 
   if (game.opponents[0].toString() === team._id.toString()) {
@@ -534,7 +558,7 @@ const updateTeam = async (team, game, isWinner) => {
     team.goals[0] += game.goals[0]; //add the goals from the game to the team
     team.goals[1] += game.goals[1];
 
-    if (game.gamePhase === "Group_Stage") {
+    if (isGroup) {
       team.goalsGroupStage[0] += game.goals[0]; //add the goals from the game to the gropstage goals
       team.goalsGroupStage[1] += game.goals[1];
     }
@@ -542,7 +566,7 @@ const updateTeam = async (team, game, isWinner) => {
     team.goals[0] += game.goals[1];
     team.goals[1] += game.goals[0];
 
-    if (game.gamePhase === "Group_Stage") {
+    if (isGroup) {
       team.goalsGroupStage[0] += game.goals[1]; //add the goals from the game to the gropstage goals
       team.goalsGroupStage[1] += game.goals[0];
     }
@@ -550,17 +574,19 @@ const updateTeam = async (team, game, isWinner) => {
   return await team.save();
 };
 
-async function writeGameDataToTeams(game) {
+async function writeGameDataToTeams(game, template) {
   try {
-    const team1 = await updateTeam(
+    await updateTeam(
       await Team.findById(game.opponents[0]),
       game,
-      game.goals[0] > game.goals[1]
+      game.goals[0] > game.goals[1],
+      template
     );
-    const team2 = await updateTeam(
+    await updateTeam(
       await Team.findById(game.opponents[1]),
       game,
-      game.goals[1] > game.goals[0]
+      game.goals[1] > game.goals[0],
+      template
     );
   } catch (err) {
     console.error("Error updating teams:", err);
@@ -699,13 +725,16 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
     let lastGamePlayed = 0;
 
     
+    const settingsForTemplate = await MainSettings.findOne({});
+    const template = loadTemplate(settingsForTemplate.scheduleTemplate);
+
     for(lastGamePlayed; lastGamePlayed <= limit; lastGamePlayed++) {
-      let games = await Game.find({ status: { $ne: "Ended" }, number: { $lte: limit } }).exec();
+      let games = await Game.find({ status: { $ne: "Ended" }, number: { $lte: limit } }).sort({ number: 1 }).exec();
+      let playedAny = false;
 
       for (const game of games) {   // Loop through all games fetched
-          if (game.isDummy) {
-              console.log("Game is a dummy: ", game);
-              continue;
+          if (game.opponents.some((o) => isDummy(o))) {
+              continue; // Teilnehmer stehen noch nicht fest
           }
 
           console.log("Auto-playing game: ", game.number);
@@ -713,8 +742,8 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
           let goalsTeam1 = Math.floor(Math.random() * 8); // Random number between 0 and 7
           let goalsTeam2 = Math.floor(Math.random() * 8);
 
-          // if the game is not a group stage game, avoid draws
-          if (game.gamePhase !== "Group_Stage" && goalsTeam1 === goalsTeam2) {
+          // Spiele, die laut Template nicht unentschieden enden dürfen, bekommen immer einen Sieger
+          if (goalsTeam1 === goalsTeam2 && isKnockoutDrawNotAllowed({ matchId: game.matchId, goals: [goalsTeam1, goalsTeam2] }, template)) {
               if (Math.random() < 0.5) {
                   goalsTeam1 += 1;
               } else {
@@ -762,38 +791,19 @@ router.post("/autoPlayGames/:limit", async (req, res) => {
 
           // Update game status to "Ended"
           game.status = "Ended";
-          lastGamePlayed = game.number; // Store the last game played
+          playedAny = true;
           await game.save();
 
           // Update team and general counters
-          await writeGameDataToTeams(game);
+          await writeGameDataToTeams(game, template);
           await genCounters.findOneAndUpdate({}, { $inc: { gamesPlayed: 1 } });
 
-          // Update placeholder games if necessary
-          const tournamentConfig = yaml.load(
-              fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
-          );
-          
-          const scheduleGenerator = new ScheduleGenerator(tournamentConfig, mainSettings);
-          
-          const gamePhase = game.gamePhase;
-          if (gamePhase === "Group_Stage") {
-            const subsequentGame = await Game.findOne({
-              number: game.number + 1,
-            }).exec();
-            if (subsequentGame.gamePhase != "Group_Stage") {
-              console.log("updating QuarterFinals");
-              await scheduleGenerator.updateQuarterFinals();
-              break;      //Break the loop to fetch the new games
-            }
-          } else {
-            console.log("updating Semifinals and Finals");
-            await scheduleGenerator.updateGeneralKnockout("Semifinals");
-            await scheduleGenerator.updateGeneralKnockout("Finals");
-            await updateFinalRanks();
-            break;      //Break the loop to fetch the new games
-          }
+          // Platzhalter-Spiele anhand des Templates neu belegen
+          const changed = await new ScheduleGenerator(template, mainSettings).updateSchedule({ autoResolve: true });
+          await updateFinalRanks();
+          if (changed > 0) break; // Neue Paarungen: Spiele neu laden
       }
+      if (!playedAny) break;
   }
 
     res.status(200).send("Spiele erfolgreich automatisch gespielt.");

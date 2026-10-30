@@ -1,4 +1,5 @@
 const bodyparser = require('body-parser');
+const { TOURNAMENT_TZ, formatLocalInput } = require('./src/services/timezone');
 const path = require('path');
 const https = require('https');
 const http = require('http');
@@ -24,6 +25,7 @@ const CertificateController = require("./src/controllers/CertificateController")
 const FeedbackController = require("./src/controllers/FeedbackController");
 const MyTeamController = require("./src/controllers/MyTeamController");
 const CashierController = require("./src/controllers/CashierController").router;
+const DecisionController = require("./src/controllers/DecisionController").router;
 
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
@@ -42,7 +44,7 @@ app.engine('hbs', exphbs.engine({
   layoutsDir: __dirname + '/src/views/layouts/',
   helpers: {
     formatTime: function (time) {
-      const formattedTime = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const formattedTime = new Date(time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: TOURNAMENT_TZ });
       return formattedTime;
     },
     formatExtraTime: function (seconds) {
@@ -57,9 +59,7 @@ app.engine('hbs', exphbs.engine({
       return ` +${parts.join(' ')}`;
     },
     formatDateTime: function (time) {
-      time.setHours(time.getHours() + 1);
-      const formattedTime = new Date(time).toISOString().slice(0, 16);
-      return formattedTime;
+      return formatLocalInput(time);
     },
     eq: function (v1, v2) {
       return v1 && v1.equals && v1.equals(v2);
@@ -257,6 +257,7 @@ app.use("/team", TeamController);
 app.use("/schedule", ScheduleController);
 app.use("/mainSettings", MainSettingController);
 app.use("/game", GameController);
+app.use("/decisions", DecisionController);
 app.use("/scorer", ScorerController);
 app.use("/player", PlayerController);
 app.use("/certificate", CertificateController);

@@ -8,6 +8,8 @@ const mongoose = require("mongoose");
 const Game = mongoose.model("Game");
 const Team = mongoose.model("Team");
 const MainSettings = mongoose.model("MainSettings");
+const { loadTemplate } = require("../services/tournamentTemplate");
+const { isDummy } = require("../services/tournamentRules");
 module.exports = {
   ScheduleController: router,
   fetchGamesData,
@@ -40,15 +42,25 @@ router.get("/generate", async (req, res) => {
         );
       }
       const scheduleGenerator = await getScheduleGenerator();
-      await scheduleGenerator.generateFullSchedule();
-
+      const result = await scheduleGenerator.generateFullSchedule();
+      if (!result.success) {
+        const escapedError = String(result.error)
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return res.status(400).send(
+          `<div style="max-width: 800px; margin: 10vh auto; padding: 24px; border: 1px solid #333; text-align: center; font-size: 1.4em;">` +
+          `<h1>Der Spielplan kann nicht generiert werden</h1>` +
+          `<p>${escapedError}</p>` +
+          `<p><a href="/mainSettings">Zu den Einstellungen</a> | <a href="/team/list">Zur Teamverwaltung</a></p>` +
+          `</div>`
+        );
+      }
       // Delay the redirect by 1 second to allow time for the schedule generation
       setTimeout(() => {
           res.redirect("/schedule/list");
       }, 1000);
   } catch (err) {
       console.error("Error generating schedule:", err);
-      res.status(500).send("Error generating schedule");
+      res.status(500).send("Error generating schedule: " + String(err.message).replace(/</g, "&lt;"));
   }
 });
 
@@ -251,182 +263,47 @@ const updateSubsequentGamesTime = async (gameId, mainTimeDifference) => {
   }
 };
 
-// if some game stats are changed afterwards this functions updates team properties in order to keep the ranking correct
-function calculateChanges(oldPoints, newPoints, oldGoals, newGoals) {
-  const pointChange = [
-    newPoints[0] - oldPoints[0],
-    newPoints[1] - oldPoints[1],
-  ];
-  const goalChange = [newGoals[0] - oldGoals[0], newGoals[1] - oldGoals[1]];
-
-  let gamesWonChange1 = 0,
-    gamesLostChange1 = 0,
-    gamesDrawChange1 = 0;
-  let gamesWonChange2 = 0,
-    gamesLostChange2 = 0,
-    gamesDrawChange2 = 0;
-
-  if (
-    oldPoints[0] === 3 &&
-    oldPoints[1] === 0 &&
-    newPoints[0] === 0 &&
-    newPoints[1] === 3
-  ) {
-    gamesWonChange1 = -1;
-    gamesWonChange2 = 1;
-    gamesLostChange1 = 1;
-    gamesLostChange2 = -1;
-  } else if (
-    oldPoints[0] === 3 &&
-    oldPoints[1] === 0 &&
-    newPoints[0] === 1 &&
-    newPoints[1] === 1
-  ) {
-    gamesWonChange1 = -1;
-    gamesLostChange2 = -1;
-    gamesDrawChange1 = 1;
-    gamesDrawChange2 = 1;
-  } else if (
-    oldPoints[0] === 0 &&
-    oldPoints[1] === 3 &&
-    newPoints[0] === 3 &&
-    newPoints[1] === 0
-  ) {
-    gamesWonChange1 = 1;
-    gamesWonChange2 = -1;
-    gamesLostChange1 = -1;
-    gamesLostChange2 = 1;
-  } else if (
-    oldPoints[0] === 0 &&
-    oldPoints[1] === 3 &&
-    newPoints[0] === 1 &&
-    newPoints[1] === 1
-  ) {
-    gamesLostChange1 = -1;
-    gamesWonChange2 = -1;
-    gamesDrawChang1 = 1;
-    gamesDrawChange2 = 1;
-  } else if (
-    oldPoints[0] === 1 &&
-    oldPoints[1] === 1 &&
-    newPoints[0] === 0 &&
-    newPoints[1] === 3
-  ) {
-    gamesDrawChange1 = -1;
-    gamesDrawChange2 = -1;
-    gamesLostChange1 = 1;
-    gamesWonChange2 = 1;
-  } else if (
-    oldPoints[0] === 1 &&
-    oldPoints[1] === 1 &&
-    newPoints[0] === 3 &&
-    newPoints[1] === 0
-  ) {
-    gamesDrawChange1 = -1;
-    gamesDrawChange2 = -1;
-    gamesWonChange1 = 1;
-    gamesLostChange2 = 1;
-  }
-
-  return {
-    pointChange,
-    goalChange,
-    gamesWonChange1,
-    gamesLostChange1,
-    gamesDrawChange1,
-    gamesWonChange2,
-    gamesLostChange2,
-    gamesDrawChange2,
-  };
+// Wenn Spielergebnisse nachträglich geändert werden, werden die Team-Statistiken mit den
+// Punkten und der Gruppenphasen-Kennung des gewählten Templates korrigiert.
+function outcomeOf(goals, side) {
+  const own = goals[side];
+  const other = goals[1 - side];
+  return own > other ? "win" : own < other ? "loss" : "draw";
 }
 
 async function editTeamInformation(oldGame, newGame) {
-  if (getPoints(oldGame) !== getPoints(newGame)) {
-    const changes = calculateChanges(
-      getPoints(oldGame),
-      getPoints(newGame),
-      oldGame.goals,
-      newGame.goals
-    );
+  const settings = await MainSettings.findOne({}).lean().exec();
+  const template = loadTemplate(settings.scheduleTemplate, { validate: false });
+  const gs = template.group_stage || {};
+  const points = gs.points || { win: 3, draw: 1, loss: 0 };
+  const isGroup = oldGame.gamePhase === (gs.game_phase_key || "Group_Stage");
+  const counter = { win: "gamesWon", loss: "gamesLost", draw: "gamesDraw" };
 
-    opponent1PointChange = changes.pointChange[0];
-    opponent2PointChange = changes.pointChange[1];
-    opponent1GoalChange = changes.goalChange[0];
-    opponent2GoalChange = changes.goalChange[1];
-    opponent1GamesWonChange = changes.gamesWonChange1;
-    opponent2GamesWonChange = changes.gamesWonChange2;
-    opponent1GamesLostChange = changes.gamesLostChange1;
-    opponent2GamesLostChange = changes.gamesLostChange2;
-    opponent1GamesDrawChange = changes.gamesDrawChange1;
-    opponent2GamesDrawChange = changes.gamesDrawChange2;
-    opponent1GoalGroupStageChange = 0;
-    opponent2GoalGroupStageChange = 0;
+  for (const side of [0, 1]) {
+    const teamId = oldGame.opponents[side];
+    if (isDummy(teamId)) continue;
 
-    if (oldGame.gamePhase === "Group_Stage") {
-      opponent1PointGroupStageChange = opponent1PointChange;
-      opponent2PointGroupStageChange = opponent2PointChange;
-      opponent1GoalGroupStageChange = opponent1GoalChange;
-      opponent2GoalGroupStageChange = opponent2GoalChange;
+    const before = outcomeOf(oldGame.goals, side);
+    const after = outcomeOf(newGame.goals, side);
+    const pointChange = points[after] - points[before];
+    const goalsFor = newGame.goals[side] - oldGame.goals[side];
+    const goalsAgainst = newGame.goals[1 - side] - oldGame.goals[1 - side];
+
+    const inc = {
+      points_General: pointChange,
+      "goals.0": goalsFor,
+      "goals.1": goalsAgainst,
+    };
+    if (before !== after) {
+      inc[counter[before]] = (inc[counter[before]] || 0) - 1;
+      inc[counter[after]] = (inc[counter[after]] || 0) + 1;
     }
-
-    // Fetch the current state of the team
-    const team1 = await Team.findById(oldGame.opponents[0]).exec();
-    const team2 = await Team.findById(oldGame.opponents[1]).exec();
-
-    // Calculate the changes based on the current state
-    const goalsChange1a = opponent1GoalChange + team1.goals[0];
-    const goalsChange1b = opponent2GoalChange + team1.goals[1];
-    const goalsGroupStageChange1a =
-      opponent1GoalGroupStageChange + team1.goalsGroupStage[0];
-    const goalsGroupStageChange1b =
-      opponent2GoalGroupStageChange + team1.goalsGroupStage[1];
-    const goalsChange2a = opponent2GoalChange + team2.goals[0];
-    const goalsChange2b = opponent1GoalChange + team2.goals[1];
-    const goalsGroupStageChange2a =
-      opponent2GoalGroupStageChange + team2.goalsGroupStage[0];
-    const goalsGroupStageChange2b =
-      opponent1GoalGroupStageChange + team2.goalsGroupStage[1];
-
-    // Update team information
-    Team.findByIdAndUpdate(oldGame.opponents[0], {
-      $inc: {
-        gamesWon: opponent1GamesWonChange,
-        gamesLost: opponent1GamesLostChange,
-        gamesDraw: opponent1GamesDrawChange,
-        points_Group_Stage: opponent1PointGroupStageChange,
-        points_General: opponent1PointChange,
-      },
-      $set: {
-        goals: [goalsChange1a, goalsChange1b],
-        goalsGroupStage: [goalsGroupStageChange1a, goalsGroupStageChange1b],
-      },
-    }).exec();
-
-    Team.findByIdAndUpdate(oldGame.opponents[1], {
-      $inc: {
-        gamesWon: opponent2GamesWonChange,
-        gamesLost: opponent2GamesLostChange,
-        gamesDraw: opponent2GamesDrawChange,
-        points_Group_Stage: opponent2PointGroupStageChange,
-        points_General: opponent2PointChange,
-      },
-      $set: {
-        goals: [goalsChange2a, goalsChange2b],
-        goalsGroupStage: [goalsGroupStageChange2a, goalsGroupStageChange2b],
-      },
-    }).exec();
-  }
-}
-
-function getPoints(game) {
-  goals = [game.goals[0], game.goals[1]];
-
-  if (goals[0] > goals[1]) {
-    return [3, 0];
-  } else if (goals[0] < goals[1]) {
-    return [0, 3];
-  } else {
-    return [1, 1];
+    if (isGroup) {
+      inc.points_Group_Stage = pointChange;
+      inc["goalsGroupStage.0"] = goalsFor;
+      inc["goalsGroupStage.1"] = goalsAgainst;
+    }
+    await Team.findByIdAndUpdate(teamId, { $inc: inc }).exec();
   }
 }
 
@@ -597,11 +474,7 @@ async function fetchMainSettings() {
 async function getScheduleGenerator() {
   try {
       const mainSettings = await fetchMainSettings();
-      const tournamentConfig = yaml.load(
-          fs.readFileSync(path.join(__dirname, `../config/scheduling_templates/${mainSettings.scheduleTemplate}`), "utf8")
-      );
-
-      return new ScheduleGenerator(tournamentConfig, mainSettings);
+      return ScheduleGenerator.fromSettings(mainSettings);
   } catch (err) {
       console.log("Error fetching Schedule Generator: " + err);
       throw err;

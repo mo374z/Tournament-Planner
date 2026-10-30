@@ -1,0 +1,310 @@
+# =====================================================================
+# Turnier-Template V4: 4 Gruppen à 4 Teams, Viertelfinale bis Finale
+# + Platzierungsspiele für alle Plätze (1-16) mit Gegnertausch
+# (Teams derselben Gruppe sollen in Platzierungsspielen möglichst nicht
+# gegeneinander spielen). Eine Kurzbeschreibung des Ablaufs steht am Dateiende.
+#
+# Ziel: Der Spielplan und der Turnierablauf sollen komplett aus dieser Datei
+# kommen. Für ein kleineres Turnier wird einfach eine andere Datei kopiert,
+# angepasst und in den Einstellungen (scheduleTemplate) ausgewählt.
+#
+# ScheduleGenerator und GameController lesen diese Datei vollständig:
+# Spielplan, Platzhalter, Punkte, Tabellenwertung, Weiterkommen, Gesamtwertung,
+# Pools, Gegnertausch und Endplatzierungen werden daraus gesteuert.
+#
+# Zeiteinheiten: Spieldauern und Pausen stehen weiterhin in den
+# Haupteinstellungen (MainSettings). Das Template verweist nur über
+# "duration_setting" darauf.
+# =====================================================================
+
+schema_version: 4 # Version des Datei-Formats (für spätere Änderungen/Validierung)
+
+meta:
+  name: "16 Teams, 4 Gruppen à 4 Teams (V4, mit Gegnertausch)" # Anzeigename in der Template-Auswahl
+  description: >-
+    V4 - wie V3 (16 Teams in 4 Gruppen, Viertelfinale bis Finale, Platzierungsspiele für alle Plätze 1-16,
+    Spiel um den letzten Platz am Ende), zusätzlich mit Gegnertausch: In den Platzierungsspielen werden
+    die Gegner innerhalb der Blöcke Platz 5-8 und Platz 9-16 so getauscht, dass möglichst keine Teams aus
+    derselben Gruppe gegeneinander spielen. Die Platzierungsspiele sind echte Entscheidungsspiele:
+    Sieger und Verlierer erhalten die beiden zugehörigen Plätze.
+  total_teams: 16 # Muss zur Summe aller Gruppengrößen passen (wird vor der Generierung geprüft)
+
+# ---------------------------------------------------------------------
+# Gruppenphase
+# ---------------------------------------------------------------------
+group_stage:
+  enabled: true # false = Turnier startet direkt mit der K.o.-Phase (dann Teams direkt zuweisen, siehe knockout_stage)
+  game_phase_key: "Group_Stage" # Interner Phasenschlüssel (Game.gamePhase); die Oberfläche erwartet "Group_Stage"
+  display_name: "Gruppenspiel" # Anzeigename im Spielplan
+  duration_setting: "gameDurationGroupStage" # Welche Spieldauer aus den Haupteinstellungen genutzt wird
+
+  # Gruppen: Name + Anzahl Teams. Gruppen dürfen unterschiedlich groß sein.
+  groups:
+    - { name: "A", teams: 4 }
+    - { name: "B", teams: 4 }
+    - { name: "C", teams: 4 }
+    - { name: "D", teams: 4 }
+
+  # Spielmodus innerhalb einer Gruppe
+  format:
+    type: "round_robin" # round_robin = jeder gegen jeden
+    legs: 1 # 1 = Einfachrunde (jede Paarung einmal), 2 = Hin- und Rückspiel
+    # Reihenfolge der Spiele im Spielplan:
+    #   by_round = erst alle Spiele von Runde 1 (aller Gruppen), dann Runde 2, ... (jedes Team spielt pro Runde 1x)
+    #   by_group = erst alle Spiele von Gruppe A, dann B, ...
+    game_order: "by_round"
+    # Reihenfolge der Gruppen innerhalb einer Runde
+    group_order: "sequential" # sequential = A, B, C, D
+    # Wie Teams in der Gruppe den Spielplan-Positionen zugeordnet werden:
+    #   sequential = in der Reihenfolge, wie sie in der Datenbank/Teamliste stehen
+    #   random = zufällig (Auslosung beim Generieren)
+    seeding: "sequential"
+
+
+  # Punktevergabe pro Spiel
+  points:
+    win: 3
+    draw: 1
+    loss: 0
+
+  # Tabellenreihenfolge innerhalb einer Gruppe. Von oben nach unten: das nächste
+  # Kriterium zählt nur bei Gleichstand im vorherigen.
+  # Erlaubt: points, goal_difference, goals_scored, goals_against (weniger = besser),
+  #          head_to_head (direkter Vergleich), wins, random (Los), manual (manuelle Entscheidung)
+  ranking:
+    tiebreakers:
+      - "points"
+      - "goal_difference"
+      - "goals_scored"
+      - "head_to_head"
+    # Wenn nach allen Kriterien immer noch Gleichstand:
+    #   manual       = Admin legt die Reihenfolge per Popup fest (betroffene Spiele bleiben bis dahin gesperrt)
+    #   alphabetical = automatisch nach Teamname
+    final_tiebreak: "manual"
+
+  # Wer kommt aus der Gruppenphase weiter?
+  advancement:
+    spots_per_group: 2 # Die besten X jeder Gruppe kommen weiter
+    # Zusätzliche Weiterkommer über Gruppen-Vergleich (z.B. "beste Drittplatzierte"). 0 = keine
+    best_of_rank:
+      rank: 3 # Gruppenplatz, der verglichen wird
+      count: 0 # Wie viele davon zusätzlich weiterkommen
+
+# ---------------------------------------------------------------------
+# Quellen für Teams (wird in den Spielen der K.o.-Phase unter "home"/"away" verwendet)
+#
+#   { type: group_rank, group: "A", rank: 1 }      -> Platz 1 aus Gruppe A
+#   { type: winner,     match: "QF1" }              -> Sieger des Spiels mit der id QF1
+#   { type: loser,      match: "SF1" }              -> Verlierer des Spiels mit der id SF1
+#   { type: pool_rank,  pool: "qf_losers", rank: 1 }-> Bestes Team aus einem definierten Pool (siehe "pools")
+#   { type: overall_rank, rank: 9 }                 -> Platz X der Gesamtwertung nach der Gruppenphase
+#   { type: team, name: "..." }                     -> Fest zugewiesenes Team (z.B. bei Freilos/Setzliste)
+# ---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
+# Pools: Gruppen von Teams, die gemeinsam sortiert werden und aus denen
+# einzelne Plätze gezogen werden (ersetzt die bisher fest codierte Logik
+# für "Verlierer Viertelfinale -> Spiel um Platz 5/7").
+# ---------------------------------------------------------------------
+pools:
+  qf_losers: # Name des Pools (frei wählbar)
+    display_name: "Viertelfinale" # Wird im Platzhalter-Text genutzt: "1. Verlierer Viertelfinale"
+    # losers_of_phase / winners_of_phase = alle Verlierer bzw. Sieger der Phase
+    teams_from: { type: "losers_of_phase", phase: "quarterfinals" }
+    # Sortierung im Pool nach den Werten der Gruppenphase (Kriterien wie bei den Tiebreakern)
+    then: ["points", "goal_difference", "goals_scored"]
+
+# ---------------------------------------------------------------------
+# Gegnertausch bei Platzierungsspielen (NEU in V4)
+#
+# Platzierungsspiele sind echte Entscheidungsspiele: Der Sieger bekommt den
+# besseren, der Verlierer den schlechteren der beiden Plätze. Die ursprüngliche
+# Platzierung (Gruppenphase / Viertelfinale) wird NICHT nachträglich
+# festgeschrieben. Deshalb dürfen die Gegner getauscht werden, damit möglichst
+# keine zwei Teams aus derselben Gruppe gegeneinander spielen.
+# ---------------------------------------------------------------------
+opponent_swap:
+  enabled: true # false = Paarungen genau wie bei den Matches unten definiert
+
+  # true = Der Gegnertausch muss vom Admin per Popup bestätigt werden (Tausch bestätigen oder ursprüngliche
+  # Paarungen beibehalten). Bis zur Entscheidung sind die betroffenen Spiele gesperrt. Das Popup erscheint nach
+  # jedem Neuladen erneut, solange nichts entschieden wurde. false = Tausch wird automatisch durchgeführt.
+  # Nur nötig, wenn durch den Tausch tatsächlich andere Paarungen entstehen.
+  manual_confirmation: true
+
+  # Ein Block = Menge von Platzierungsspielen, die untereinander Gegner tauschen dürfen.
+  # Getauscht wird nur INNERHALB eines Blocks. Teams aus verschiedenen Blöcken
+  # (z.B. Platz 5-8 und Platz 9-16) werden nie vermischt.
+  # Ein Block wird EINMAL berechnet, sobald alle seine Teams feststehen (Platz 5-8: nach den
+  # Viertelfinals, Platz 9-16: nach der Gruppenphase), und danach nicht mehr verändert.
+  # Sobald eines der Spiele des Blocks gestartet wurde, bleibt der ganze Block unverändert.
+  # Die Spiele eines Blocks werden nach ihrem final_placement sortiert, die Teams in Rangfolge
+  # (home, away, home, away, ...) auf die Spiele verteilt und dann getauscht.
+  blocks:
+    - id: "ranks_5_8" # Verlierer der Viertelfinals
+      matches: ["P5", "P7"]
+    - id: "ranks_9_16" # Nicht weitergekommene Teams, sortiert nach der Gruppenphase
+      matches: ["P9", "P11", "P13", "P15"]
+
+  # Wie getauscht wird:
+  #   minimal_swap = möglichst wenige Gruppen-Duelle; bei gleich vielen Duellen wird so wenig
+  #                  wie möglich verschoben (kleinste Rang-Abstände). Ist keine konfliktfreie
+  #                  Lösung möglich, wird die bestmögliche genommen.
+  # Das final_placement der Spiele bleibt unverändert:
+  # Sieger = final_placement, Verlierer = final_placement + 1
+  strategy: "minimal_swap"
+
+# ---------------------------------------------------------------------
+# K.o.-Phase: Liste von Phasen in der Reihenfolge, wie sie im Spielplan stehen.
+# Jede Phase enthält ihre Spiele. Jedes Spiel hat eine eindeutige "id".
+# ---------------------------------------------------------------------
+knockout_stage:
+  enabled: true
+
+  # Was passiert bei Unentschieden in einem K.o.-Spiel?
+  #   extra_time = Nachspielzeit (Timer-Funktion), danach ggf. penalties
+  #   penalties  = direkt Elfmeterschießen / Entscheidung per Hand
+  #   manual     = Admin trägt den Sieger manuell ein
+  # Bei Gleichstand kann das Spiel nicht beendet werden (require_winner), der Admin muss ein Ergebnis mit Sieger eintragen.
+  draw_resolution:
+    order: ["extra_time", "penalties"]
+    require_winner: true # true = Spiel kann bei Gleichstand nicht beendet werden
+
+  phases:
+    # ---------------- Viertelfinale ----------------
+    - id: "quarterfinals" # Eindeutiger Phasenname, wird z.B. von pools verwendet
+      enabled: true
+      game_phase_key: "Quarterfinals" # Interner Schlüssel, Spiele heißen dann "Quarterfinals 1" usw.
+      display_name: "Viertelfinale"
+      duration_setting: "gameDurationQuarterfinals"
+      matches:
+        - { id: "QF1", home: { type: group_rank, group: "A", rank: 1 }, away: { type: group_rank, group: "D", rank: 2 } }
+        - { id: "QF2", home: { type: group_rank, group: "B", rank: 1 }, away: { type: group_rank, group: "C", rank: 2 } }
+        - { id: "QF3", home: { type: group_rank, group: "C", rank: 1 }, away: { type: group_rank, group: "B", rank: 2 } }
+        - { id: "QF4", home: { type: group_rank, group: "D", rank: 1 }, away: { type: group_rank, group: "A", rank: 2 } }
+
+    # ---------------- Halbfinale ----------------
+    - id: "semifinals"
+      enabled: true
+      game_phase_key: "Semifinals"
+      display_name: "Halbfinale"
+      duration_setting: "gameDurationSemifinals"
+      matches:
+        - { id: "SF1", home: { type: winner, match: "QF1" }, away: { type: winner, match: "QF3" } }
+        - { id: "SF2", home: { type: winner, match: "QF2" }, away: { type: winner, match: "QF4" } }
+
+    # ---------------- Platzierungsspiele und Finale ----------------
+    # Die Reihenfolge der Spiele hier = Reihenfolge im Spielplan.
+    # "final_placement" = Platz des Siegers; der Verlierer bekommt final_placement + 1.
+    # Bei den Platzierungsspielen P5-P15 sind home/away nur die AUSGANGS-Paarung
+    # (siehe "opponent_swap": die Gegner können getauscht werden).
+    - id: "finals"
+      enabled: true
+      game_phase_key: "Finals"
+      duration_setting: "gameDurationFinal"
+      matches:
+        - id: "P13"
+          display_name: "Platzierungsspiel 13-14"
+          final_placement: 13
+          home: { type: overall_rank, rank: 13 }
+          away: { type: overall_rank, rank: 14 }
+        - id: "P11"
+          display_name: "Platzierungsspiel 11-12"
+          final_placement: 11
+          home: { type: overall_rank, rank: 11 }
+          away: { type: overall_rank, rank: 12 }
+        - id: "P9"
+          display_name: "Platzierungsspiel 9-10"
+          final_placement: 9
+          home: { type: overall_rank, rank: 9 }
+          away: { type: overall_rank, rank: 10 }
+        - id: "P7"
+          display_name: "Platzierungsspiel 7-8"
+          final_placement: 7
+          home: { type: pool_rank, pool: "qf_losers", rank: 3 }
+          away: { type: pool_rank, pool: "qf_losers", rank: 4 }
+        - id: "P5"
+          display_name: "Platzierungsspiel 5-6"
+          final_placement: 5
+          home: { type: pool_rank, pool: "qf_losers", rank: 1 }
+          away: { type: pool_rank, pool: "qf_losers", rank: 2 }
+        - id: "BRONZE"
+          display_name: "Spiel um Platz 3"
+          final_placement: 3
+          home: { type: loser, match: "SF1" }
+          away: { type: loser, match: "SF2" }
+        - id: "FINAL"
+          display_name: "Finale"
+          final_placement: 1
+          home: { type: winner, match: "SF1" }
+          away: { type: winner, match: "SF2" }
+        - id: "P15"
+          display_name: "Spiel um letzten Platz"
+          final_placement: 15
+          home: { type: overall_rank, rank: 15 }
+          away: { type: overall_rank, rank: 16 }
+
+# ---------------------------------------------------------------------
+# Gesamtwertung (Endplatzierung)
+# ---------------------------------------------------------------------
+final_ranking:
+  # Wie die "Gesamtwertung" VOR den Platzierungsspielen berechnet wird
+  # (wird für overall_rank in den Spielen oben benötigt):
+  #   qualified_first = Weitergekommene Teams zuerst (nach Gesamtpunkten/-toren),
+  #                     danach alle anderen nach Gruppenphasen-Leistung
+  overall_rank_mode: "qualified_first"
+  # Sortierung der weitergekommenen Teams in der Gesamtwertung
+  qualified_sort: ["points_general", "goal_difference_general", "goals_scored_general"]
+  # Sortierung der nicht weitergekommenen Teams
+  non_qualified_sort: ["points", "goal_difference", "goals_scored"]
+  # Endplatz wird aus den Spielen mit "final_placement" vergeben
+  # (Sieger = Platz, Verlierer = Platz + 1). Jedes Team braucht am Ende genau einen Platz.
+  placement_source: "match_final_placement"
+
+# ---------------------------------------------------------------------
+# Anzeige / Texte
+# ---------------------------------------------------------------------
+display:
+  # Texte für noch unbekannte Teams (Platzhalter im Spielplan, bis das Spiel feststeht)
+  placeholders:
+    group_rank: "{rank}. aus Gruppe {group}" # z.B. "1. aus Gruppe A"
+    winner: "Sieger {match_name}" # z.B. "Sieger Viertelfinale 1"
+    loser: "Verlierer {match_name}"
+    overall_rank: "{rank}. Gesamtwertung"
+    pool_rank: "{rank}. Verlierer {pool_name}"
+
+# =====================================================================
+# KURZBESCHREIBUNG: ABLAUF UND BESONDERHEITEN
+#
+# Ablauf (Reihenfolge im Spielplan):
+#   1. Gruppenphase: 4 Gruppen (A-D) à 4 Teams, jeder gegen jeden (24 Spiele).
+#      Die besten 2 jeder Gruppe kommen weiter, die anderen 8 Teams sind
+#      für die Plätze 9-16 vorgesehen.
+#   2. Viertelfinale (4 Spiele): A1-D2, B1-C2, C1-B2, D1-A2.
+#   3. Halbfinale (2 Spiele): Sieger QF1 gegen Sieger QF3, Sieger QF2 gegen Sieger QF4.
+#   4. Platzierungsspiele und Finale (8 Spiele), in dieser Reihenfolge:
+#      Platz 13-14, 11-12, 9-10, 7-8, 5-6, Spiel um Platz 3, Finale, Spiel um den letzten Platz.
+#
+# Wie die Plätze entstehen:
+#   - Platz 1-4:   Halbfinale, Spiel um Platz 3 und Finale.
+#   - Platz 5-8:   Verlierer der Viertelfinals, nach Gruppenleistung sortiert (Pool "qf_losers").
+#                  Die besten zwei spielen Platz 5/6, die anderen zwei Platz 7/8.
+#   - Platz 9-16:  Zunächst nach der Gruppenphase sortiert (Gesamtwertung), danach
+#                  paarweise (9/10, 11/12, 13/14, 15/16) gegeneinander.
+#   - Jedes Platzierungsspiel vergibt zwei Plätze: Sieger = final_placement,
+#     Verlierer = final_placement + 1.
+#
+# Besonderheiten:
+#   - Gegnertausch (opponent_swap): In Platzierungsspielen sollen möglichst keine Teams aus
+#     derselben Gruppe gegeneinander spielen. Dafür werden Gegner innerhalb des Blocks getauscht.
+#     Da die Platzierungsspiele echte Entscheidungsspiele sind, wird die Ausgangsplatzierung
+#     nicht festgeschrieben: der Spielausgang entscheidet. Bei den Plätzen 9-16 kommen genau
+#     2 Teams je Gruppe zusammen, deshalb ist der Tausch dort besonders wichtig.
+#   - Teams stehen erst fest, wenn die Quelle beendet ist (Gruppenphase bzw. Viertelfinale);
+#     bis dahin zeigt der Spielplan Platzhalter (siehe "display.placeholders").
+#   - Das Spiel um den letzten Platz steht bewusst am Ende des Spielplans, nach dem Finale.
+#   - Bei Unentschieden in K.o.-Spielen muss ein Sieger feststehen (siehe "draw_resolution").
+#
+# Kleineres Turnier: Datei kopieren, Gruppen/total_teams anpassen, nicht benötigte Spiele und
+# Blöcke löschen, final_placement der Spiele neu vergeben (jeder Platz genau einmal).
+# =====================================================================

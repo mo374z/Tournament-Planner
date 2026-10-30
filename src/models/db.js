@@ -40,6 +40,7 @@ connectToMongo();
 
 require('./Team');
 require('./Game');
+require('./Decision');
 require('./MainSettings');
 require('./GeneralCounters');
 require('./Player');

@@ -40,6 +40,9 @@ var GameSchema = new mongoose.Schema({
     },
     finalPlacement:{
       type: Number, default: null
+    },
+    matchId: { // Match-ID aus dem Schedule-Template (z.B. "QF1"); null bei Gruppenspielen/Custom-Spielen
+      type: String, default: null
     }
 
 });

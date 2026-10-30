@@ -226,6 +226,162 @@
 </div>
 {{/unless}}
 {{/unless}}
+{{#if (eqref userrole "admin")}}
+<div class="modal fade" id="decisionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" style="display:none">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="decisionTitle"></h5>
+            </div>
+            <div class="modal-body">
+                <p id="decisionDescription"></p>
+                <div id="decisionDetails"></div>
+                <div id="decisionError" class="text-danger mt-2"></div>
+            </div>
+            <div class="modal-footer flex-column align-items-stretch">
+                <div id="decisionOptions" class="d-grid gap-2"></div>
+                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="decisionIgnore">
+                    Später entscheiden (Hinweis erscheint nach dem Neuladen wieder; betroffene Spiele bleiben gesperrt)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// Offene manuelle Entscheidungen (Gegnertausch, Gleichstand, ...) als Popup anzeigen
+(function () {
+    let modal = null;
+    function el(tag, text, cls) {
+        const e = document.createElement(tag);
+        if (text !== undefined) e.textContent = text;
+        if (cls) e.className = cls;
+        return e;
+    }
+    function pairList(title, list) {
+        const box = el('div', undefined, 'mb-3');
+        box.appendChild(el('strong', title));
+        const ul = el('ul', undefined, 'mb-0');
+        list.forEach(m => {
+            const g = t => t.name + (t.group ? ' (' + t.group + ')' : '');
+            ul.appendChild(el('li', m.name + ': ' + g(m.home) + ' vs. ' + g(m.away)));
+        });
+        box.appendChild(ul);
+        return box;
+    }
+    function show(pending, index) {
+        const d = pending[index];
+        if (!d) return;
+        document.getElementById('decisionTitle').textContent = d.title + (pending.length > 1 ? ' (' + (index + 1) + '/' + pending.length + ')' : '');
+        document.getElementById('decisionDescription').textContent = d.description;
+        document.getElementById('decisionError').textContent = '';
+        const details = document.getElementById('decisionDetails');
+        details.replaceChildren();
+        if (d.type === 'opponent_swap' && d.details) {
+            details.appendChild(pairList('Ursprüngliche Paarungen', d.details.original));
+            details.appendChild(pairList('Paarungen mit Gegnertausch', d.details.swapped));
+        }
+        const options = document.getElementById('decisionOptions');
+        options.replaceChildren();
+        const submit = async choice => {
+            const res = await fetch('/decisions/resolve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: d.key, choice })
+            });
+            const data = await res.json();
+            if (!data.success) { document.getElementById('decisionError').textContent = data.error || 'Fehler'; return; }
+            if (data.pending.length) show(data.pending, 0); else { modal.hide(); window.location.reload(); }
+        };
+        if (d.type === 'tie_break' && d.details && d.details.teams) {
+            const tbl = el('table', undefined, 'table table-sm table-bordered text-center align-middle mb-2');
+            const head = el('tr');
+            ['Team', 'Punkte', 'Tore', 'Torverhältnis', 'Punkte gesamt', 'Tore gesamt'].forEach(h => head.appendChild(el('th', h)));
+            const thead = el('thead'); thead.appendChild(head); tbl.appendChild(thead);
+            const tb = el('tbody');
+            const sign = n => (n > 0 ? '+' + n : String(n));
+            d.details.teams.forEach(t => {
+                const s = t.stats || {};
+                const tr = el('tr');
+                tr.appendChild(el('td', t.name + (t.group ? ' (' + t.group + ')' : ''), 'text-start'));
+                tr.appendChild(el('td', String(s.pts)));
+                tr.appendChild(el('td', s.gf + ':' + s.ga));
+                tr.appendChild(el('td', sign(s.gf - s.ga)));
+                tr.appendChild(el('td', String(s.ptsGen)));
+                tr.appendChild(el('td', s.gfGen + ':' + s.gaGen + ' (' + sign(s.gfGen - s.gaGen) + ')'));
+                tb.appendChild(tr);
+            });
+            tbl.appendChild(tb);
+            options.appendChild(tbl);
+            // Reihenfolge per Hoch/Runter festlegen statt aller Permutationen als Buttons
+            const order = d.details.teams.slice();
+            const list = el('ol', undefined, 'list-group list-group-numbered mb-2');
+            const render = () => {
+                list.replaceChildren();
+                order.forEach((t, i) => {
+                    const li = el('li', undefined, 'list-group-item d-flex justify-content-between align-items-center');
+                    li.appendChild(el('span', ' ' + t.name + (t.group ? ' (Gruppe ' + t.group + ')' : '')));
+                    const btns = el('span');
+                    const mk = (txt, dis, fn) => {
+                        const b = el('button', txt, 'btn btn-outline-secondary btn-sm ms-1');
+                        b.type = 'button'; b.disabled = dis; b.addEventListener('click', fn);
+                        return b;
+                    };
+                    btns.appendChild(mk('▲', i === 0, () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; render(); }));
+                    btns.appendChild(mk('▼', i === order.length - 1, () => { [order[i + 1], order[i]] = [order[i], order[i + 1]]; render(); }));
+                    li.appendChild(btns);
+                    list.appendChild(li);
+                });
+            };
+            render();
+            options.appendChild(el('div', 'Reihenfolge festlegen (oben = bester Platz):', 'fw-bold'));
+            options.appendChild(list);
+            const ok = el('button', 'Reihenfolge bestätigen', 'btn btn-primary');
+            ok.type = 'button';
+            ok.addEventListener('click', () => submit(order.map(t => t.id).join(',')));
+            options.appendChild(ok);
+        } else {
+            d.options.forEach(o => {
+                const b = el('button', o.label, 'btn btn-primary');
+                b.type = 'button';
+                b.addEventListener('click', () => submit(o.id));
+                options.appendChild(b);
+            });
+        }
+        document.getElementById('decisionIgnore').onclick = () => modal.hide();
+        modal.show();
+    }
+    window.addEventListener('load', async () => {
+        // Popup nur auf Spielplan-Liste und Spielseite anzeigen
+        const p = window.location.pathname.replace(/\/+$/, '');
+        if (!(p === '/schedule/list' || /^\/game\/[^/]+\/play$/.test(p))) return;
+        try {
+            const res = await fetch('/decisions/pending');
+            if (!res.ok) return;
+            const pending = await res.json();
+            const onList = p === '/schedule/list';
+            if (onList) {
+                // Statusanzeige unten links, bleibt beim Scrollen sichtbar
+                const badge = el('div', undefined, 'position-fixed shadow rounded px-3 py-2 text-white');
+                badge.style.cssText = 'left:12px;bottom:12px;z-index:1050;';
+                if (pending.length) {
+                    badge.classList.add('bg-danger');
+                    badge.style.cursor = 'pointer';
+                    badge.textContent = 'Manuelle Entscheidungen offen: ' + pending.length + ' (anklicken)';
+                    badge.addEventListener('click', () => show(pending, 0));
+                } else {
+                    badge.classList.add('bg-success');
+                    badge.textContent = 'Keine manuelle Entscheidung offen';
+                }
+                document.body.appendChild(badge);
+            }
+            if (!pending.length) return;
+            modal = new bootstrap.Modal(document.getElementById('decisionModal'));
+            show(pending, 0);
+        } catch (e) { /* Popup ist nur ein Hinweis */ }
+    });
+})();
+</script>
+{{/if}}
 
 </body>
 
