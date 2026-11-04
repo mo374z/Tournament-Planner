@@ -40,6 +40,40 @@ router.get('/', (req, res) => {
     renderPublicPage(req, res);
 });
 
+// Public JSON data for the live game box on the home page
+router.get('/liveGameData', async (req, res) => {
+    try {
+        const game = await Game.findOne({ status: 'active' }).exec();
+        if (!game) return res.json({ active: false });
+
+        const defaultLogo = {
+            path: '/teamlogos/default_logo.png',
+            position: { x: 0.5, y: 0.5 },
+            scale: 0.5,
+            backgroundColor: '#f8f9fa'
+        };
+        const resolveTeam = async (opponent) => {
+            const team = mongoose.isValidObjectId(opponent) ? await Team.findById(opponent).exec() : null;
+            const dummyName = opponent && typeof opponent === 'object' && opponent.name;
+            return {
+                name: team ? team.name : (dummyName || 'Team'),
+                logo: team && team.logo && team.logo.path ? team.logo : defaultLogo
+            };
+        };
+
+        res.json({
+            active: true,
+            gameDisplayName: game.gameDisplayName || '',
+            goals: game.goals || [0, 0],
+            team1: await resolveTeam(game.opponents[0]),
+            team2: await resolveTeam(game.opponents[1])
+        });
+    } catch (err) {
+        console.error('Error fetching live game data: ' + err);
+        res.status(500).json({ active: false });
+    }
+});
+
 router.get('/TV', authorizeRoles('admin', 'TV'), (req, res) => {
     renderTVPage(req, res);
 });
@@ -117,6 +151,7 @@ async function renderPublicPage(req, res) {
             const allTeams = await Team.find({}).sort({ name: 1 });
 
             res.render('home', {
+                socketConfig,
                 gameslist: games,
                 teamsByGroup,
                 timeBetweenGames,

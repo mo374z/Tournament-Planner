@@ -115,7 +115,7 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
                             points: productDetails.points || 0
                         }
                     },
-                    { upsert: true, new: true }
+                    { upsert: true, returnDocument: 'after' }
                 );
             }
         }

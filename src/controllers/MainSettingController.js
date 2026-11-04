@@ -37,6 +37,7 @@ function createDefaultMainSettings() {
         publicPageOptions: {
             showAdvertisingPosters: true,
             showRankingTable: false,
+            showLiveGame: false,
         },
         liveGamePageOptions: {
             showTeamLogos: true
@@ -216,7 +217,7 @@ router.post('/', async (req, res) => {
 // POST route to handle form submission and update Public Page Settings
 router.post('/publicPageSettings', async (req, res) => {
     try {
-        const { showAdvertisingPosters, showRankingTable } = req.body;
+        const { showAdvertisingPosters, showRankingTable, showLiveGame } = req.body;
 
         // Find the MainSettings document and update its values
         const mainSettings = await MainSettings.findOne({});
@@ -228,7 +229,8 @@ router.post('/publicPageSettings', async (req, res) => {
 
         mainSettings.publicPageOptions = {
             showAdvertisingPosters: showAdvertisingPosters === 'on',
-            showRankingTable: showRankingTable === 'on'
+            showRankingTable: showRankingTable === 'on',
+            showLiveGame: showLiveGame === 'on'
         };
 
         // Save the updated MainSettings
@@ -371,7 +373,7 @@ router.get('/resetCounters', async (req, res) => {
             goalSektCounter: mainSettings.goalsforSekt,
             wonSektBottles: 0,
             // Add other fields and their reset values if needed
-        }, { new: true });
+        }, { returnDocument: 'after' });
 
         // Redirect to the main settings page after resetting counters
         res.redirect('/mainSettings');

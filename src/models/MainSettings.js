@@ -53,6 +53,10 @@ var MainSettingsSchema = new mongoose.Schema({
         showRankingTable: {
             type: Boolean,
             default: false
+        },
+        showLiveGame: {
+            type: Boolean,
+            default: false
         }
     },
     liveGamePageOptions: {

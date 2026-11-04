@@ -1,12 +1,184 @@
 <body>
     <div class="container-fluid">
         <div class="container mt-5 mb-3 text-center" style="font-size: 2.8rem; font-weight: bold;">
-            Budeturnier 2026
+            Budeturnier 2027
         </div>
 
     </div>
+
+    {{#if publicPageOptions.showLiveGame}}
+    <!-- Live Game Section -->
+    <div class="container mb-3 d-none" id="homeLiveGame">
+        <div class="home-live-card text-center">
+            <div class="home-live-badge"><span class="home-live-dot"></span> LIVE <span id="homeLiveName"></span></div>
+            <div class="home-live-grid">
+                <div class="home-live-team">
+                    <div class="home-live-logo" id="homeLiveLogo1"></div>
+                    <div class="home-live-name" id="homeLiveTeam1"></div>
+                </div>
+                <div class="home-live-center">
+                    <div class="home-live-score"><span id="homeLiveScore1">0</span><span class="home-live-sep">:</span><span id="homeLiveScore2">0</span></div>
+                    <div class="home-live-timer" id="homeLiveTimer">00:00</div>
+                </div>
+                <div class="home-live-team">
+                    <div class="home-live-logo" id="homeLiveLogo2"></div>
+                    <div class="home-live-name" id="homeLiveTeam2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .home-live-card {
+            --s: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 14px 16px 18px;
+            background: #fff;
+            border: 2px solid #212529;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+        }
+
+        .home-live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #dc3545;
+            margin-bottom: 8px;
+            font-size: clamp(.8rem, 2.5vw, 1rem);
+        }
+
+        .home-live-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: homeLivePulse 1.2s infinite;
+        }
+
+        @keyframes homeLivePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .25; }
+        }
+
+        .home-live-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: clamp(6px, 2vw, 24px);
+        }
+
+        .home-live-logo {
+            --logo: calc(150px * var(--s));
+            width: var(--logo);
+            height: var(--logo);
+            margin: 0 auto 8px;
+        }
+
+        .home-live-logo > div {
+            transform: scale(var(--s));
+            transform-origin: top left;
+        }
+
+        .home-live-name {
+            font-weight: 700;
+            font-size: clamp(.85rem, 3vw, 1.8rem);
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+        }
+
+        .home-live-score {
+            font-weight: 800;
+            line-height: 1;
+            font-size: clamp(2.2rem, 11vw, 5.5rem);
+            white-space: nowrap;
+        }
+
+        .home-live-sep {
+            margin: 0 .15em;
+        }
+
+        .home-live-timer {
+            font-weight: 700;
+            font-size: clamp(1.1rem, 5vw, 2.6rem);
+            color: #757575;
+            margin-top: 6px;
+            transition: color .3s ease;
+        }
+
+        .home-live-timer.last-minute { color: #dc3545; }
+        .home-live-timer.overtime { color: #f2b705; }
+
+        @media (max-width: 767px) { .home-live-card { --s: .7; } }
+        @media (max-width: 420px) { .home-live-card { --s: .5; } }
+    </style>
+
+    <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+    <script>
+        (function () {
+            const box = document.getElementById('homeLiveGame');
+            const timerEl = document.getElementById('homeLiveTimer');
+
+            function logoHtml(logo, name) {
+                const x = ((logo.position && logo.position.x != null ? logo.position.x : 0.5) * 100).toFixed(1) + '%';
+                const y = ((logo.position && logo.position.y != null ? logo.position.y : 0.5) * 100).toFixed(1) + '%';
+                const scale = Math.max(0.1, Math.min(2, logo.scale || 0.5));
+                const wrap = document.createElement('div');
+                wrap.style.cssText = 'width:150px;height:150px;position:relative;border-radius:50%;overflow:hidden;background:' + (logo.backgroundColor || '#f8f9fa');
+                const img = document.createElement('img');
+                img.src = logo.path;
+                img.alt = name;
+                img.style.cssText = 'position:absolute;left:' + x + ';top:' + y + ';transform:translate(-50%,-50%) scale(' + scale + ');max-width:none;pointer-events:none;';
+                wrap.appendChild(img);
+                return wrap;
+            }
+
+            function setTeam(n, team) {
+                document.getElementById('homeLiveTeam' + n).textContent = team.name;
+                const logoBox = document.getElementById('homeLiveLogo' + n);
+                logoBox.replaceChildren(logoHtml(team.logo, team.name));
+            }
+
+            async function refreshLiveGame() {
+                try {
+                    const res = await fetch('/liveGameData');
+                    const data = await res.json();
+                    if (!data.active) {
+                        box.classList.add('d-none');
+                        return;
+                    }
+                    setTeam(1, data.team1);
+                    setTeam(2, data.team2);
+                    document.getElementById('homeLiveScore1').textContent = data.goals[0];
+                    document.getElementById('homeLiveScore2').textContent = data.goals[1];
+                    document.getElementById('homeLiveName').textContent = data.gameDisplayName ? '· ' + data.gameDisplayName : '';
+                    box.classList.remove('d-none');
+                } catch (e) {
+                    console.error('Live game update failed', e);
+                }
+            }
+
+            const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
+            socket.on('timerUpdate', (timerValue, isPaused, timerStatus, lastMin) => {
+                const minutes = Math.floor(timerValue / 60);
+                const seconds = timerValue % 60;
+                const isOvertime = timerStatus === 'Overtime';
+                timerEl.textContent = (isOvertime ? '+' : '') + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+                timerEl.classList.toggle('overtime', isOvertime);
+                timerEl.classList.toggle('last-minute', !!lastMin && !isOvertime);
+            });
+            socket.on('updateLiveGame', refreshLiveGame);
+            socket.on('connect', () => socket.emit('getData'));
+
+            refreshLiveGame();
+        })();
+    </script>
+    {{/if}}
     <div class="container-fluid mt-2 mb-2">
-                <div class="alert alert-warning text-center mb-3 {{#unless infoBannerMessage}}d-none{{/unless}} info-banner">
+        <div class="alert alert-warning text-center mb-3 {{#unless infoBannerMessage}}d-none{{/unless}} info-banner">
             <marquee behavior="scroll" direction="left" scrollamount="4" scrolldelay="10">{{infoBannerMessage}}</marquee>
         </div>
     </div>
@@ -220,7 +392,7 @@
                 </thead>
                 <tbody>
                     {{#each gameslist}}
-                        <tr class="{{#streq this.status 'active'}}border border-4 border-warning glow{{/streq}} {{#streq this.gamePhase 'Group_Stage'}}{{else}}bg-light{{/streq}}" data-team1="{{this.opponents.[0]}}" data-team2="{{this.opponents.[1]}}">
+                        <tr class="{{#streq this.status 'active'}}active-game{{/streq}} {{#streq this.gamePhase 'Group_Stage'}}{{else}}bg-light{{/streq}}" data-team1="{{this.opponents.[0]}}" data-team2="{{this.opponents.[1]}}">
                             <td>{{this.number}}</td>
                             <td>{{formatTime this.time}}</td>
                             {{#streq this.group.[0] this.group.[1]}}
@@ -309,6 +481,19 @@
         }
         .glow {
             box-shadow: 0 0 10px rgba(255, 165, 0, 0.8);
+        }
+        .table tr.active-game > td {
+            border-top: 4px solid #ffc107;
+            border-bottom: 4px solid #ffc107;
+            --bs-table-bg-state: rgba(255, 193, 7, 0.18);
+            --bs-table-bg-type: rgba(255, 193, 7, 0.18);
+            font-weight: 600;
+        }
+        .table tr.active-game > td:first-child {
+            border-left: 4px solid #ffc107;
+        }
+        .table tr.active-game > td:last-child {
+            border-right: 4px solid #ffc107;
         }
         .info-banner {
             font-size: 1.5rem;
@@ -464,7 +649,7 @@
 
             const teamFilter = document.getElementById('teamFilter');
             const clearFilter = document.getElementById('clearFilter');
-            const gameRows = document.querySelectorAll('table tbody tr');
+            const gameRows = document.querySelectorAll('table tbody tr[data-team1]');
 
             function filterGames() {
                 const selectedTeam = teamFilter.value;
