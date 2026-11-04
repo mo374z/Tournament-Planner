@@ -13,14 +13,74 @@
         <button type="submit" class="btn btn-primary mt-3" id="generateCertificateBtn">Urkunde generieren</button>
     </form>
     
-    <form action="/certificate/generateAllCertificates" method="POST" class="mt-3" id="generateAllForm">
-        <button type="submit" class="btn btn-success">Alle Urkunden als ZIP herunterladen</button>
+    <p class="mt-4 mb-1"><strong>Alle platzierten Urkunden herunterladen:</strong></p>
+    <form action="/certificate/generateAllCertificates" method="POST" class="d-inline" id="generateAllForm">
+        <button type="submit" class="btn btn-success">Einzelne PDFs in ZIP</button>
+    </form>
+    <form action="/certificate/generateAllCertificatesPdf" method="POST" class="d-inline" id="generateAllPdfForm">
+        <button type="submit" class="btn btn-success">Alle in 1 PDF</button>
     </form>
     <hr>
     <h1>Präsentations-Generator</h1>   
     <form action="/certificate/generatePresentation" method="POST">
         <button type="submit" class="btn btn-primary mt-3">PowerPoint-Präsentation generieren</button>
-    </form>
+    <hr>
+    <details class="mt-3">
+        <summary class="h5" style="cursor: pointer;">Urkunde manuell erstellen</summary>
+        <form action="/certificate/generateManualCertificate" method="POST" enctype="multipart/form-data" target="_blank" class="mt-3">
+            <div class="row g-2">
+                <div class="col-md-8">
+                    <label for="manualName" class="form-label">Mannschaftsname *</label>
+                    <input type="text" class="form-control" id="manualName" name="name" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="manualRank" class="form-label">Platz</label>
+                    <input type="number" min="1" class="form-control" id="manualRank" name="rank">
+                </div>
+                <div class="col-md-2">
+                    <label for="manualGroup" class="form-label">Gruppe</label>
+                    <input type="text" class="form-control" id="manualGroup" name="group">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualPlayed" class="form-label">Spiele</label>
+                    <input type="number" min="0" class="form-control" id="manualPlayed" name="gamesPlayed">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualWon" class="form-label">Siege</label>
+                    <input type="number" min="0" class="form-control" id="manualWon" name="gamesWon">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualLost" class="form-label">Niederlagen</label>
+                    <input type="number" min="0" class="form-control" id="manualLost" name="gamesLost">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualSekt" class="form-label">Sekt erhalten</label>
+                    <input type="number" min="0" class="form-control" id="manualSekt" name="sektWon">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualGoalsFor" class="form-label">Tore geschossen</label>
+                    <input type="number" min="0" class="form-control" id="manualGoalsFor" name="goalsFor">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualGoalsAgainst" class="form-label">Tore kassiert</label>
+                    <input type="number" min="0" class="form-control" id="manualGoalsAgainst" name="goalsAgainst">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualWeizen" class="form-label">Weizen</label>
+                    <input type="number" min="0" class="form-control" id="manualWeizen" name="weizen">
+                </div>
+                <div class="col-md-3">
+                    <label for="manualPils" class="form-label">Pils</label>
+                    <input type="number" min="0" class="form-control" id="manualPils" name="pils">
+                </div>
+                <div class="col-12">
+                    <label for="manualImage" class="form-label">Foto (optional)</label>
+                    <input type="file" class="form-control" id="manualImage" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Urkunde generieren</button>
+        </form>
+    </details>
 </div>
 
 <!-- Status Modal -->
@@ -32,7 +92,7 @@
                     <span class="sr-only">Lädt...</span>
                 </div>
                 <h5>Urkunden werden generiert...</h5>
-                <p class="text-muted mb-0">Bitte warten Sie, während alle Urkunden der platzierten Teams erstellt und als ZIP-Datei verpackt werden.</p>
+                <p class="text-muted mb-0">Bitte warten Sie, während alle Urkunden der platzierten Teams erstellt und zum Download vorbereitet werden.</p>
             </div>
         </div>
     </div>
@@ -60,8 +120,10 @@ function updateCertificateButtonState() {
     }
 }
 
-// Handle generate all certificates form submission
-document.getElementById('generateAllForm').addEventListener('submit', async function(e) {
+document.getElementById('generateAllForm').addEventListener('submit', e => handleBulkDownload(e, '/certificate/generateAllCertificates', 'zip'));
+document.getElementById('generateAllPdfForm').addEventListener('submit', e => handleBulkDownload(e, '/certificate/generateAllCertificatesPdf', 'pdf'));
+
+async function handleBulkDownload(e, endpoint, ext) {
     e.preventDefault();
     
     // Show loading modal using Bootstrap 5
@@ -70,7 +132,7 @@ document.getElementById('generateAllForm').addEventListener('submit', async func
     
     try {
         // Make AJAX request to generate certificates
-        const response = await fetch('/certificate/generateAllCertificates', {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -88,7 +150,7 @@ document.getElementById('generateAllForm').addEventListener('submit', async func
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'Urkunden_' + new Date().toISOString().replace(/:/g, '-').split('.')[0] + '.zip';
+        a.download = 'Urkunden_' + new Date().toISOString().replace(/:/g, '-').split('.')[0] + '.' + ext;
         document.body.appendChild(a);
         a.click();
         
@@ -103,7 +165,7 @@ document.getElementById('generateAllForm').addEventListener('submit', async func
         alert('Fehler beim Generieren der Urkunden: ' + error.message);
         modal.hide();
     }
-});
+}
 
 // Initialize button state on page load
 document.addEventListener('DOMContentLoaded', function() {

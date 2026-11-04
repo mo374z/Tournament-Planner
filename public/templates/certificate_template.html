@@ -142,12 +142,54 @@
     }
 
     .sstripe {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 9pt;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      text-shadow: 0 0 1px rgba(0, 0, 0, .5);
       position: absolute;
       height: 6mm;
       transform: rotate(-35deg);
       z-index: 6;
     }
 
+
+    .jubilee-seal {
+      position: absolute;
+      top: 6mm;
+      left: 8mm;
+      width: 38mm;
+      height: 56mm;
+      z-index: 7;
+      filter: drop-shadow(0 1mm 1.5mm rgba(0, 0, 0, .35));
+    }
+
+    .jubilee-seal svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    .jubilee-sub {
+      font-size: 15pt;
+      font-weight: 700;
+      color: #a67c00;
+      letter-spacing: 1px;
+      margin-top: 1mm;
+    }
+
+    .gold-frame {
+      position: absolute;
+      inset: 5mm;
+      border: 1mm solid #d4a800;
+      outline: 0.3mm solid #d4a800;
+      outline-offset: 1.2mm;
+      z-index: 3;
+      pointer-events: none;
+    }
 
     @media print {
       body {
@@ -164,12 +206,53 @@
 
 <body>
   <div class="page">
+    <div class="gold-frame"></div>
     <img class="logo" src="logo.png" alt="Logo" />
+    <div class="jubilee-seal">
+      <svg viewBox="0 0 200 290" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff4b8" />
+            <stop offset=".25" stop-color="#e8c04a" />
+            <stop offset=".5" stop-color="#b8860b" />
+            <stop offset=".75" stop-color="#f0d27a" />
+            <stop offset="1" stop-color="#8a6508" />
+          </linearGradient>
+          <linearGradient id="goldRev" x1="1" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#fff4b8" />
+            <stop offset=".35" stop-color="#d9ac2e" />
+            <stop offset=".7" stop-color="#a87a08" />
+            <stop offset="1" stop-color="#f0d27a" />
+          </linearGradient>
+          <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2f2f2f" />
+            <stop offset="1" stop-color="#111" />
+          </linearGradient>
+          <path id="textArc" d="M 100 100 m -64 0 a 64 64 0 1 1 128 0 a 64 64 0 1 1 -128 0" />
+        </defs>
+        <polygon points="62,170 30,285 62,262 88,285 104,175" fill="url(#ribbon)" stroke="#d4a800" stroke-width="2" />
+        <polygon points="138,170 170,285 138,262 112,285 96,175" fill="url(#ribbon)" stroke="#d4a800" stroke-width="2" />
+        <polygon points="100.0,3.0 105.9,10.2 112.7,3.8 117.6,11.7 125.1,6.3 128.9,14.8 137.1,10.4 139.8,19.3 148.5,16.0 150.0,25.2 159.0,23.0 159.3,32.3 168.6,31.4 167.7,40.7 177.0,41.0 174.8,50.0 184.0,51.5 180.7,60.2 189.6,62.9 185.2,71.1 193.7,74.9 188.3,82.4 196.2,87.3 189.8,94.1 197.0,100.0 189.8,105.9 196.2,112.7 188.3,117.6 193.7,125.1 185.2,128.9 189.6,137.1 180.7,139.8 184.0,148.5 174.8,150.0 177.0,159.0 167.7,159.3 168.6,168.6 159.3,167.7 159.0,177.0 150.0,174.8 148.5,184.0 139.8,180.7 137.1,189.6 128.9,185.2 125.1,193.7 117.6,188.3 112.7,196.2 105.9,189.8 100.0,197.0 94.1,189.8 87.3,196.2 82.4,188.3 74.9,193.7 71.1,185.2 62.9,189.6 60.2,180.7 51.5,184.0 50.0,174.8 41.0,177.0 40.7,167.7 31.4,168.6 32.3,159.3 23.0,159.0 25.2,150.0 16.0,148.5 19.3,139.8 10.4,137.1 14.8,128.9 6.3,125.1 11.7,117.6 3.8,112.7 10.2,105.9 3.0,100.0 10.2,94.1 3.8,87.3 11.7,82.4 6.3,74.9 14.8,71.1 10.4,62.9 19.3,60.2 16.0,51.5 25.2,50.0 23.0,41.0 32.3,40.7 31.4,31.4 40.7,32.3 41.0,23.0 50.0,25.2 51.5,16.0 60.2,19.3 62.9,10.4 71.1,14.8 74.9,6.3 82.4,11.7 87.3,3.8 94.1,10.2" fill="url(#gold)" stroke="#7a5a00" stroke-width="1.5" />
+        <circle cx="100" cy="100" r="86" fill="url(#goldRev)" stroke="#7a5a00" stroke-width="1" />
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#fff4b8" stroke-width="1.5" />
+        <circle cx="100" cy="100" r="50" fill="url(#gold)" stroke="#7a5a00" stroke-width="1.5" />
+        <circle cx="100" cy="100" r="46" fill="none" stroke="#fff4b8" stroke-width="1" />
+        <text font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700" letter-spacing="3" fill="#4a3500">
+          <textPath href="#textArc" startOffset="25%" text-anchor="middle">BUDETURNIER</textPath>
+        </text>
+        <text font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700" letter-spacing="3" fill="#4a3500">
+          <textPath href="#textArc" startOffset="75%" text-anchor="middle">JUBILÄUM</textPath>
+        </text>
+        <text x="100" y="110" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="56" font-weight="700" fill="#3d2c00" stroke="#fff4b8" stroke-width=".6">40</text>
+        <text x="102" y="129" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="12" font-weight="700" letter-spacing="4" fill="#3d2c00">JAHRE</text>
+      </svg>
+    </div>
 
 
     <div class="content">
       <div class="title">URKUNDE</div>
-      <div class="event">Budeturnier 2026</div>
+      <div class="event">Budeturnier 2027</div>
+      <div class="jubilee-sub">&#9733; 40 Jahre Jubiläum &#9733;</div>
     </div>
 
 
@@ -187,14 +270,14 @@
       <!-- <div class="rank-place">Platz</div> -->
     </div>
 
-    <div class="sstripe y" style="top: 77mm; left: 12mm; width: 50mm;"></div>
-    <div class="sstripe lt" style="top: 85mm; left: 5mm; width: 60mm;"></div>
-    <div class="sstripe dk" style="top:93mm; left: 4mm;  width: 60mm"></div>
+    <div class="sstripe y" style="top: 77mm; left: 12mm; width: 50mm;">{{STAT_1}}</div>
+    <div class="sstripe lt" style="top: 85mm; left: 5mm; width: 60mm;">{{STAT_2}}</div>
+    <div class="sstripe dk" style="top:93mm; left: 4mm;  width: 60mm">{{STAT_3}}</div>
     
     <!-- <div class="sstripe lt" style="top: 198mm; left: 142mm; width: 55mm;"></div> -->
-    <div class="sstripe dk" style="top: 196mm; left: 149mm;  width: 60mm"></div>
-    <div class="sstripe md" style="top: 209mm; left: 155mm; width: 50mm;"></div>
-    <div class="sstripe y" style="top: 208mm; left: 150mm; width: 45mm;"></div>
+    <div class="sstripe dk" style="top: 196mm; left: 149mm;  width: 60mm">{{STAT_4}}</div>
+    <div class="sstripe md" style="top: 209.2mm; left: 156.2mm; width: 50mm;">{{STAT_6}}</div>
+    <div class="sstripe y" style="top: 208mm; left: 150mm; width: 45mm;">{{STAT_5}}</div>
     <!-- <div class="sstripe md" style="top: 202mm; left: 150mm; width: 60mm; height: 7mm;"></div> -->
 
     <div class="image-box" style="top: auto; bottom: -6mm; height: 70mm; width: 230mm; border: none;">

@@ -10,7 +10,9 @@ const Automizer = require('pptx-automizer').default;
 const { modify } = require('pptx-automizer');
 const { ModifyShapeHelper } = require('pptx-automizer');
 const sizeOf = require('image-size');
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
+const { PDFDocument } = require('pdf-lib');
+const multer = require('multer');
 
 commonMiddleware(router, ['admin']);
 
@@ -39,7 +41,24 @@ async function generateCertificatePdf(team, outputPath) {
     htmlContent = htmlContent.replace(/src="skyline\.png"/g, `src="${imageToBase64(path.join(templatesDir, 'skyline.png'))}"`);
     htmlContent = htmlContent.replace(/{{TEAM_NAME}}/g, team.name || '');
     htmlContent = htmlContent.replace(/{{RANK}}/g, (team.finalPlacement || '').toString());
-    htmlContent = htmlContent.replace(/{{IMAGE_URL}}/g, team.imagePath ? imageToBase64(path.join(publicDir, team.imagePath)) : '');
+    const goals = Array.isArray(team.goals) ? team.goals : [];
+    const drinks = team.drinksCount || {};
+    const drinkStat = [
+        drinks.weizen ? `Weizen: ${drinks.weizen}` : '',
+        drinks.pils ? `Pils: ${drinks.pils}` : ''
+    ].filter(Boolean).join(' | ');
+    const stats = [
+        team.group ? `Gruppe ${team.group}` : '',
+        team.gamesPlayed ? `Spiele: ${team.gamesPlayed}` : '',
+        (team.gamesWon || team.gamesLost) ? `Siege: ${team.gamesWon || 0} / Niederlagen: ${team.gamesLost || 0}` : '',
+        (goals[0] || goals[1]) ? `Geschossen: ${goals[0] || 0} / ${goals[1] || 0} Kassiert` : '',
+        team.sektWon ? `Sekt erhalten: ${team.sektWon}` : '',
+        drinkStat
+    ];
+    for (let i = 1; i <= 6; i++) {
+        htmlContent = htmlContent.replace(`{{STAT_${i}}}`, stats[i - 1]);
+    }
+    htmlContent = htmlContent.replace(/{{IMAGE_URL}}/g, () => team.imageDataUrl || (team.imagePath ? imageToBase64(path.join(publicDir, team.imagePath)) : ''));
 
     const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     try {
@@ -93,7 +112,7 @@ router.post('/generateAllCertificates', async (req, res) => {
         res.setHeader('Content-Type', 'application/zip');
         res.setHeader('Content-Disposition', `attachment; filename="${zipFileName}"`);
 
-        const archive = archiver('zip', { zlib: { level: 9 } });
+        const archive = new ZipArchive({ zlib: { level: 9 } });
         archive.on('error', (err) => { throw err; });
         archive.pipe(res);
 
@@ -109,6 +128,78 @@ router.post('/generateAllCertificates', async (req, res) => {
     } catch (err) {
         console.error('Fehler beim Generieren der Urkunden-ZIP:', err);
         res.status(500).send('Fehler beim Generieren der Urkunden-ZIP: ' + err.message);
+    }
+});
+
+const imageUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => cb(null, /^image\/(png|jpe?g|gif|webp)$/.test(file.mimetype))
+});
+
+router.post('/generateManualCertificate', imageUpload.single('image'), async (req, res) => {
+    let pdfPath;
+    try {
+        const b = req.body;
+        const num = (v) => (v === undefined || v === '' ? undefined : Number(v));
+        const team = {
+            name: (b.name || '').trim(),
+            finalPlacement: b.rank ? String(b.rank).trim() : '',
+            group: (b.group || '').trim(),
+            gamesPlayed: num(b.gamesPlayed),
+            gamesWon: num(b.gamesWon),
+            gamesLost: num(b.gamesLost),
+            goals: [num(b.goalsFor) || 0, num(b.goalsAgainst) || 0],
+            sektWon: num(b.sektWon),
+            drinksCount: { weizen: num(b.weizen) || 0, pils: num(b.pils) || 0 }
+        };
+        if (!team.name) return res.status(400).send('Teamname fehlt');
+        if (req.file) team.imageDataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+        const tempDir = path.join(__dirname, '../../public/certificates/temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+        pdfPath = path.join(tempDir, `manual_${Date.now()}.pdf`);
+        await generateCertificatePdf(team, pdfPath);
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline; filename="Urkunde.pdf"');
+        res.sendFile(pdfPath, () => fs.existsSync(pdfPath) && fs.unlinkSync(pdfPath));
+    } catch (err) {
+        console.error('Error generating manual certificate:', err);
+        if (pdfPath && fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+        res.status(500).send('Error generating manual certificate: ' + err.message);
+    }
+});
+
+router.post('/generateAllCertificatesPdf', async (req, res) => {
+    const tempFiles = [];
+    try {
+        const teams = await Team.find({ finalPlacement: { $ne: null } }).sort({ finalPlacement: 1 }).exec();
+        if (!teams || teams.length === 0) return res.status(404).send('Keine Teams mit Platzierung gefunden');
+
+        const tempDir = path.join(__dirname, '../../public/certificates/temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+        const merged = await PDFDocument.create();
+        for (const team of teams) {
+            const pdfPath = path.join(tempDir, `merge_${team._id}_${Date.now()}.pdf`);
+            tempFiles.push(pdfPath);
+            await generateCertificatePdf(team, pdfPath);
+            const doc = await PDFDocument.load(fs.readFileSync(pdfPath));
+            const pages = await merged.copyPages(doc, doc.getPageIndices());
+            pages.forEach(p => merged.addPage(p));
+        }
+
+        const bytes = await merged.save();
+        const fileName = `Urkunden_${new Date().toISOString().replace(/:/g, '-').split('.')[0]}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.send(Buffer.from(bytes));
+    } catch (err) {
+        console.error('Fehler beim Generieren der Sammel-PDF:', err);
+        res.status(500).send('Fehler beim Generieren der Sammel-PDF: ' + err.message);
+    } finally {
+        tempFiles.forEach(f => fs.existsSync(f) && fs.unlinkSync(f));
     }
 });
 

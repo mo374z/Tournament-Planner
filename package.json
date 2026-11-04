@@ -29,6 +29,7 @@
     "mongoose": "^9.11.1",
     "multer": "^2.4.0",
     "path": "^0.12.7",
+    "pdf-lib": "^1.17.1",
     "pizzip": "^3.3.0",
     "pptx-automizer": "^0.9.4",
     "puppeteer": "^25.13.0",
