@@ -160,7 +160,8 @@ knockout_stage:
 
     # ---------------- Platzierungsspiele und Finale ----------------
     # Die Reihenfolge der Spiele hier = Reihenfolge im Spielplan.
-    # "final_placement" = Platz des Siegers; der Verlierer bekommt final_placement + 1.
+    # Standard: Sieger bekommt final_placement, Verlierer final_placement + 1.
+    # winner_placement / loser_placement überschreiben dies bei Sonderregeln.
     - id: "finals"
       enabled: true
       game_phase_key: "Finals"
@@ -204,6 +205,9 @@ knockout_stage:
         - id: "P15"
           display_name: "Spiel um letzten Platz"
           final_placement: 15
+          # Sonderregel: Der Sieger des Spiels um den letzten Platz bekommt Platz 16.
+          winner_placement: 16
+          loser_placement: 15
           home: { type: overall_rank, rank: 15 }
           away: { type: overall_rank, rank: 16 }
 
@@ -221,7 +225,8 @@ final_ranking:
   # Sortierung der nicht weitergekommenen Teams
   non_qualified_sort: ["points", "goal_difference", "goals_scored"]
   # Endplatz wird aus den Spielen mit "final_placement" vergeben
-  # (Sieger = Platz, Verlierer = Platz + 1). Jedes Team braucht am Ende genau einen Platz.
+  # (Standard: Sieger = Platz, Verlierer = Platz + 1; winner_placement / loser_placement überschreiben dies).
+  # Jedes Team braucht am Ende genau einen Platz.
   placement_source: "match_final_placement"
 
 # ---------------------------------------------------------------------

@@ -150,8 +150,9 @@ opponent_swap:
   #   minimal_swap = möglichst wenige Gruppen-Duelle; bei gleich vielen Duellen wird so wenig
   #                  wie möglich verschoben (kleinste Rang-Abstände). Ist keine konfliktfreie
   #                  Lösung möglich, wird die bestmögliche genommen.
-  # Das final_placement der Spiele bleibt unverändert:
-  # Sieger = final_placement, Verlierer = final_placement + 1
+  # Das final_placement der Spiele bleibt unverändert. Standard:
+  # Sieger = final_placement, Verlierer = final_placement + 1.
+  # winner_placement / loser_placement überschreiben dies bei Sonderregeln.
   strategy: "minimal_swap"
 
 # ---------------------------------------------------------------------
@@ -195,7 +196,8 @@ knockout_stage:
 
     # ---------------- Platzierungsspiele und Finale ----------------
     # Die Reihenfolge der Spiele hier = Reihenfolge im Spielplan.
-    # "final_placement" = Platz des Siegers; der Verlierer bekommt final_placement + 1.
+    # Standard: Sieger bekommt final_placement, Verlierer final_placement + 1.
+    # winner_placement / loser_placement überschreiben dies bei Sonderregeln.
     # Bei den Platzierungsspielen P5-P15 sind home/away nur die AUSGANGS-Paarung
     # (siehe "opponent_swap": die Gegner können getauscht werden).
     - id: "finals"
@@ -241,6 +243,9 @@ knockout_stage:
         - id: "P15"
           display_name: "Spiel um letzten Platz"
           final_placement: 15
+          # Sonderregel: Der Sieger des Spiels um den letzten Platz bekommt Platz 16.
+          winner_placement: 16
+          loser_placement: 15
           home: { type: overall_rank, rank: 15 }
           away: { type: overall_rank, rank: 16 }
 
@@ -258,7 +263,8 @@ final_ranking:
   # Sortierung der nicht weitergekommenen Teams
   non_qualified_sort: ["points", "goal_difference", "goals_scored"]
   # Endplatz wird aus den Spielen mit "final_placement" vergeben
-  # (Sieger = Platz, Verlierer = Platz + 1). Jedes Team braucht am Ende genau einen Platz.
+  # (Standard: Sieger = Platz, Verlierer = Platz + 1; winner_placement / loser_placement überschreiben dies).
+  # Jedes Team braucht am Ende genau einen Platz.
   placement_source: "match_final_placement"
 
 # ---------------------------------------------------------------------
@@ -291,8 +297,8 @@ display:
 #                  Die besten zwei spielen Platz 5/6, die anderen zwei Platz 7/8.
 #   - Platz 9-16:  Zunächst nach der Gruppenphase sortiert (Gesamtwertung), danach
 #                  paarweise (9/10, 11/12, 13/14, 15/16) gegeneinander.
-#   - Jedes Platzierungsspiel vergibt zwei Plätze: Sieger = final_placement,
-#     Verlierer = final_placement + 1.
+#   - Standardmäßig vergibt jedes Platzierungsspiel zwei Plätze: Sieger = final_placement,
+#     Verlierer = final_placement + 1. Sonderregel P15: Sieger erhält Platz 16, Verlierer Platz 15.
 #
 # Besonderheiten:
 #   - Gegnertausch (opponent_swap): In Platzierungsspielen sollen möglichst keine Teams aus

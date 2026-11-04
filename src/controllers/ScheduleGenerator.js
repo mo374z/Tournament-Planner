@@ -144,13 +144,24 @@ class ScheduleGenerator {
                 displayName: rules.matchDisplayName(match, phase, i),
                 duration,
                 finalPlacement: match.final_placement || null,
+                winnerPlacement: match.winner_placement || null,
+                loserPlacement: match.loser_placement || null,
                 matchId: match.id
             });
         }
         return this.getCurrentEndTime();
     }
 
-    async createGame({ opponents, gamePhase, displayName, duration, finalPlacement = null, matchId = null }) {
+    async createGame({
+        opponents,
+        gamePhase,
+        displayName,
+        duration,
+        finalPlacement = null,
+        winnerPlacement = null,
+        loserPlacement = null,
+        matchId = null
+    }) {
         const gameStartTime = new Date(this.currentTime);
 
         if (this.gameNumber > 1) {
@@ -167,6 +178,8 @@ class ScheduleGenerator {
             gamePhase: gamePhase,
             gameDisplayName: displayName,
             finalPlacement: finalPlacement,
+            winnerPlacement,
+            loserPlacement,
             matchId: matchId
         });
 
@@ -191,6 +204,23 @@ class ScheduleGenerator {
         try {
             const teams = await Team.find({}).exec();
             const games = await Game.find({}).lean().exec();
+            const templateMatches = new Map(
+                ((this.config.knockout_stage && this.config.knockout_stage.phases) || [])
+                    .flatMap(phase => phase.matches || [])
+                    .map(match => [match.id, match])
+            );
+            for (const game of games) {
+                const match = templateMatches.get(game.matchId);
+                if (!match) continue;
+                const winnerPlacement = match.winner_placement ?? null;
+                const loserPlacement = match.loser_placement ?? null;
+                if (game.winnerPlacement !== winnerPlacement || game.loserPlacement !== loserPlacement) {
+                    await Game.updateOne(
+                        { _id: game._id },
+                        { $set: { winnerPlacement, loserPlacement } }
+                    );
+                }
+            }
             let decisions = await getAllDecisions();
             let plan = rules.computeSchedulePlan(this.config, teams, games, decisions);
             for (let pass = 0; pass < 20; pass++) {

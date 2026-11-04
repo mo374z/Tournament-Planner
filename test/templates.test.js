@@ -27,7 +27,7 @@ describe("Schedule templates (pure)", function () {
     const errors = validateTemplate(t).join("\n");
     assert.match(errors, /total_teams/);
     assert.match(errors, /NOPE/);
-    assert.match(errors, /final_placement/);
+    assert.match(errors, /Platzierungswerte/);
   });
 
   it("refuses path tricks when loading a template", function () {
@@ -110,6 +110,18 @@ for (const c of CASES) {
       assert.strictEqual(all[all.length - 1].matchId, c.lastMatch);
     });
 
+    if (["4groups_4teams.yaml", "4groups_4teams_v3.yaml", "4groups_4teams_v4.yaml"].includes(c.file)) {
+      it("stores the custom winner and loser placements for the last-place game", async function () {
+        const lastPlaceGame = await Game.findOne({ matchId: "P15" });
+        await Game.updateOne({ _id: lastPlaceGame._id }, { $unset: { winnerPlacement: "", loserPlacement: "" } });
+        const settings = await env.MainSettings.findOne({});
+        await ScheduleGenerator.fromSettings(settings).updateSchedule();
+        const updated = await Game.findById(lastPlaceGame._id);
+        assert.strictEqual(updated.winnerPlacement, 16);
+        assert.strictEqual(updated.loserPlacement, 15);
+      });
+    }
+
     it("plays through (autoplay) with unique final placements and no placeholders left", async function () {
       const res = await app.autoPlay(200);
       assert.strictEqual(res.status, 200);
@@ -121,6 +133,14 @@ for (const c of CASES) {
       });
       const placements = (await Team.find({})).map(t => t.finalPlacement).sort((a, b) => a - b);
       assert.deepStrictEqual(placements, Array.from({ length: teams.length }, (_, i) => i + 1));
+      const lastPlaceGame = games.find(g => g.matchId === "P15");
+      if (lastPlaceGame) {
+        const winnerIndex = lastPlaceGame.goals[1] > lastPlaceGame.goals[0] ? 1 : 0;
+        const winner = await Team.findById(lastPlaceGame.opponents[winnerIndex]);
+        const loser = await Team.findById(lastPlaceGame.opponents[1 - winnerIndex]);
+        assert.strictEqual(winner.finalPlacement, 16, "winner of last-place game should receive the last place");
+        assert.strictEqual(loser.finalPlacement, 15, "loser of last-place game should receive place 15");
+      }
     });
 
     if (c.swap) {

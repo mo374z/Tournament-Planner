@@ -113,9 +113,10 @@ async function updateFinalRanks() {
         const winnerId = isTeam0Winner ? game.opponents[0] : game.opponents[1];
         const loserId = isTeam0Winner ? game.opponents[1] : game.opponents[0];
 
-        // Winner gets finalPlacement, loser gets finalPlacement + 1
-        await Team.findByIdAndUpdate(winnerId, { finalPlacement: game.finalPlacement });
-        await Team.findByIdAndUpdate(loserId, { finalPlacement: game.finalPlacement + 1 });
+        const winnerPlacement = game.winnerPlacement ?? game.finalPlacement;
+        const loserPlacement = game.loserPlacement ?? game.finalPlacement + 1;
+        await Team.findByIdAndUpdate(winnerId, { finalPlacement: winnerPlacement });
+        await Team.findByIdAndUpdate(loserId, { finalPlacement: loserPlacement });
     }
 }
 

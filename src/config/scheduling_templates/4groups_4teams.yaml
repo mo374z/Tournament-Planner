@@ -103,7 +103,8 @@ knockout_stage:
         - { id: "P7", display_name: "Platzierungsspiel 7-8", final_placement: 7, home: { type: pool_rank, pool: "qf_losers", rank: 3 }, away: { type: pool_rank, pool: "qf_losers", rank: 4 } }
         - { id: "P5", display_name: "Platzierungsspiel 5-6", final_placement: 5, home: { type: pool_rank, pool: "qf_losers", rank: 1 }, away: { type: pool_rank, pool: "qf_losers", rank: 2 } }
         - { id: "BRONZE", display_name: "Spiel um Platz 3", final_placement: 3, home: { type: loser, match: "SF1" }, away: { type: loser, match: "SF2" } }
-        - { id: "P15", display_name: "Spiel um letzten Platz", final_placement: 15, home: { type: overall_rank, rank: 15 }, away: { type: overall_rank, rank: 16 } }
+        # Sonderregel: Der Sieger des Spiels um den letzten Platz bekommt Platz 16.
+        - { id: "P15", display_name: "Spiel um letzten Platz", final_placement: 15, winner_placement: 16, loser_placement: 15, home: { type: overall_rank, rank: 15 }, away: { type: overall_rank, rank: 16 } }
         - { id: "FINAL", display_name: "Finale", final_placement: 1, home: { type: winner, match: "SF1" }, away: { type: winner, match: "SF2" } }
 
 final_ranking:

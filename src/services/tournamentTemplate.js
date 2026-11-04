@@ -77,10 +77,19 @@ function validateTemplate(t) {
   for (const { match } of matches) {
     checkSource(match.home, `Match ${match.id} (home)`);
     checkSource(match.away, `Match ${match.id} (away)`);
-    if (match.final_placement) placements.push(match.final_placement, match.final_placement + 1);
+    if (match.winner_placement !== undefined || match.loser_placement !== undefined) {
+      if (!Number.isInteger(match.winner_placement) || !Number.isInteger(match.loser_placement) ||
+          match.winner_placement < 1 || match.loser_placement < 1) {
+        errors.push(`Match ${match.id}: winner_placement und loser_placement müssen beide positive ganze Zahlen sein`);
+      } else {
+        placements.push(match.winner_placement, match.loser_placement);
+      }
+    } else if (match.final_placement) {
+      placements.push(match.final_placement, match.final_placement + 1);
+    }
   }
   if (placements.length && new Set(placements).size !== placements.length) {
-    errors.push('Mehrere Spiele vergeben dieselben Plätze (final_placement überschneidet sich; jedes Spiel vergibt Platz p für den Sieger und p+1 für den Verlierer)');
+    errors.push('Mehrere Spiele vergeben dieselben Plätze (Platzierungswerte der Sieger und Verlierer überschneiden sich)');
   }
 
   const swap = t.opponent_swap;
