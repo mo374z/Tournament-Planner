@@ -309,7 +309,7 @@
             <div class="row g-4 mb-5">
                 {{#each products.drinks}}
                 <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="card product-card" data-product-id="{{this.id}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="{{this.points}}" onclick="selectProduct('{{this.id}}', '{{this.name}}', {{this.price}}, {{this.points}})">
+                    <div class="card product-card" data-product-id="{{this.productId}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="{{this.points}}">
                         <div class="card-body text-center p-3">
                             <h6 class="card-title mb-2">{{this.name}}</h6>
                             <p class="text-primary mb-0"><strong>{{this.price}} €</strong></p>
@@ -327,10 +327,13 @@
             <div class="row g-4">
                 {{#each products.food}}
                 <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="card product-card" data-product-id="{{this.id}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="0" onclick="selectProduct('{{this.id}}', '{{this.name}}', {{this.price}}, 0)">
+                    <div class="card product-card" data-product-id="{{this.productId}}" data-product-name="{{this.name}}" data-product-price="{{this.price}}" data-product-points="{{this.points}}">
                         <div class="card-body text-center p-3">
                             <h6 class="card-title mb-2">{{this.name}}</h6>
                             <p class="text-primary mb-0"><strong>{{this.price}} €</strong></p>
+                            {{#if this.points}}
+                            <small class="text-success">({{this.points}} Pkt)</small>
+                            {{/if}}
                         </div>
                     </div>
                 </div>
@@ -384,7 +387,7 @@
                     <div class="col-md-3">
                         <h6 class="text-center mb-3 text-primary">Gruppe {{@key}}</h6>
                         {{#each this}}
-                        <div class="card team-card" onclick="selectTeam('{{this._id}}', '{{this.name}}', '{{this.group}}')">
+                        <div class="card team-card" data-team-id="{{this._id}}" data-team-name="{{this.name}}" data-team-group="{{this.group}}">
                             <div class="card-body">
                                 <span>{{this.name}}</span>
                             </div>
@@ -418,6 +421,16 @@
     let totalPrice = 0;
     let totalPoints = 0;
     let currentTeam = { id: null, name: null, group: null };
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+    }
     
     // Modal Funktionen
     function showSuccessModal(title, message) {
@@ -445,6 +458,23 @@
     
     // Zeige Modal beim Laden der Seite
     document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.addEventListener('click', () => {
+                selectProduct(
+                    card.dataset.productId,
+                    card.dataset.productName,
+                    Number(card.dataset.productPrice),
+                    Number(card.dataset.productPoints)
+                );
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => { card.style.transform = ''; }, 100);
+            });
+        });
+        document.querySelectorAll('.team-card[data-team-id]').forEach(card => {
+            card.addEventListener('click', () => {
+                selectTeam(card.dataset.teamId, card.dataset.teamName, card.dataset.teamGroup);
+            });
+        });
         openTeamModal();
     });
     
@@ -486,12 +516,6 @@
         
         updateCartDisplay();
         
-        // Kurze visuelle Rückmeldung
-        const card = event.currentTarget;
-        card.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            card.style.transform = '';
-        }, 100);
     }
     
     function reduceQuantity(index) {
@@ -532,7 +556,7 @@
                     <div class="cart-item">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="flex-grow-1">
-                                <strong>${item.quantity} x ${item.name}</strong><br>
+                                <strong>${item.quantity} x ${escapeHtml(item.name)}</strong><br>
                                 <small>${item.price.toFixed(2)} € = ${itemTotal.toFixed(2)} €</small>
                                 ${item.points > 0 ? `<br><small class="text-success">${item.quantity * item.points} Punkte</small>` : ''}
                             </div>

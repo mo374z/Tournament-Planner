@@ -1,0 +1,250 @@
+<script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+
+<style>
+    .kitchen-header {
+        max-width: 1500px;
+        margin: 1rem auto 1.5rem;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, #fff 0%, #f1f5f9 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    }
+
+    .kitchen-title {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+    }
+
+    .kitchen-title-icon {
+        width: 3rem;
+        height: 3rem;
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        border-radius: 0.9rem;
+        background: #fff3cd;
+        font-size: 1.6rem;
+    }
+
+    .kitchen-header h1 {
+        font-size: clamp(1.35rem, 3vw, 2rem);
+    }
+
+    .kitchen-header-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+
+    .kitchen-order-card {
+        touch-action: pan-y;
+        transition: transform 0.18s ease, opacity 0.18s ease;
+        border-left: 6px solid #0d6efd;
+    }
+
+    .kitchen-order-card.is-removing {
+        transform: translateX(-110%);
+        opacity: 0;
+    }
+
+    .kitchen-order-card h2 {
+        overflow-wrap: anywhere;
+    }
+
+    .kitchen-order-time {
+        white-space: nowrap;
+    }
+
+    .kitchen-empty {
+        border: 2px dashed #adb5bd;
+        border-radius: 1rem;
+        color: #6c757d;
+        padding: 3rem 1rem;
+        text-align: center;
+    }
+
+    @media (max-width: 575.98px) {
+        .kitchen-header {
+            margin: 0.5rem 0 1rem;
+            padding: 0.9rem;
+        }
+
+        .kitchen-header-actions {
+            width: 100%;
+        }
+
+        .kitchen-header-actions .btn {
+            margin-left: auto;
+        }
+    }
+</style>
+
+<main class="container-fluid">
+    <header class="kitchen-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="kitchen-title">
+            <span class="kitchen-title-icon" aria-hidden="true">🍳</span>
+            <div>
+                <h1 class="mb-1 fw-bold">Küchenbestellungen</h1>
+                <span class="text-muted"><span id="openOrderCount">0</span> offene Bestellungen</span>
+            </div>
+        </div>
+        <div class="kitchen-header-actions">
+            <span id="kitchenConnection" class="badge rounded-pill bg-secondary px-3 py-2">Verbinde …</span>
+            <a href="/cashier/order" class="btn btn-primary px-3">← Zur Kasse</a>
+        </div>
+    </header>
+
+    <div id="kitchenError" class="alert alert-danger d-none" role="alert"></div>
+    <section id="kitchenOrders" class="row g-3 pb-4" aria-live="polite"></section>
+    <div id="kitchenEmpty" class="kitchen-empty mt-3">
+        <h2 class="h4">Noch keine offenen Bestellungen</h2>
+        <p class="mb-0">Neue bezahlte Bestellungen erscheinen hier automatisch.</p>
+    </div>
+</main>
+
+<script>
+    const kitchenOrders = new Map();
+    const ordersContainer = document.getElementById('kitchenOrders');
+    const emptyState = document.getElementById('kitchenEmpty');
+    const orderCount = document.getElementById('openOrderCount');
+    const errorBanner = document.getElementById('kitchenError');
+    const connectionBadge = document.getElementById('kitchenConnection');
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+    }
+
+    function renderOrders() {
+        const sortedOrders = [...kitchenOrders.values()]
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        ordersContainer.innerHTML = sortedOrders.map(order => {
+            const timestamp = new Date(order.createdAt).toLocaleTimeString('de-DE', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const items = order.items.map(item => `
+                <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
+                    <span class="text-break">${escapeHtml(item.name)}</span>
+                    <span class="badge bg-primary rounded-pill fs-6">${item.quantity}×</span>
+                </li>
+            `).join('');
+            const team = order.teamGroup
+                ? `${escapeHtml(order.teamName)} <span class="text-muted">· Gruppe ${escapeHtml(order.teamGroup)}</span>`
+                : escapeHtml(order.teamName);
+
+            return `
+                <div class="col-12 col-md-6 col-xxl-4">
+                    <article class="card shadow-sm kitchen-order-card" data-order-id="${escapeHtml(order.id)}">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                                <div>
+                                    <h2 class="h4 mb-1">${team}</h2>
+                                    <time class="text-muted kitchen-order-time" datetime="${escapeHtml(order.createdAt)}">🕒 ${timestamp}</time>
+                                </div>
+                                <button type="button" class="btn btn-success btn-lg" data-complete-order="${escapeHtml(order.id)}" aria-label="Bestellung erledigen">✓</button>
+                            </div>
+                            <ul class="list-group list-group-flush">${items}</ul>
+                            <small class="text-muted d-block mt-3">Zum Erledigen nach links wischen oder ✓ drücken</small>
+                        </div>
+                    </article>
+                </div>
+            `;
+        }).join('');
+
+        emptyState.classList.toggle('d-none', sortedOrders.length > 0);
+        orderCount.textContent = sortedOrders.length;
+    }
+
+    async function loadOrders() {
+        const response = await fetch('/cashier/kitchen/orders');
+        if (!response.ok) throw new Error('Bestellungen konnten nicht geladen werden.');
+        const result = await response.json();
+        if (!result.success || !Array.isArray(result.orders)) {
+            throw new Error('Ungültige Antwort vom Bestellserver.');
+        }
+        kitchenOrders.clear();
+        result.orders.forEach(order => kitchenOrders.set(order.id, order));
+        renderOrders();
+        errorBanner.classList.add('d-none');
+    }
+
+    async function completeOrder(orderId) {
+        const card = ordersContainer.querySelector(`[data-order-id="${CSS.escape(orderId)}"]`);
+        if (card) card.classList.add('is-removing');
+
+        try {
+            const response = await fetch(`/cashier/kitchen/orders/${encodeURIComponent(orderId)}/complete`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Bestellung konnte nicht erledigt werden.');
+            }
+            kitchenOrders.delete(orderId);
+            renderOrders();
+            errorBanner.classList.add('d-none');
+        } catch (error) {
+            if (card) card.classList.remove('is-removing');
+            errorBanner.textContent = error.message;
+            errorBanner.classList.remove('d-none');
+        }
+    }
+
+    ordersContainer.addEventListener('click', event => {
+        const button = event.target.closest('[data-complete-order]');
+        if (button) completeOrder(button.dataset.completeOrder);
+    });
+
+    let swipeStartX = null;
+    ordersContainer.addEventListener('touchstart', event => {
+        const card = event.target.closest('[data-order-id]');
+        if (card && event.touches.length === 1) swipeStartX = event.touches[0].clientX;
+    }, { passive: true });
+
+    ordersContainer.addEventListener('touchend', event => {
+        const card = event.target.closest('[data-order-id]');
+        if (!card || swipeStartX === null || event.changedTouches.length !== 1) return;
+        const swipeDistance = event.changedTouches[0].clientX - swipeStartX;
+        swipeStartX = null;
+        if (swipeDistance < -80) completeOrder(card.dataset.orderId);
+    }, { passive: true });
+
+    const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
+    socket.on('connect', async () => {
+        connectionBadge.textContent = 'Live verbunden';
+        connectionBadge.className = 'badge bg-success';
+        try {
+            await loadOrders();
+        } catch (error) {
+            errorBanner.textContent = error.message;
+            errorBanner.classList.remove('d-none');
+        }
+    });
+    socket.on('disconnect', () => {
+        connectionBadge.textContent = 'Verbindung getrennt';
+        connectionBadge.className = 'badge bg-danger';
+    });
+    socket.on('kitchenOrderCreated', order => {
+        kitchenOrders.set(order.id, order);
+        renderOrders();
+    });
+    socket.on('kitchenOrderRemoved', orderId => {
+        kitchenOrders.delete(orderId);
+        renderOrders();
+    });
+
+    loadOrders().catch(error => {
+        errorBanner.textContent = error.message;
+        errorBanner.classList.remove('d-none');
+    });
+</script>

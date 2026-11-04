@@ -1,0 +1,210 @@
+<style>
+    .product-editor {
+        height: 100%;
+    }
+
+    .product-status {
+        white-space: nowrap;
+    }
+
+    .product-editor input,
+    .product-editor select {
+        min-width: 0;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="mb-1">Produkte verwalten</h1>
+            <p class="text-muted mb-0">Produkte, Kategorie, Preis und Team-Punkte für die Kasse festlegen.</p>
+        </div>
+        <a class="btn btn-outline-primary" href="/cashier/order">Zur Kasse</a>
+    </div>
+
+    {{#if saved}}
+    <div class="alert alert-success" role="status">Änderungen wurden gespeichert.</div>
+    {{/if}}
+    {{#if errors}}
+    <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
+            {{#each errors}}<li>{{this}}</li>{{/each}}
+        </ul>
+    </div>
+    {{/if}}
+
+    <section class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h5 mb-0">Neues Produkt hinzufügen</h2>
+        </div>
+        <div class="card-body">
+            <form action="/cashier/products" method="POST" class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="newProductName">Produktname</label>
+                    <input class="form-control" id="newProductName" name="name" maxlength="100" required value="{{formProduct.name}}">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label" for="newProductCategory">Kategorie</label>
+                    <select class="form-select" id="newProductCategory" name="category" required>
+                        <option value="drinks" {{#unless (eqref formProduct.category "food")}}selected{{/unless}}>Getränke</option>
+                        <option value="food" {{#if (eqref formProduct.category "food")}}selected{{/if}}>Essen</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label" for="newProductPrice">Preis (€)</label>
+                    <input class="form-control" id="newProductPrice" name="price" type="number" min="0" step="0.01" required value="{{formProduct.price}}">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label" for="newProductPoints">Punkte für Bierranking</label>
+                    <input class="form-control" id="newProductPoints" name="points" type="number" min="0" step="1" value="{{#if formProduct.points}}{{formProduct.points}}{{else}}0{{/if}}" required>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label" for="newProductSendToKitchen">An Küche senden?</label>
+                    <select class="form-select" id="newProductSendToKitchen" name="sendToKitchen" required>
+                        <option value="no" {{#unless formProduct.sendToKitchen}}selected{{/unless}}>Nein</option>
+                        <option value="yes" {{#if formProduct.sendToKitchen}}selected{{/if}}>Ja</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2 d-grid">
+                    <button class="btn btn-success" type="submit">Produkt hinzufügen</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="mb-5">
+        <h2 class="h3 mb-3">🍺 Getränke</h2>
+        <div class="row g-4">
+        {{#each products.drinks}}
+        <div class="col-12 col-xl-6">
+            <section class="card shadow-sm product-editor">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <strong>{{this.name}}</strong>
+                    {{#if this.active}}
+                    <span class="badge bg-success product-status">Aktiv</span>
+                    {{else}}
+                    <span class="badge bg-secondary product-status">Inaktiv</span>
+                    {{/if}}
+                </div>
+                <div class="card-body">
+                    <form id="product-form-{{this.productId}}" action="/cashier/products" method="POST" class="row g-3 align-items-end">
+                        <input type="hidden" name="productId" value="{{this.productId}}">
+                        <div class="col-12 col-md-5">
+                            <label class="form-label" for="name-{{this.productId}}">Produktname</label>
+                            <input class="form-control" id="name-{{this.productId}}" name="name" maxlength="100" required value="{{this.name}}">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="category-{{this.productId}}">Kategorie</label>
+                            <select class="form-select" id="category-{{this.productId}}" name="category" required>
+                                <option value="drinks" {{#if (eqref this.category "drinks")}}selected{{/if}}>Getränke</option>
+                                <option value="food" {{#if (eqref this.category "food")}}selected{{/if}}>Essen</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label" for="price-{{this.productId}}">Preis (€)</label>
+                            <input class="form-control" id="price-{{this.productId}}" name="price" type="number" min="0" step="0.01" required value="{{this.price}}">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label" for="points-{{this.productId}}">Punkte</label>
+                            <input class="form-control" id="points-{{this.productId}}" name="points" type="number" min="0" step="1" required value="{{this.points}}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="active" {{#if this.active}}checked{{/if}}>
+                                <span class="form-check-label">In der Kasse anbieten</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="sendToKitchen" {{#if this.sendToKitchen}}checked{{/if}}>
+                                <span class="form-check-label">An Küche senden</span>
+                            </label>
+                        </div>
+                    </form>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
+                        <form action="/cashier/products/{{this.productId}}/delete" method="POST" onsubmit="return confirm('Produkt „{{this.name}}“ wirklich entfernen? Die Verkaufsstatistik bleibt erhalten.');">
+                            <button class="btn btn-outline-danger" type="submit">Produkt entfernen</button>
+                        </form>
+                        <button class="btn btn-primary" type="submit" form="product-form-{{this.productId}}">Änderungen speichern</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+        {{else}}
+        <div class="col-12">
+            <p class="text-muted">Noch keine Getränke angelegt.</p>
+        </div>
+        {{/each}}
+        </div>
+    </section>
+
+    <section class="mb-5">
+        <h2 class="h3 mb-3">🍴 Essen</h2>
+        <div class="row g-4">
+        {{#each products.food}}
+        <div class="col-12 col-xl-6">
+            <section class="card shadow-sm product-editor">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <strong>{{this.name}}</strong>
+                    {{#if this.active}}
+                    <span class="badge bg-success product-status">Aktiv</span>
+                    {{else}}
+                    <span class="badge bg-secondary product-status">Inaktiv</span>
+                    {{/if}}
+                </div>
+                <div class="card-body">
+                    <form id="product-form-{{this.productId}}" action="/cashier/products" method="POST" class="row g-3 align-items-end">
+                        <input type="hidden" name="productId" value="{{this.productId}}">
+                        <div class="col-12 col-md-5">
+                            <label class="form-label" for="name-{{this.productId}}">Produktname</label>
+                            <input class="form-control" id="name-{{this.productId}}" name="name" maxlength="100" required value="{{this.name}}">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="category-{{this.productId}}">Kategorie</label>
+                            <select class="form-select" id="category-{{this.productId}}" name="category" required>
+                                <option value="drinks" {{#if (eqref this.category "drinks")}}selected{{/if}}>Getränke</option>
+                                <option value="food" {{#if (eqref this.category "food")}}selected{{/if}}>Essen</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label" for="price-{{this.productId}}">Preis (€)</label>
+                            <input class="form-control" id="price-{{this.productId}}" name="price" type="number" min="0" step="0.01" required value="{{this.price}}">
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label" for="points-{{this.productId}}">Punkte</label>
+                            <input class="form-control" id="points-{{this.productId}}" name="points" type="number" min="0" step="1" required value="{{this.points}}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="active" {{#if this.active}}checked{{/if}}>
+                                <span class="form-check-label">In der Kasse anbieten</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="sendToKitchen" {{#if this.sendToKitchen}}checked{{/if}}>
+                                <span class="form-check-label">An Küche senden</span>
+                            </label>
+                        </div>
+
+                        <script>
+                            const newProductCategory = document.getElementById('newProductCategory');
+                            const newProductSendToKitchen = document.getElementById('newProductSendToKitchen');
+                            newProductCategory.addEventListener('change', () => {
+                                newProductSendToKitchen.value = newProductCategory.value === 'food' ? 'yes' : 'no';
+                            });
+                        </script>
+                    </form>
+                    <div class="d-flex justify-content-between align-items-center gap-2 mt-3">
+                        <form action="/cashier/products/{{this.productId}}/delete" method="POST" onsubmit="return confirm('Produkt „{{this.name}}“ wirklich entfernen? Die Verkaufsstatistik bleibt erhalten.');">
+                            <button class="btn btn-outline-danger" type="submit">Produkt entfernen</button>
+                        </form>
+                        <button class="btn btn-primary" type="submit" form="product-form-{{this.productId}}">Änderungen speichern</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+        {{else}}
+        <div class="col-12">
+            <p class="text-muted">Noch keine Essen-Produkte angelegt.</p>
+        </div>
+        {{/each}}
+        </div>
+    </section>
+</div>

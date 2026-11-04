@@ -15,15 +15,15 @@
         animation: bounce 2s infinite;
     }
     
-    h1 {
+    .ranking-container h1 {
         font-size: 3rem !important;
     }
     
-    h2 {
+    .ranking-container h2 {
         font-size: 2.2rem !important;
     }
     
-    h4 {
+    .ranking-container h4 {
         font-size: 1.8rem !important;
     }
     
@@ -51,10 +51,11 @@
     /* Bier-Balken Styling */
     .beer-chart-container {
         position: relative;
-        height: 550px;
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-around;
+        min-height: 550px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+        gap: 16px;
         padding: 50px 20px 20px 20px;
         background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
         border-radius: 15px;
@@ -65,13 +66,12 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        flex: 1;
-        max-width: 200px;
-        margin: 0 10px;
+        justify-content: flex-end;
+        min-width: 0;
     }
     
     .beer-bar {
-        width: 100%;
+        width: min(100%, 150px);
         position: relative;
         border-radius: 10px 10px 5px 5px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -324,12 +324,15 @@
     .beer-label {
         margin-top: 15px;
         text-align: center;
+        min-width: 0;
+        max-width: 100%;
     }
     
     .beer-label h4 {
         font-weight: bold;
         margin-bottom: 5px;
         font-size: 1.5rem !important;
+        overflow-wrap: anywhere;
     }
     
     .beer-label p {
@@ -393,6 +396,123 @@
         background: linear-gradient(135deg, #dc3545, #c82333);
         color: white;
     }
+
+    .ranking-card-body {
+        flex-wrap: wrap;
+        gap: 12px 0;
+    }
+
+    .ranking-team-name {
+        flex: 1 1 120px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .ranking-score {
+        flex: 0 1 auto;
+        min-width: 0;
+        margin-left: auto;
+    }
+
+    .ranking-score h2 {
+        font-size: clamp(1rem, 2vw, 2.2rem) !important;
+        white-space: nowrap;
+    }
+
+    .ranking-score small {
+        white-space: nowrap;
+    }
+
+    @media (max-width: 767.98px) {
+        .ranking-container {
+            padding: 24px;
+            margin: 16px 12px;
+        }
+
+        .ranking-container h1 {
+            font-size: clamp(2rem, 8vw, 3rem) !important;
+            overflow-wrap: anywhere;
+        }
+
+        .ranking-container h3 {
+            font-size: clamp(1.25rem, 4vw, 1.75rem);
+        }
+
+        .ranking-card-body {
+            column-gap: 12px;
+        }
+
+        .rank-badge {
+            width: 52px;
+            height: 52px;
+            flex: 0 0 52px;
+            font-size: 1.5rem;
+        }
+
+        .ranking-team-name {
+            margin-left: 0 !important;
+        }
+
+        .ranking-score {
+            flex: 1 0 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding-left: 64px;
+            text-align: left !important;
+        }
+
+        .ranking-score h2 {
+            margin: 0;
+        }
+
+        .beer-chart-container {
+            min-height: 480px;
+            gap: 8px;
+            padding: 44px 12px 16px;
+        }
+
+        .beer-bar {
+            max-width: 110px;
+        }
+
+        .beer-label h4 {
+            font-size: clamp(1rem, 4vw, 1.35rem) !important;
+        }
+
+        .beer-label .badge {
+            font-size: 0.95rem;
+            padding: 6px 12px;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .ranking-container {
+            padding: 18px 14px;
+        }
+
+        .ranking-score {
+            padding-left: 0;
+        }
+
+        .beer-chart-container {
+            gap: 4px;
+            padding-right: 8px;
+            padding-left: 8px;
+        }
+
+        .beer-label p,
+        .beer-label .badge {
+            font-size: 0.85rem;
+        }
+
+        .text-center .btn-lg {
+            display: block;
+            width: 100%;
+            margin: 10px 0 !important;
+        }
+    }
 </style>
 
 <div class="ranking-container">
@@ -411,14 +531,14 @@
             <h3 class="mb-4">🏅 Rangliste</h3>
             {{#each teams}}
             <div class="card shadow-sm mb-3">
-                <div class="card-body d-flex align-items-center">
+                <div class="card-body d-flex align-items-center ranking-card-body">
                     <div class="rank-badge {{#if (gt @index 2)}}rank-other{{else}}rank-{{math @index '+' 1}}{{/if}}">
                         {{math @index '+' 1}}
                     </div>
-                    <div class="ms-4 flex-grow-1">
+                    <div class="ms-4 flex-grow-1 ranking-team-name">
                         <h4 class="mb-0">{{this.name}}</h4>
                     </div>
-                    <div class="text-end">
+                    <div class="text-end ranking-score">
                         <h2 class="mb-0" style="color: #ffa500;">
                             🏆 <span id="count-{{this._id}}">{{this.drinksCount.points}}</span> Pkt
                         </h2>
@@ -432,7 +552,6 @@
         <!-- Rechte Seite: Bier-Balkendiagramm -->
         <div class="col-md-7">
             <h3 class="mb-4">🍺 Top 3 Visualisierung</h3>
-            <div class="beer-chart-container" id="beerChartContainer" data-max-points="{{maxPoints}}">
             <div class="beer-chart-container" id="beerChartContainer" data-max-points="{{maxPoints}}">
                 {{#each topThree}}
                 <div class="beer-bar-wrapper">

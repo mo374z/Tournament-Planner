@@ -127,9 +127,14 @@
 
                         {{#unless (eqref userrole "TV")}}                        
                             {{#if (eqref userrole "cashier")}}
-                                {{!-- cashier sieht nur Bestellseite --}}
                                 <li class="nav-item">
                                     <a class="nav-link ms-5" href="/cashier/order">🍺 Bestellseite</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/cashier/products">Produkte verwalten</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link ms-5" href="/cashier/kitchen">Küche</a>
                                 </li>
                             {{else}}
                                 {{!-- Admin sieht alles --}}
@@ -160,6 +165,8 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="kassierDropdown">
                                         <li><a class="dropdown-item" href="/cashier/order">Bestellseite</a></li>
+                                        <li><a class="dropdown-item" href="/cashier/products">Produkte verwalten</a></li>
+                                        <li><a class="dropdown-item" href="/cashier/kitchen">Küchenbestellungen</a></li>
                                         <li><a class="dropdown-item" href="/cashier/ranking" target="_blank">Ranking</a></li>
                                         <li><a class="dropdown-item" href="/cashier/statistics">Statistiken</a></li>
                                     </ul>

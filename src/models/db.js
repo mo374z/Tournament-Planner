@@ -47,6 +47,7 @@ require('./Player');
 require('./User');
 require('./Feedback');
 require('./ProductSales');
+require('./Product');
 
 
 async function createDb(dbName) {   // Create a new database for the tournament
@@ -233,5 +234,4 @@ module.exports = {
   backupPathArchive,
   backupPathJSON,
 };
-
 

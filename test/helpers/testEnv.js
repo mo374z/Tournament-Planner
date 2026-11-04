@@ -13,7 +13,7 @@ const TEST_DB_URI = process.env.TEST_MONGO_URI || "mongodb://127.0.0.1:27017/Tou
 // Port 0 = random free port, so the socket.io server of the GameController does not collide with a running app
 process.argv.push("--socket-port", "0");
 
-for (const model of ["Game", "Team", "MainSettings", "GeneralCounters", "Player", "User", "Feedback", "ProductSales", "Decision"]) {
+for (const model of ["Game", "Team", "MainSettings", "GeneralCounters", "Player", "User", "Feedback", "ProductSales", "Product", "Decision"]) {
   require(path.join(ROOT, "src", "models", model));
 }
 
@@ -22,6 +22,8 @@ const Team = mongoose.model("Team");
 const MainSettings = mongoose.model("MainSettings");
 const Counters = mongoose.model("generalCounters");
 const Decision = mongoose.model("Decision");
+const ProductSales = mongoose.model("ProductSales");
+const Product = mongoose.model("Product");
 
 const MIN = 60 * 1000;
 
@@ -88,9 +90,9 @@ function loadTemplate(name = "4groups_4teams.yaml") {
   return yaml.load(fs.readFileSync(path.join(ROOT, "src", "config", "scheduling_templates", name), "utf8"));
 }
 
-function adminCookie() {
+function adminCookie(role = "admin") {
   const keytokens = yaml.load(fs.readFileSync(path.join(ROOT, "keytokens.yaml"), "utf8"));
-  return "jwt=" + jwt.sign({ username: "test", role: "admin" }, keytokens.jwtSecretkey);
+  return "jwt=" + jwt.sign({ username: "test", role }, keytokens.jwtSecretkey);
 }
 
 // Mounts the real GameController router on a throw-away express app
@@ -167,6 +169,8 @@ module.exports = {
   MainSettings,
   Counters,
   Decision,
+  ProductSales,
+  Product,
   connect,
   disconnect,
   resetDb,
@@ -174,6 +178,7 @@ module.exports = {
   seedCounters,
   seedTeams,
   teamDoc,
+  adminCookie,
   loadTemplate,
   startGameApp,
   isDummyOpponent,
