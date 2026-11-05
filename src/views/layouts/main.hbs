@@ -35,6 +35,92 @@
         .nav-link {
             padding: 0.5rem 1rem;
         }
+        .navbar .navbar-nav .nav-link {
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            margin: 0.2rem 0.25rem;
+            white-space: nowrap;
+            transition: background-color 0.15s, border-color 0.15s;
+        }
+        .navbar .navbar-nav .nav-link:hover,
+        .navbar .navbar-nav .nav-link.show {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        /* Große Abstände (ms-5) ersetzen, damit das Menü nicht aus dem Fenster läuft */
+        .navbar .navbar-nav .nav-link.ms-5 {
+            margin-left: 0.25rem !important;
+        }
+        .navbar .navbar-text.ms-5 {
+            margin-left: 0.75rem !important;
+        }
+        .navbar .navbar-nav .nav-link.nav-link-highlight {
+            background-color: rgba(25, 135, 84, 0.25);
+            border-color: rgba(25, 135, 84, 0.8);
+            color: #fff;
+            font-weight: 600;
+        }
+        .navbar .navbar-nav .nav-link.nav-link-highlight:hover {
+            background-color: rgba(25, 135, 84, 0.45);
+            border-color: #198754;
+        }
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.3rem 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 2rem;
+            background-color: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.85);
+            white-space: nowrap;
+        }
+        .user-badge > i {
+            font-size: 1.6rem;
+        }
+        .user-badge-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+        .user-badge-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+        }
+        .user-badge-name {
+            font-weight: 600;
+        }
+        @media (max-width: 1399.98px) {
+            /* Ausklappmenü: Block mittig, Buttons untereinander gleich breit und linksbündig */
+            .navbar-collapse .navbar-nav {
+                align-items: stretch !important;
+                width: fit-content;
+                min-width: min(260px, 100%);
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+            .navbar-collapse .navbar-nav .nav-link {
+                text-align: left;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+            .navbar-collapse .navbar-nav .user-badge {
+                margin-left: 0 !important;
+                margin-top: 0.4rem;
+            }
+        }
+        @media (min-width: 1400px) {
+            .navbar-collapse {
+                min-width: 0;
+            }
+            .navbar-nav {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+        }
     </style>
 
 </head>
@@ -103,7 +189,7 @@
                  {{#if myTeamEnabled}}
                     {{#unless (or (eqref userrole "cashier") (eqref userrole "TV"))}}
                         <li class="nav-item">
-                            <a class="nav-link ms-5" href="/myteam/login">MyTeam</a>
+                            <a class="nav-link ms-5{{#unless username}} nav-link-highlight{{/unless}}" href="/myteam/login">{{#unless username}}<i class="fas fa-users me-1"></i> {{/unless}}MyTeam</a>
                         </li>
                     {{/unless}}
                 {{/if}}
@@ -211,7 +297,13 @@
                     </li>
                     <li class="nav-item">
                         {{#if username}}
-                            <p class="navbar-text ms-5">Signed in: <br> {{username}} - {{userrole}}</p>
+                            <div class="user-badge ms-3">
+                                <i class="fas fa-user-circle"></i>
+                                <div class="user-badge-text">
+                                    <span class="user-badge-label">Angemeldet</span>
+                                    <span class="user-badge-name">{{username}} · {{userrole}}</span>
+                                </div>
+                            </div>
                         {{/if}}
                     </li>
                 </ul>

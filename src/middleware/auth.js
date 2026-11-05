@@ -12,12 +12,20 @@ function verifyToken(req, res, next) {
         return res.status(401).send(`
             <html>
                 <head>
-                    <title>Access Denied</title>
+                    <title>Wa wilsch du?</title>
+                    <style>
+                        body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: sans-serif; background: #f3f4f6; color: #1f2937; }
+                        main { max-width: 360px; padding: 2rem; text-align: center; background: white; border-radius: 12px; box-shadow: 0 8px 24px #0001; }
+                        h1 { margin-top: 0; }
+                        a { display: inline-block; margin-top: 1rem; padding: .7rem 1rem; color: white; background: #2563eb; border-radius: 6px; text-decoration: none; }
+                    </style>
                 </head>
                 <body>
-                    <h1>Access Denied</h1>
-                    <p>You do not have permission to access this page.</p>
-                    <button onclick="window.location.href='/user/login'">Go to Login Page</button>
+                    <main>
+                        <h1>Wa willsch du?</h1>
+                        <p>Für diese Seite musst du dich zuerst anmelden.</p>
+                        <a href="/user/login">Zum Login</a>
+                    </main>
                 </body>
             </html>
         `);

@@ -1,6 +1,22 @@
 
 
     <style>
+        .login-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-top: 2rem;
+            margin-bottom: 4rem;
+        }
+        .login-box {
+            text-align: left;
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 0.75rem;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
         #capsLockIndicator {
             color: rgb(104, 0, 0);
             font-weight: bold;
@@ -21,14 +37,15 @@
         });
     </script>
 
-    <h1>Login Page</h1>
-    <form action="/user/login" method="POST">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        <div id="capsLockIndicator" style="display: none;">Caps Lock is on!</div>
-        <button type="submit" class="btn btn-success">Login</button>
-        
-    </form>
+    <div class="login-wrapper">
+        <h1>Anmeldung</h1>
+        <form action="/user/login" method="POST" class="login-box">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required><br><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br><br>
+            <div id="capsLockIndicator" style="display: none;">Caps Lock is on!</div>
+            <button type="submit" class="btn btn-success">Login</button>
+        </form>
+    </div>
 

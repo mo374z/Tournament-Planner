@@ -143,6 +143,21 @@ function checkPath(pathList) {
 
 checkPath([backupPathArchive, backupPathJSON]);
 
+// Findet mongodump/mongorestore auch dann, wenn die MongoDB Tools nicht im PATH sind
+function findMongoTool(name) {
+  if (process.platform !== 'win32') return name;
+  const roots = [process.env.MONGO_TOOLS_PATH, 'C:\\Program Files\\MongoDB\\Tools'].filter(Boolean);
+  for (const root of roots) {
+    const candidates = [path.join(root, `${name}.exe`), path.join(root, 'bin', `${name}.exe`)];
+    if (fs.existsSync(root)) {
+      fs.readdirSync(root).forEach((v) => candidates.push(path.join(root, v, 'bin', `${name}.exe`)));
+    }
+    const found = candidates.find((c) => fs.existsSync(c));
+    if (found) return `"${found}"`;
+  }
+  return name;
+}
+
 
 // Backup erstellen
 function backupDb(dbName, backupPathArchive, backupPathJSON, withJSON = false) {
@@ -156,7 +171,7 @@ function backupDb(dbName, backupPathArchive, backupPathJSON, withJSON = false) {
 
   return new Promise((resolve, reject) => {
       // Archiv-Backup erstellen
-      const commandArchive = `mongodump --uri=${backupURI} --archive="${backupFile}" --gzip`;
+      const commandArchive = `${findMongoTool('mongodump')} --uri=${backupURI} --archive="${backupFile}" --gzip`;
 
       exec(commandArchive, (error, stdout, stderr) => {
           if (error) {
@@ -168,7 +183,7 @@ function backupDb(dbName, backupPathArchive, backupPathJSON, withJSON = false) {
               return resolve(backupFile);
           }
           // JSON-Backup erstellen
-          const commandJSON = `mongodump --uri=${backupURI} --out="${backupPathJSON}"`;
+          const commandJSON = `${findMongoTool('mongodump')} --uri=${backupURI} --out="${backupPathJSON}"`;
 
           exec(commandJSON, (jsonError, jsonStdout, jsonStderr) => {
               if (jsonError) {
@@ -190,7 +205,7 @@ function restoreDb(backupFile) {
 
   return new Promise((resolve, reject) => {
       // Hier wird der Befehl für den Restore angepasst, sodass alle Sammlungen in der neuen DB landen
-      const command = `mongorestore --archive="${backupFile}" --gzip --nsFrom=".*" --nsTo="${sanitizedDbName}.*" --drop`;
+      const command = `${findMongoTool('mongorestore')} --archive="${backupFile}" --gzip --nsFrom=".*" --nsTo="${sanitizedDbName}.*" --drop`;
 
       console.log(`Restore-Befehl: ${command}`);
 
