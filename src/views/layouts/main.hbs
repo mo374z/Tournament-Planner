@@ -167,7 +167,11 @@
                                         <li><a class="dropdown-item" href="/cashier/order">Bestellseite</a></li>
                                         <li><a class="dropdown-item" href="/cashier/products">Produkte verwalten</a></li>
                                         <li><a class="dropdown-item" href="/cashier/kitchen">Küchenbestellungen</a></li>
+                                        {{#if beerRankingEnabled}}
                                         <li><a class="dropdown-item" href="/cashier/ranking" target="_blank">Ranking</a></li>
+                                        {{else}}
+                                        <li><span class="dropdown-item disabled text-muted" aria-disabled="true" style="pointer-events: none;">Ranking (deaktiviert)</span></li>
+                                        {{/if}}
                                         <li><a class="dropdown-item" href="/cashier/statistics">Statistiken</a></li>
                                     </ul>
                                 </li>

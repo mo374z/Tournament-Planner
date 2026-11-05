@@ -222,6 +222,7 @@ app.use(async (req, res, next) => {
     now - mainSettingsCacheLastFetch < MAIN_SETTINGS_CACHE_TTL_MS
   ) {
     res.locals.myTeamEnabled = mainSettingsCache.myTeamEnabled;
+    res.locals.beerRankingEnabled = mainSettingsCache.beerRankingEnabled;
     return next();
   }
   
@@ -229,25 +230,33 @@ app.use(async (req, res, next) => {
     const MainSettings = mongoose.model('MainSettings');
     const mainSettings = await MainSettings.findOne(
       {},
-      { 'myTeamPageOptions.myTeamEnabled': 1 }
+      { 'myTeamPageOptions.myTeamEnabled': 1, 'beerRankingOptions.enabled': 1 }
     );
     const myTeamEnabled =
       (mainSettings &&
         mainSettings.myTeamPageOptions &&
         mainSettings.myTeamPageOptions.myTeamEnabled) ||
       false;
+    const beerRankingEnabled =
+      !mainSettings ||
+      !mainSettings.beerRankingOptions ||
+      mainSettings.beerRankingOptions.enabled !== false;
     
     // Update cache
-    mainSettingsCache = { myTeamEnabled };
+    mainSettingsCache = { myTeamEnabled, beerRankingEnabled };
     mainSettingsCacheLoaded = true;
     mainSettingsCacheLastFetch = now;
     res.locals.myTeamEnabled = myTeamEnabled;
+    res.locals.beerRankingEnabled = beerRankingEnabled;
   } catch (err) {
     console.log('Error loading MainSettings for navigation:', err);
     // On error, fall back to cached value if available, otherwise false.
     res.locals.myTeamEnabled = mainSettingsCacheLoaded
       ? mainSettingsCache.myTeamEnabled
       : false;
+    res.locals.beerRankingEnabled = mainSettingsCacheLoaded
+      ? mainSettingsCache.beerRankingEnabled
+      : true;
   }
   next();
 });

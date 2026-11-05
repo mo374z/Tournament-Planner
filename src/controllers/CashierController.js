@@ -5,6 +5,7 @@ const Team = mongoose.model('Team');
 const ProductSales = mongoose.model('ProductSales');
 const Product = require('../models/Product');
 const { updateSocketConfig } = require('../config/socketConfig');
+const { getBeerRankingState } = require('../services/beerRankingState');
 const socketConfig = updateSocketConfig(process.argv.slice(2));
 
 // Middleware to check if user is logged in
@@ -327,8 +328,9 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
             
             await team.save();
 
-            // Emit socket event für Live-Updates
-            if (global.io) {
+            // Emit socket event für Live-Updates (nicht bei deaktiviertem/eingefrorenem Ranking, damit keine Daten durchsickern)
+            const beerState = await getBeerRankingState();
+            if (global.io && beerState.enabled && !beerState.frozen) {
                 global.io.emit('drinksCountUpdated', {
                     teamId: team._id,
                     teamName: team.name,
@@ -375,6 +377,28 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
 // GET Route für das Bier-Ranking
 router.get('/ranking', async (req, res) => {
     try {
+        const beerState = await getBeerRankingState();
+        if (!beerState.enabled) {
+            return res.status(403).send('Das Bier-Ranking ist deaktiviert.');
+        }
+
+        if (beerState.frozen) {
+            // Reine Platzhalter: keine echten Teamnamen oder Punkte an den Client senden
+            const placeholders = [0, 1, 2, 3, 4].map(i => ({
+                name: 'Team ' + (i + 1),
+                drinksCount: { points: 50 - i * 8, weizen: 10 - i, pils: 8 - i },
+                barHeight: [400, 300, 200][i]
+            }));
+            return res.render('layouts/beerRanking', {
+                frozen: true,
+                teams: placeholders,
+                topThree: placeholders.slice(0, 3),
+                maxPoints: 1,
+                socketConfig: socketConfig,
+                title: 'Bier-Ranking'
+            });
+        }
+
         // Top 5 Teams mit den höchsten Punkten (nur Teams mit Punkten > 0)
         const teams = await Team.find({ 'drinksCount.points': { $gt: 0 } })
             .sort({ 'drinksCount.points': -1 })
@@ -413,6 +437,11 @@ router.get('/ranking', async (req, res) => {
 // API Route für Live-Ranking-Daten
 router.get('/api/ranking', async (req, res) => {
     try {
+        const beerState = await getBeerRankingState();
+        if (!beerState.enabled || beerState.frozen) {
+            return res.json({ success: true, frozen: beerState.frozen, disabled: !beerState.enabled, teams: [], topThree: [] });
+        }
+
         const teams = await Team.find({ 'drinksCount.points': { $gt: 0 } })
             .sort({ 'drinksCount.points': -1 })
             .limit(5)

@@ -343,7 +343,11 @@ router.post('/myTeamSettings', async (req, res) => {
         mainSettings.myTeamPageOptions.allowLogoUpload = allowLogoUpload === 'on';
         mainSettings.myTeamPageOptions.allowPlayerAdd = allowPlayerAdd === 'on';
         mainSettings.myTeamPageOptions.allowCertificateDownload = allowCertificateDownload === 'on';
-        mainSettings.myTeamPageOptions.showBeerRanking = showBeerRanking === 'on';
+        const beerEnabled = !mainSettings.beerRankingOptions || mainSettings.beerRankingOptions.enabled !== false;
+        // Bei deaktiviertem Bier-Ranking ist die Checkbox gesperrt und wird nicht gesendet -> bisherigen Wert behalten
+        if (beerEnabled) {
+            mainSettings.myTeamPageOptions.showBeerRanking = showBeerRanking === 'on';
+        }
 
         // Save the updated MainSettings
         await mainSettings.save();
@@ -357,6 +361,37 @@ router.post('/myTeamSettings', async (req, res) => {
         res.redirect('/mainSettings');
     } catch (err) {
         console.error('Error updating MyTeam Settings:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+// POST route to handle Beer Ranking Settings
+router.post('/beerRankingSettings', async (req, res) => {
+    try {
+        const { beerRankingEnabled, beerRankingFrozen } = req.body;
+
+        let mainSettings = await MainSettings.findOne({});
+        if (!mainSettings) {
+            mainSettings = createDefaultMainSettings();
+        }
+
+        const enabled = beerRankingEnabled === 'on';
+        mainSettings.beerRankingOptions = {
+            enabled,
+            frozen: enabled && beerRankingFrozen === 'on'
+        };
+
+        await mainSettings.save();
+
+        if (global.invalidateMainSettingsCache) {
+            global.invalidateMainSettingsCache();
+        }
+        if (global.io) {
+            global.io.emit('beerRankingStateChanged');
+        }
+
+        res.redirect('/mainSettings');
+    } catch (err) {
+        console.error('Error updating Beer Ranking Settings:', err);
         res.status(500).send('Internal Server Error');
     }
 });

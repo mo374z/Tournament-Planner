@@ -77,6 +77,16 @@ var MainSettingsSchema = new mongoose.Schema({
             default: true
         }
     },
+    beerRankingOptions: {
+        enabled: {
+            type: Boolean,
+            default: true
+        },
+        frozen: {
+            type: Boolean,
+            default: false
+        }
+    },
     myTeamPageOptions: {
         myTeamEnabled: {
             type: Boolean,

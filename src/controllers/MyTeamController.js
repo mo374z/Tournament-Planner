@@ -249,7 +249,14 @@ router.get("/dashboard", async (req, res) => {
     const players = await Player.find({ team: team._id }).exec();
 
     let beerRanking = null;
-    if (mainSettings.myTeamPageOptions?.showBeerRanking) {
+    const beerOptions = mainSettings.beerRankingOptions || {};
+    const beerRankingEnabled = beerOptions.enabled !== false;
+    const beerRankingFrozen = beerRankingEnabled && beerOptions.frozen === true;
+    const showBeerRanking = beerRankingEnabled && !!mainSettings.myTeamPageOptions?.showBeerRanking;
+    if (showBeerRanking && beerRankingFrozen) {
+      // Eingefroren: nur Platzhalter, keine echten Werte an die Seite senden
+      beerRanking = { frozen: true, rank: 8, points: 88, weizen: 8, pils: 8 };
+    } else if (showBeerRanking) {
       const rankedTeams = await Team.find({ 'drinksCount.points': { $gt: 0 } })
         .sort({ 'drinksCount.points': -1 })
         .select('_id');
@@ -298,6 +305,7 @@ router.get("/dashboard", async (req, res) => {
       pastGames: pastGames,
       players: players,
       mainSettings: mainSettings, // Pass mainSettings to check upload permission
+      showBeerRanking: showBeerRanking,
       viewTitle: `MyTeam: ${team.name}`
     });
   } catch (err) {

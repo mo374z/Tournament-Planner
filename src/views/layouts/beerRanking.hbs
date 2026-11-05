@@ -8,6 +8,7 @@
         box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         margin: 20px auto;
         max-width: 1600px;
+        zoom: 0.8;
     }
     
     .trophy {
@@ -513,6 +514,32 @@
             margin: 10px 0 !important;
         }
     }
+    .frozen-blur {
+        filter: blur(18px);
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .frozen-wrapper {
+        position: relative;
+    }
+
+    .frozen-banner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        width: 90%;
+        text-align: center;
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #0d6efd;
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 16px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
 </style>
 
 <div class="ranking-container">
@@ -525,7 +552,9 @@
     <hr>
     
     {{#if teams}}
-    <div class="row">
+    <div class="{{#if frozen}}frozen-wrapper{{/if}}">
+    {{#if frozen}}<div class="frozen-banner">❄️ Die Ranking-Anzeige ist eingefroren – die Spannung steigt!</div>{{/if}}
+    <div class="row {{#if frozen}}frozen-blur{{/if}}" {{#if frozen}}aria-hidden="true"{{/if}}>
         <!-- Linke Seite: Rangliste -->
         <div class="col-md-5">
             <h3 class="mb-4">🏅 Rangliste</h3>
@@ -579,28 +608,20 @@
             </div>
         </div>
     </div>
-    
-    <div class="text-center mt-4">
-        <button class="btn btn-primary btn-lg" onclick="window.location.reload()">
-            🔄 Aktualisieren
-        </button>
-        <a href="/cashier/order" class="btn btn-secondary btn-lg ms-2">
-            ← Zurück zur Bestellung
-        </a>
     </div>
+    
     {{else}}
     <div class="no-data">
         <h3>Noch keine Daten verfügbar</h3>
         <p>Sobald Teams Weizen bestellen, erscheint hier das Ranking.</p>
     </div>
-    
-    <div class="text-center mt-4">
-        <a href="/cashier/order" class="btn btn-secondary btn-lg">
-            ← Zurück zur Bestellung
-        </a>
-    </div>
     {{/if}}
 </div>
+
+<!-- Notfall-Aktualisieren -->
+<button type="button" onclick="window.location.reload()" title="Aktualisieren"
+    style="position: fixed; bottom: 20px; left: 20px; z-index: 1000; font-size: 1.1rem; padding: 6px 14px; opacity: 0.6;"
+    class="btn btn-outline-secondary">🔄 Aktualisieren</button>
 
 <!-- Verbindungsstatus -->
 <div id="connectionStatus" class="connection-status status-disconnected">
@@ -609,6 +630,10 @@
 
 <script>
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
+    const isFrozen = {{#if frozen}}true{{else}}false{{/if}};
+
+    // Seite neu laden, wenn Ranking ein-/ausgefroren oder deaktiviert wird
+    socket.on('beerRankingStateChanged', () => window.location.reload());
     
     const connectionStatus = document.getElementById('connectionStatus');
     
@@ -655,6 +680,7 @@
     
     // Initialize beer bars on page load
     async function initializeBeerBars() {
+        if (isFrozen) return;
         const response = await fetch('/cashier/api/ranking');
         const result = await response.json();
 
@@ -777,8 +803,8 @@
                                 barElement.style.height = `${newHeight}px`;
                                 barElement.dataset.points = newValue;
                             }
-                        });
-                    }
+                        }
+                    });
                 }
             }
         } catch (err) {

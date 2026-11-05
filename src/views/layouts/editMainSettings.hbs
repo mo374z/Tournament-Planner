@@ -432,17 +432,60 @@
                 <div class="col-lg-6">
                     <!-- Advertising Management -->
                     <div class="card border border-secondary shadow-sm">
-                        <div class="card-header bg-warning text-dark">
+                        <div class="card-header text-white" style="background-color: #6f42c1;">
                             <h5 class="mb-0"><i class="fas fa-images me-2"></i>Werbung</h5>
                         </div>
                         <div class="card-body">
                             <div class="d-grid">
-                                <a href="/mainSettings/ads" class="btn btn-outline-warning">
+                                <a href="/mainSettings/ads" class="btn btn-outline-secondary" style="color: #6f42c1; border-color: #6f42c1;">
                                     <i class="fas fa-images me-2"></i>Werbung verwalten
                                 </a>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Beer Ranking Settings -->
+                    <div class="card border border-secondary shadow-sm mt-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-beer me-2"></i>Bier-Ranking</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="/mainSettings/beerRankingSettings" method="POST" autocomplete="off">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="beerRankingEnabled" name="beerRankingEnabled" {{#if mainSettings.beerRankingOptions.enabled}}checked{{/if}}>
+                                    <label class="form-check-label" for="beerRankingEnabled">
+                                        <i class="fas fa-toggle-on me-2"></i>Bier-Ranking aktivieren
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="beerRankingFrozen" name="beerRankingFrozen" {{#if mainSettings.beerRankingOptions.frozen}}checked{{/if}} {{#unless mainSettings.beerRankingOptions.enabled}}disabled{{/unless}}>
+                                    <label class="form-check-label" for="beerRankingFrozen">
+                                        <i class="fas fa-snowflake me-2"></i>Ranking einfrieren (geblurt, keine Daten werden gesendet)
+                                    </label>
+                                </div>
+                                <small class="text-muted mb-3 d-block">
+                                    <i class="fas fa-info-circle me-1"></i>Die Statistik läuft im Hintergrund weiter. Deaktiviert blendet das Ranking auch in MyTeam und im Kassier-Menü aus.
+                                </small>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-save me-2"></i>Speichern
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <script>
+                        (function () {
+                            var enabled = document.getElementById('beerRankingEnabled');
+                            var frozen = document.getElementById('beerRankingFrozen');
+                            var myTeamBeer = document.getElementById('showBeerRanking');
+                            enabled.addEventListener('change', function () {
+                                frozen.disabled = !enabled.checked;
+                                if (!enabled.checked) frozen.checked = false;
+                                if (myTeamBeer) myTeamBeer.disabled = !enabled.checked;
+                            });
+                        })();
+                    </script>
 
                     <!-- Live Game Page Settings -->
                     <div class="card border border-secondary shadow-sm mt-4">
@@ -536,9 +579,9 @@
                                     </label>
                                 </div>
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="showBeerRanking" name="showBeerRanking" {{#if mainSettings.myTeamPageOptions.showBeerRanking}}checked{{/if}}>
+                                    <input class="form-check-input" type="checkbox" id="showBeerRanking" name="showBeerRanking" {{#if mainSettings.myTeamPageOptions.showBeerRanking}}checked{{/if}} {{#unless mainSettings.beerRankingOptions.enabled}}disabled{{/unless}}>
                                     <label class="form-check-label" for="showBeerRanking">
-                                        <i class="fas fa-beer me-1"></i>Bier-Ranking in MyTeam anzeigen
+                                        <i class="fas fa-beer me-1"></i>Bier-Ranking in MyTeam anzeigen{{#unless mainSettings.beerRankingOptions.enabled}} <small class="text-muted">(Bier-Ranking deaktiviert)</small>{{/unless}}
                                     </label>
                                 </div>
                                 <div class="d-grid mb-3">

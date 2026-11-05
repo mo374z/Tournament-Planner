@@ -14,7 +14,7 @@
     {{!-- Tutorial steps: data-target is the section to scroll to (empty = scroll to top) --}}
     <div id="myTeamTutorialSteps" class="d-none" data-team-id="{{team._id}}">
         <div data-target="" data-title="Willkommen auf der MyTeam-Seite von {{team.name}}!">Hier findest du eure Teamstatistiken, Spiele und Spieler. Wir zeigen dir kurz die einzelnen Bereiche.</div>
-        <div data-target="myteam-stats" data-title="Statistiken und Spielergebnisse{{#if mainSettings.myTeamPageOptions.showBeerRanking}} & Bier-Ranking{{/if}}">Hier siehst du die Statistiken eurer Mannschaft: Gruppe, gespielte Spiele, Tore,         Sekt sowie Siege, Unentschieden und Niederlagen.{{#if mainSettings.myTeamPageOptions.showBeerRanking}} Außerdem seht ihr im Bier-Ranking eure Punkte, eure aktuelle Platzierung sowie die Anzahl an Weizen und Pils.{{/if}}</div>
+        <div data-target="myteam-stats" data-title="Statistiken und Spielergebnisse{{#if showBeerRanking}} & Bier-Ranking{{/if}}">Hier siehst du die Statistiken eurer Mannschaft: Gruppe, gespielte Spiele, Tore,         Sekt sowie Siege, Unentschieden und Niederlagen.{{#if showBeerRanking}} Außerdem seht ihr im Bier-Ranking eure Punkte, eure aktuelle Platzierung sowie die Anzahl an Weizen und Pils.{{/if}}</div>
         {{#if team.logo.path}}
         <div data-target="myteam-logo" data-title="Team-Logo">{{#if mainSettings.myTeamPageOptions.allowLogoUpload}}Hier könnt ihr ein Logo für eure Mannschaft hochladen und bearbeiten. Es wird bei der Spielstandsanzeige verwendet.{{else}}Hier seht ihr euer Team-Logo. Es wird bei der Spielstandsanzeige verwendet.{{/if}}</div>
         {{/if}}
@@ -251,15 +251,15 @@
                         </div>
                     </div>
                 </div>
-                {{#if mainSettings.myTeamPageOptions.showBeerRanking}}
+                {{#if showBeerRanking}}
                 <div class="card shadow-sm mt-3" id="myteam-beer" style="scroll-margin-top: 1rem;">
                     <div class="card-header bg-warning text-dark">
                         <h3 class="card-title mb-0">
-                            <i class="fas fa-beer me-2"></i>Bier-Ranking
+                                            <i class="fas fa-beer me-2"></i>Bier-Ranking{{#if team.beerRanking.frozen}} <small>❄️ eingefroren</small>{{/if}}
                         </h3>
                     </div>
                     <div class="card-body">
-                        <div class="row g-3">
+                                        <div class="row g-3" {{#if team.beerRanking.frozen}}style="filter: blur(14px); pointer-events: none; user-select: none;" aria-hidden="true"{{/if}}>
                             <div class="col-6 col-md-3">
                                 <div class="result-card placement-card">
                                     <div class="result-icon">
