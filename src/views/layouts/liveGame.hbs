@@ -125,11 +125,21 @@
             font-size: clamp(12pt, 2.7vw, 32pt);
             margin-bottom: 0;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
+            line-height: 1.15;
+            width: max-content;
+            position: relative;
+            left: 50%;
+            translate: -50% 0;
         }
-        .live-name-nologo { font-size: clamp(14pt, 3vw, 35pt); }
+        .live-name-nologo {
+            font-size: clamp(14pt, 3vw, 35pt);
+            white-space: nowrap;
+            line-height: 1.15;
+            width: max-content;
+            position: relative;
+            left: 50%;
+            translate: -50% 0;
+        }
         .live-score { font-weight: bold; font-size: clamp(32pt, 7.5vw, 90pt); margin: 0; }
         .live-score-box { min-width: clamp(60px, 16vw, 200px); }
         .live-timer-box { min-width: clamp(90px, 18vw, 220px); }
@@ -425,6 +435,31 @@
         }
     }
 
+    // Schriftgröße bleibt gleich; ragt der Name über den Rand, wird er Richtung Mitte verschoben
+    function fitName(el) {
+        if (!el) return;
+        el.style.transform = '';
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const text = range.getBoundingClientRect();
+        const bounds = (el.closest('.live-grid') || document.body).getBoundingClientRect();
+        const margin = 4;
+        const left = Math.max(bounds.left, 0) + margin;
+        const right = Math.min(bounds.right, window.innerWidth) - margin;
+        let dx = 0;
+        if (text.left < left) {
+            dx = left - text.left;
+        } else if (text.right > right) {
+            dx = right - text.right;
+        }
+        if (dx) el.style.transform = `translateX(${dx}px)`;
+    }
+    function fitAllNames() {
+        document.querySelectorAll('.live-name, .live-name-nologo').forEach(fitName);
+    }
+    window.addEventListener('resize', fitAllNames);
+    document.addEventListener('DOMContentLoaded', fitAllNames);
+
     async function updateName(elementId, teamID) {
         // get name based on id
         const response = await fetch(`/team/getTeamName/${teamID}`, { method: 'GET'})
@@ -435,6 +470,7 @@
             const nameElement = document.getElementById(elementId);
             if (nameElement) {
                 nameElement.innerText = teamName;
+                fitName(nameElement);
             }
             return teamName;
         } else {
