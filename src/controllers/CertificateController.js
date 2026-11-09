@@ -9,10 +9,11 @@ const puppeteer = require('puppeteer');
 const Automizer = require('pptx-automizer').default;
 const { modify } = require('pptx-automizer');
 const { ModifyShapeHelper } = require('pptx-automizer');
-const sizeOf = require('image-size');
+const { imageSize } = require('image-size');
 const { ZipArchive } = require('archiver');
 const { PDFDocument } = require('pdf-lib');
 const multer = require('multer');
+const { getSlideSize, loadSponsorImages, layoutSponsorImages, addSponsorSlides } = require('../services/presentationSponsors');
 
 commonMiddleware(router, ['admin']);
 
@@ -205,12 +206,22 @@ router.post('/generateAllCertificatesPdf', async (req, res) => {
 
 router.post('/generatePresentation', async (req, res) => {
     try {
-        const teams = await Team.find().exec();
+        let teams = await Team.find().exec();
         teams.sort((a, b) => {
             if (a.finalPlacement === null) return 1;
             if (b.finalPlacement === null) return -1;
             return a.finalPlacement - b.finalPlacement;
         });
+
+        if (req.body.teamOrder !== undefined) {
+            const order = Array.isArray(req.body.teamOrder) ? req.body.teamOrder : [req.body.teamOrder];
+            const teamsById = new Map(teams.map(team => [String(team._id), team]));
+            if (order.length !== teams.length || new Set(order).size !== teams.length ||
+                order.some(id => typeof id !== 'string' || !teamsById.has(id))) {
+                return res.status(400).send('Die Mannschaftsliste hat sich geändert oder die Reihenfolge ist ungültig. Bitte die Seite neu laden und erneut versuchen.');
+            }
+            teams = order.map(id => teamsById.get(id));
+        }
 
         const templatePath = path.join(__dirname, '../../public/templates/template.pptx');
         const outputDir = path.join(__dirname, '../../public/presentations');
@@ -218,6 +229,9 @@ router.post('/generatePresentation', async (req, res) => {
 
         if (!fs.existsSync(templatePath)) throw new Error('Template not found: template.pptx');
         if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+        const sponsors = await loadSponsorImages(path.join(__dirname, '../../public/images/carousel'));
+        const sponsorPages = layoutSponsorImages(sponsors, getSlideSize(templatePath));
 
         const automizer = new Automizer({
             templateDir: path.join(__dirname, '../../public/templates'),
@@ -231,6 +245,8 @@ router.post('/generatePresentation', async (req, res) => {
         let pres = automizer.loadRoot('template.pptx', 'presentation').load('template.pptx', 'slide');
         const teamTemplateSlideNr = 4;
 
+        addSponsorSlides(pres, sponsorPages, teams.length);
+
         for (const team of teams) {
             pres = pres.addSlide('slide', teamTemplateSlideNr, async (slide) => {
                 slide.useSlideLayout();
@@ -241,7 +257,7 @@ router.post('/generatePresentation', async (req, res) => {
                 if (!fs.existsSync(imagePath)) throw new Error(`Image not found: ${imagePath}`);
                 
                 pres.loadMedia(path.basename(imagePath));
-                const dimensions = sizeOf(imagePath);
+                const dimensions = imageSize(fs.readFileSync(imagePath));
                 const placeholder = await slide.getElement('{image}');
                 const newHeight = placeholder.position.cy;
                 const newWidth = newHeight * (dimensions.width / dimensions.height);
