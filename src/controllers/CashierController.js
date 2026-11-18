@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Team = mongoose.model('Team');
 const ProductSales = mongoose.model('ProductSales');
+const ProductSaleLog = mongoose.model('ProductSaleLog');
 const Product = require('../models/Product');
 const { updateSocketConfig } = require('../config/socketConfig');
 const { getBeerRankingState } = require('../services/beerRankingState');
@@ -288,6 +289,7 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
         let weizenCount = 0;
         let pilsCount = 0;
         let points = 0;
+        const orderId = randomUUID();
 
         for (const [productId, quantity] of itemQuantities) {
             const product = productsById.get(productId);
@@ -314,6 +316,14 @@ router.post('/update-beer', cookieParser(), verifyToken, authorizeRoles('admin',
                 },
                 { upsert: true, returnDocument: 'after' }
             );
+
+            await ProductSaleLog.create({
+                orderId,
+                productId,
+                productName: product.name,
+                quantity,
+                timestamp: new Date()
+            });
         }
 
         if (team) {
@@ -466,14 +476,28 @@ router.get('/statistics', verifyToken, authorizeRoles('admin'), async (req, res)
             .sort({ 'drinksCount.points': -1 })
             .select('name drinksCount');
         
+        const [salesLog, orderIds] = await Promise.all([
+            ProductSaleLog.find().sort({ timestamp: 1 }).lean(),
+            ProductSaleLog.distinct('orderId', { orderId: { $exists: true, $ne: null } })
+        ]);
+
         // Berechne Gesamtstatistiken
         const totalStats = {
             totalRevenue: productStats.reduce((sum, p) => sum + p.totalRevenue, 0),
             totalQuantity: productStats.reduce((sum, p) => sum + p.totalQuantitySold, 0),
-            totalPoints: teamRanking.reduce((sum, t) => sum + t.drinksCount.points, 0)
+            totalPoints: teamRanking.reduce((sum, t) => sum + t.drinksCount.points, 0),
+            totalOrders: orderIds.length
         };
-        
+
+        const salesLogData = salesLog.map(s => ({
+            id: s.productId,
+            name: s.productName,
+            q: s.quantity,
+            t: s.timestamp.getTime()
+        }));
+
         res.render('layouts/statisticsPage', {
+            salesLogJson: JSON.stringify(salesLogData).replace(/</g, '\\u003c'),
             productStats: productStats,
             teamRanking: teamRanking,
             totalStats: totalStats,
@@ -492,6 +516,7 @@ router.get('/statistics', verifyToken, authorizeRoles('admin'), async (req, res)
 router.get('/reset-products', verifyToken, authorizeRoles('admin'), async (req, res) => {
     try {
         await ProductSales.deleteMany({});
+        await ProductSaleLog.deleteMany({});
         res.redirect('/cashier/statistics');
     } catch (err) {
         console.error('Fehler beim Zurücksetzen der Produktverkäufe:', err);

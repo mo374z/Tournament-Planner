@@ -2,6 +2,7 @@ const assert = require("assert");
 const express = require("express");
 const path = require("path");
 const exphbs = require("express-handlebars");
+const cookieParser = require("cookie-parser");
 const env = require("./helpers/testEnv");
 const { router } = require("../src/controllers/CashierController");
 
@@ -15,6 +16,7 @@ describe("Cashier product catalog", function () {
     await Promise.all([
       env.Product.deleteMany({}),
       env.ProductSales.deleteMany({}),
+      env.ProductSaleLog.deleteMany({}),
       env.Team.deleteMany({})
     ]);
 
@@ -23,9 +25,15 @@ describe("Cashier product catalog", function () {
     app.engine("hbs", exphbs.engine({
       extname: ".hbs",
       defaultLayout: false,
-      helpers: { eqref: (left, right) => left === right }
+      helpers: {
+        eqref: (left, right) => left === right,
+        eq: (left, right) => left === right,
+        stringeq: (left, right) => left === right,
+        add: (left, right) => left + right
+      }
     }));
     app.set("view engine", "hbs");
+    app.use(cookieParser());
     app.use(express.urlencoded({ extended: false }));
     app.use(express.json());
     app.use("/cashier", router);
@@ -40,6 +48,7 @@ describe("Cashier product catalog", function () {
     await Promise.all([
       env.Product.deleteMany({}),
       env.ProductSales.deleteMany({}),
+      env.ProductSaleLog.deleteMany({}),
       env.Team.deleteMany({})
     ]);
     await env.disconnect();
@@ -172,6 +181,9 @@ describe("Cashier product catalog", function () {
     const sale = await env.ProductSales.findOne({ productId: product.productId });
     assert.strictEqual(sale.totalQuantitySold, 2);
     assert.strictEqual(sale.totalRevenue, 7);
+    const saleLogs = await env.ProductSaleLog.find().lean();
+    assert.strictEqual(saleLogs.length, 2);
+    assert.ok(saleLogs.every(log => log.orderId === saleLogs[0].orderId));
     const updatedTeam = await env.Team.findById(team._id);
     assert.strictEqual(updatedTeam.drinksCount.points, 6);
     assert.strictEqual(updatedTeam.drinksCount.weizen, 2);
@@ -198,6 +210,27 @@ describe("Cashier product catalog", function () {
     })).json();
     assert.deepStrictEqual(remainingOrders.orders, []);
 
+    const statisticsResponse = await fetch(base + "/cashier/statistics", {
+      headers: { Cookie: env.adminCookie() }
+    });
+    assert.strictEqual(statisticsResponse.status, 200);
+    const statisticsPage = await statisticsResponse.text();
+    assert.match(statisticsPage, /<div class="stat-value">3<\/div>\s*<div class="stat-label">Verkaufte Produkte insgesamt/);
+    assert.match(statisticsPage, /<div class="stat-value">1<\/div>\s*<div class="stat-label">Anzahl Bestellungen/);
+
+    const secondSaleResponse = await post("/cashier/update-beer", {
+      teamId: "no_team",
+      items: [{ id: product.productId, quantity: 1 }]
+    }, true);
+    assert.strictEqual(secondSaleResponse.status, 200);
+    const updatedStatisticsResponse = await fetch(base + "/cashier/statistics", {
+      headers: { Cookie: env.adminCookie() }
+    });
+    assert.strictEqual(updatedStatisticsResponse.status, 200);
+    const updatedStatisticsPage = await updatedStatisticsResponse.text();
+    assert.match(updatedStatisticsPage, /<div class="stat-value">4<\/div>\s*<div class="stat-label">Verkaufte Produkte insgesamt/);
+    assert.match(updatedStatisticsPage, /<div class="stat-value">2<\/div>\s*<div class="stat-label">Anzahl Bestellungen/);
+
     product.active = false;
     await product.save();
     const rejectedResponse = await post("/cashier/update-beer", {
@@ -211,7 +244,7 @@ describe("Cashier product catalog", function () {
     const deletedProduct = await env.Product.findOne({ productId: product.productId });
     assert.strictEqual(deletedProduct.deleted, true);
     assert.strictEqual(deletedProduct.active, false);
-    assert.strictEqual((await env.ProductSales.findOne({ productId: product.productId })).totalQuantitySold, 2);
+    assert.strictEqual((await env.ProductSales.findOne({ productId: product.productId })).totalQuantitySold, 3);
 
     const managementResponse = await fetch(base + "/cashier/products", {
       headers: { Cookie: env.adminCookie() }

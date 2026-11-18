@@ -184,6 +184,32 @@
             </div>
         </div>
         
+        <!-- Verkäufe über die Zeit -->
+        <div class="table-container">
+            <h2><i class="fas fa-clock me-2"></i>Verkäufe nach Uhrzeit</h2>
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <label for="salesProductFilter" class="form-label">Produkt</label>
+                    <select id="salesProductFilter" class="form-select">
+                        <option value="all">Alle Bestellungen (gesamt)</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="salesBucket" class="form-label">Zeitintervall</label>
+                    <select id="salesBucket" class="form-select">
+                        <option value="5">5 Minuten</option>
+                        <option value="15">15 Minuten</option>
+                        <option value="30">30 Minuten</option>
+                        <option value="60" selected>1 Stunde</option>
+                    </select>
+                </div>
+            </div>
+            <div id="salesChartEmpty" class="text-muted text-center py-4" style="display:none;">Noch keine Verkäufe mit Zeitstempel vorhanden.</div>
+            <div id="salesChartWrap" style="overflow-x:auto;">
+                <canvas id="salesChart" height="320"></canvas>
+            </div>
+        </div>
+
         <!-- Produktverkaufsstatistiken -->
         <div class="table-container">
             <h2><i class="fas fa-box me-2"></i>Produktverkäufe</h2>
@@ -225,6 +251,18 @@
                     {{/each}}
                 </tbody>
             </table>
+            <div class="stats-overview mt-3">
+                <div class="stat-card quantity">
+                    <i class="fas fa-boxes"></i>
+                    <div class="stat-value">{{totalStats.totalQuantity}}</div>
+                    <div class="stat-label">Verkaufte Produkte insgesamt</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-receipt"></i>
+                    <div class="stat-value">{{totalStats.totalOrders}}</div>
+                    <div class="stat-label">Anzahl Bestellungen</div>
+                </div>
+            </div>
             <div class="text-center mt-3">
                 <button class="btn btn-danger" onclick="if(confirm('Alle Produktverkäufe löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) { window.location.href='/cashier/reset-products'; }"><i class="fas fa-trash me-2"></i>Produktverkäufe zurücksetzen</button>
             </div>
@@ -269,3 +307,102 @@
                 <button class="btn btn-danger" onclick="if(confirm('Alle Team-Punktzahlen zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden!')) { window.location.href='/cashier/reset-rankings'; }"><i class="fas fa-trash me-2"></i>Team-Rankings zurücksetzen</button>
             </div>        </div>        </div>
     </div>
+
+<script>
+(function () {
+    const sales = {{{salesLogJson}}};
+    const productSelect = document.getElementById('salesProductFilter');
+    const bucketSelect = document.getElementById('salesBucket');
+    const canvas = document.getElementById('salesChart');
+    const wrap = document.getElementById('salesChartWrap');
+    const empty = document.getElementById('salesChartEmpty');
+
+    const products = new Map();
+    sales.forEach(s => products.set(s.id, s.name));
+    products.forEach((name, id) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = name;
+        productSelect.appendChild(opt);
+    });
+
+    const pad = n => String(n).padStart(2, '0');
+
+    function render() {
+        const bucketMs = parseInt(bucketSelect.value, 10) * 60000;
+        const filtered = sales.filter(s => productSelect.value === 'all' || s.id === productSelect.value);
+        if (!filtered.length) {
+            wrap.style.display = 'none';
+            empty.style.display = 'block';
+            return;
+        }
+        wrap.style.display = 'block';
+        empty.style.display = 'none';
+
+        const first = Math.floor(filtered[0].t / bucketMs) * bucketMs;
+        const last = Math.floor(filtered[filtered.length - 1].t / bucketMs) * bucketMs;
+        const counts = new Map();
+        filtered.forEach(s => {
+            const key = Math.floor(s.t / bucketMs) * bucketMs;
+            counts.set(key, (counts.get(key) || 0) + s.q);
+        });
+        const bars = [];
+        for (let t = first; t <= last; t += bucketMs) bars.push({ t, v: counts.get(t) || 0 });
+
+        const barW = 36, gap = 8, left = 45, top = 20, bottom = 50;
+        const width = Math.max(wrap.clientWidth, left + bars.length * (barW + gap) + 10);
+        const height = 320;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        const max = Math.max(...bars.map(b => b.v));
+        const step = Math.max(1, Math.ceil(max / 5));
+        const yMax = Math.ceil(max / step) * step;
+        const plotH = height - top - bottom;
+
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#666';
+        ctx.strokeStyle = '#e5e5e5';
+        for (let v = 0; v <= yMax; v += step) {
+            const y = top + plotH - (v / yMax) * plotH;
+            ctx.beginPath();
+            ctx.moveTo(left, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+            ctx.fillText(v, left - 6, y + 4);
+        }
+
+        bars.forEach((b, i) => {
+            const x = left + gap + i * (barW + gap);
+            const h = (b.v / yMax) * plotH;
+            const y = top + plotH - h;
+            const grad = ctx.createLinearGradient(0, y, 0, top + plotH);
+            grad.addColorStop(0, '#667eea');
+            grad.addColorStop(1, '#764ba2');
+            ctx.fillStyle = grad;
+            ctx.fillRect(x, y, barW, h);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#333';
+            if (b.v > 0) ctx.fillText(b.v, x + barW / 2, y - 4);
+            ctx.fillStyle = '#666';
+            const d = new Date(b.t);
+            ctx.fillText(pad(d.getHours()) + ':' + pad(d.getMinutes()), x + barW / 2, top + plotH + 16);
+            if (i === 0 || d.getHours() === 0 && d.getMinutes() === 0) {
+                ctx.fillText(pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.', x + barW / 2, top + plotH + 32);
+            }
+        });
+    }
+
+    productSelect.addEventListener('change', render);
+    bucketSelect.addEventListener('change', render);
+    window.addEventListener('resize', render);
+    render();
+})();
+</script>

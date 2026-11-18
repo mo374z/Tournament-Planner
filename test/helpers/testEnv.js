@@ -13,7 +13,7 @@ const TEST_DB_URI = process.env.TEST_MONGO_URI || "mongodb://127.0.0.1:27017/Tou
 // Port 0 = random free port, so the socket.io server of the GameController does not collide with a running app
 process.argv.push("--socket-port", "0");
 
-for (const model of ["Game", "Team", "MainSettings", "GeneralCounters", "Player", "User", "Feedback", "ProductSales", "Product", "Decision"]) {
+for (const model of ["Game", "Team", "MainSettings", "GeneralCounters", "Player", "User", "Feedback", "ProductSales", "ProductSaleLog", "Product", "Decision"]) {
   require(path.join(ROOT, "src", "models", model));
 }
 
@@ -23,6 +23,7 @@ const MainSettings = mongoose.model("MainSettings");
 const Counters = mongoose.model("generalCounters");
 const Decision = mongoose.model("Decision");
 const ProductSales = mongoose.model("ProductSales");
+const ProductSaleLog = mongoose.model("ProductSaleLog");
 const Product = mongoose.model("Product");
 
 const MIN = 60 * 1000;
@@ -170,6 +171,7 @@ module.exports = {
   Counters,
   Decision,
   ProductSales,
+  ProductSaleLog,
   Product,
   connect,
   disconnect,

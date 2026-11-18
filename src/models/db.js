@@ -47,6 +47,7 @@ require('./Player');
 require('./User');
 require('./Feedback');
 require('./ProductSales');
+require('./ProductSaleLog');
 require('./Product');
 
 
