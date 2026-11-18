@@ -1,6 +1,7 @@
 // Reine Regel-Funktionen (ohne Datenbankzugriff), die ausschließlich aus dem Schedule-Template gesteuert werden:
 // Rundenplan, Tabellen, Gesamtwertung, Pools, Gegnertausch und Auflösung der Platzhalter.
 
+const { gameWinner } = require('./penaltyShootout');
 const isDummy = (o) => !o || o.isDummy === true;
 const idOf = (o) => (isDummy(o) ? null : String(o._id || o));
 
@@ -66,9 +67,10 @@ function computeStats(games, groupPhaseKey, points) {
     const b = idOf(g.opponents[1]);
     if (!a || !b) continue;
     const [ga, gb] = g.goals;
-    const pa = ga > gb ? points.win : ga === gb ? points.draw : points.loss;
-    const pb = gb > ga ? points.win : ga === gb ? points.draw : points.loss;
     const isGroup = g.gamePhase === groupPhaseKey;
+    const winner = isGroup ? (ga === gb ? null : ga > gb ? 0 : 1) : gameWinner(g);
+    const pa = winner === null ? points.draw : winner === 0 ? points.win : points.loss;
+    const pb = winner === null ? points.draw : winner === 1 ? points.win : points.loss;
     for (const [id, own, opp, pts] of [[a, ga, gb, pa], [b, gb, ga, pb]]) {
       const s = get(id);
       s.ptsGen += pts; s.gfGen += own; s.gaGen += opp;
@@ -281,7 +283,7 @@ function buildContext(template, teams, games, decisions = []) {
   const matchResult = (matchId) => {
     const g = gameByMatch.get(matchId);
     if (!g || g.status !== 'Ended' || isDummy(g.opponents[0]) || isDummy(g.opponents[1])) return null;
-    const w = winnerIndex(g.goals);
+    const w = gameWinner(g) ?? winnerIndex(g.goals);
     return { winner: teamById.get(idOf(g.opponents[w])), loser: teamById.get(idOf(g.opponents[1 - w])) };
   };
 

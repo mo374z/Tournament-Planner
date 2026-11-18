@@ -84,6 +84,15 @@
 
 <!-- Carousel Section - gleiche Breite wie Spielstandsanzeige -->
 <div class="container text-center live-wrap">
+    <div id="liveShootout" class="live-shootout d-none" aria-live="polite">
+        <div class="live-shootout-heading">⚽ Elfmeterschießen ⚽</div>
+        <div class="live-shootout-grid">
+            <div class="live-shootout-team"><h3 id="liveShootoutTeam0"></h3><div id="liveShootoutKicks0" class="live-penalty-kicks"></div></div>
+            <div id="liveShootoutScore" class="live-shootout-score"></div>
+            <div class="live-shootout-team"><h3 id="liveShootoutTeam1"></h3><div id="liveShootoutKicks1" class="live-penalty-kicks"></div></div>
+        </div>
+        <div id="liveShootoutStatus" class="live-shootout-status"></div>
+    </div>
     <div id="carouselSlidesOnly" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner d-flex align-items-center page-divider live-carousel" id="carouselImages">
             {{#each carouselImages}}
@@ -107,6 +116,17 @@
     <style>
         .live-wrap { width: 1200px; max-width: 95vw; margin: 0 auto; }
         .live-carousel { height: clamp(160px, 30vw, 400px); overflow: hidden; }
+        .live-shootout { border: 2px solid #222; border-radius: 10px; overflow: hidden; background: #fff; color: #111; }
+        .live-shootout-heading { background: #171717; color: #fff; font-size: clamp(1.3rem, 3.8vw, 3rem); font-weight: 800; text-transform: uppercase; }
+        .live-shootout-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 1rem; padding: 1rem; }
+        .live-shootout-team { min-width: 0; }
+        .live-shootout-team h3 { font-size: clamp(1.1rem, 3vw, 2.7rem); font-weight: 700; overflow-wrap: anywhere; }
+        .live-shootout-score { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 800; white-space: nowrap; }
+        .live-penalty-kicks { display: flex; justify-content: center; flex-wrap: wrap; gap: clamp(3px, 0.6vw, 8px); }
+        .penalty-kick { display: inline-flex; align-items: center; justify-content: center; width: clamp(24px, 4vw, 48px); height: clamp(24px, 4vw, 48px); border: 3px solid #888; border-radius: 50%; font-size: clamp(1rem, 2.5vw, 2rem); font-weight: 800; line-height: 1; }
+        .penalty-kick.scored { background: #16b629; color: #fff; border-color: #111; }
+        .penalty-kick.missed { background: #d20b0b; color: #fff; border-color: #111; }
+        .live-shootout-status { border-top: 1px solid #aaa; margin: 0 1rem; padding: 0.5rem; font-size: clamp(1.2rem, 3vw, 2.5rem); font-weight: 700; }
         .live-grid {
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
@@ -322,6 +342,7 @@
     </style>
 
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
+<script src="/js/penaltyShootout.js"></script>
 <script>
     const socket = io('{{socketConfig.protocol}}://{{socketConfig.host}}:{{socketConfig.socketPort}}');
 
@@ -330,6 +351,7 @@
         document.getElementById('connectionStatusText').classList.remove('text-danger');
         document.getElementById('connectionStatusText').classList.add('text-success');
         document.getElementById('connectionStatusText').textContent = 'Verbunden';
+        socket.emit('getData');
     });
 
     socket.on('disconnect', () => {
@@ -358,6 +380,30 @@
     socket.on('updateLiveGame', (updatedGame) => {
         updatePage(updatedGame);
         console.log('Game updated');
+    });
+
+    socket.on('reloadTVPage', () => location.reload());
+
+    socket.on('penaltyShootoutUpdate', payload => {
+        const state = payload.gameId === '{{ game._id }}' ? payload.shootout : null;
+        document.getElementById('liveShootout').classList.toggle('d-none', !state);
+        document.getElementById('carouselSlidesOnly').classList.toggle('d-none', Boolean(state));
+        if (!state) return;
+        const names = [document.getElementById('team1Name').textContent, document.getElementById('team2Name').textContent];
+        const count = Math.max(5, state.teamKicks[0].length, state.teamKicks[1].length);
+        state.teamKicks.forEach((kicks, team) => {
+            document.getElementById('liveShootoutTeam' + team).textContent = names[team];
+            renderPenaltyKicks(document.getElementById('liveShootoutKicks' + team), kicks, count);
+        });
+        document.getElementById('liveShootoutScore').textContent = state.scores.join(' : ');
+        document.getElementById('liveShootoutStatus').textContent = state.winner === null
+            ? 'Nächster Schütze: ' + names[state.nextTeam]
+            : 'Sieger: ' + names[state.winner];
+    });
+    socket.on('penaltyShootoutError', message => {
+        console.error(message);
+        document.getElementById('connectionStatusText').textContent = message;
+        document.getElementById('connectionStatusText').classList.add('text-danger');
     });
 
     const soundFiles = { start: 'startsound', pause: 'pausesound', resume: 'resumesound', end: 'endsound' };

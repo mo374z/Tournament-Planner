@@ -38,6 +38,19 @@ var GameSchema = new mongoose.Schema({
     extraTimeSeconds: { // played extra time (Nachspielzeit) in seconds
       type: Number, default: 0
     },
+    penaltyShootout: {
+      type: new mongoose.Schema({
+        starter: { type: Number, required: true },
+        kicks: [{
+          _id: false,
+          team: { type: Number, required: true },
+          scored: { type: Boolean, required: true },
+        }],
+        finished: { type: Boolean, default: false },
+        revision: { type: Number, default: 0 },
+      }, { _id: false }),
+      default: null,
+    },
     finalPlacement:{
       type: Number, default: null
     },

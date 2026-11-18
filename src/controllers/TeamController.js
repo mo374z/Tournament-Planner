@@ -8,6 +8,7 @@ const Player = mongoose.model('Player');
 const MainSettings = mongoose.model('MainSettings');
 const { commonMiddleware, authorizeRoles } = require('../middleware/auth');
 const { getRank, updateFinalRanks } = require('../models/Team');
+const { gameWinner } = require('../services/penaltyShootout');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -735,24 +736,23 @@ async function getPastGamesForTeam(teamId) {
       
       // Determine winner based on actual team positions
       let winner;
-      if (game.goals[0] === game.goals[1]) {
+      const shootoutWinner = gameWinner(game);
+      if (shootoutWinner === null) {
         winner = { name: "Unentschieden" };
       } else {
         // Find which index the current team is at
         const currentTeamIndex = game.opponents.findIndex(opponentId => 
           opponentId.toString() === teamId.toString()
         );
-        const opponentIndex = currentTeamIndex === 0 ? 1 : 0;
-        
         // Determine winner based on goals
-        if (game.goals[currentTeamIndex] > game.goals[opponentIndex]) {
+        if (shootoutWinner === currentTeamIndex) {
           winner = opponents.find(opp => opp.id.toString() === teamId.toString());
           //add the index to the winner object
           winner.index = currentTeamIndex;
         } else {
           winner = opponents.find(opp => opp.id.toString() !== teamId.toString());
           //add the index to the winner object
-          winner.index = opponentIndex;
+          winner.index = 1 - currentTeamIndex;
         }
       }      
       return {

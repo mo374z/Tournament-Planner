@@ -213,6 +213,28 @@ describe("GameController uses the template rules", function () {
     assert.ok(sf1.opponents.every(o => !env.isDummyOpponent(o)));
   });
 
+  it("advances the shootout winner to the semifinal", async function () {
+    await setup("4groups_4teams_v3.yaml", ["A", "B", "C", "D"]);
+    const group = await Game.find({ gamePhase: "Group_Stage" }).sort({ number: 1 });
+    for (const g of group) await app.play(g, [2, 1]);
+    await app.resolveAll();
+    const qf = await Game.findOne({ matchId: "QF1" });
+    await app.start(qf._id);
+    const action = name => fetch(`${app.base}/game/${qf._id}/shootout/${name}`, {
+      method: "POST", headers: { Cookie: env.adminCookie() },
+    });
+    assert.strictEqual((await action("start")).status, 200);
+    assert.strictEqual((await action("starter-1")).status, 200);
+    for (const kick of ["scored", "missed", "scored", "missed", "scored", "missed"]) {
+      assert.strictEqual((await action(kick)).status, 200);
+    }
+    assert.strictEqual((await action("finish")).status, 200);
+    await app.end(qf._id);
+    const sf1 = await Game.findOne({ matchId: "SF1" });
+    assert.strictEqual(String(sf1.opponents[0]), String(qf.opponents[1]));
+    assert.deepStrictEqual((await Game.findById(qf._id)).goals, [0, 0]);
+  });
+
   it("generating with a wrong team count reports an error", async function () {
     await env.resetDb();
     const settings = await env.seedSettings({ scheduleTemplate: "2groups_4teams_small.yaml" });

@@ -26,7 +26,7 @@
                         <td>{{formatTime this.time}}</td>
                         <td>{{this.opponents.[0]}}</td>
                         <td>{{this.opponents.[1]}}</td>
-                        <td>{{this.goals.[0]}}:{{this.goals.[1]}}</td>
+                        <td>{{this.goals.[0]}}:{{this.goals.[1]}}{{formatPenaltyResult this.penaltyShootout}}</td>
                         <td>{{this.duration}} min{{#streq this.status 'Ended'}}{{formatExtraTime this.extraTimeSeconds}}{{/streq}}</td>
                         <td>{{this.group.[0]}}</td>
                         <td>{{this.group.[1]}}</td>

@@ -121,6 +121,59 @@ describe("GameController: single game behaviour", function () {
     assert.strictEqual((await Counters.findOne({})).gamesPlayed, 0);
   });
 
+  it("persists and finishes a shootout without changing regular goals or goal counters", async function () {
+    const g = await gameNo(1);
+    const action = name => fetch(`${app.base}/game/${g._id}/shootout/${name}`, {
+      method: "POST", headers: { Cookie: env.adminCookie() },
+    });
+    assert.strictEqual((await action("start")).status, 409);
+    await app.start(g._id);
+    assert.strictEqual((await action("start")).status, 200);
+    assert.strictEqual((await action("starter-1")).status, 200);
+    assert.strictEqual((await action("finish")).status, 409);
+    assert.match((await app.end(g._id)).headers.get("location"), /error=shootout/);
+    for (const kick of ["scored", "missed", "scored", "missed", "scored", "missed"]) {
+      assert.strictEqual((await action(kick)).status, 200);
+    }
+    let fresh = await Game.findById(g._id);
+    assert.strictEqual(fresh.penaltyShootout.kicks.length, 6);
+    assert.strictEqual((await action("scored")).status, 409);
+    assert.strictEqual((await action("undo")).status, 200);
+    assert.strictEqual((await action("missed")).status, 200);
+    assert.strictEqual((await action("finish")).status, 200);
+    assert.strictEqual((await app.score(g._id, 1, 1)).status, 409);
+    await app.end(g._id);
+    fresh = await Game.findById(g._id);
+    assert.strictEqual(fresh.status, "Ended");
+    assert.deepStrictEqual(fresh.goals, [0, 0]);
+    assert.strictEqual(fresh.penaltyShootout.finished, true);
+    assert.strictEqual((await Counters.findOne({})).allGoals, 0);
+  });
+
+  it("uses the shootout winner for knockout statistics and final placement", async function () {
+    const [team1, team2] = await Team.find().limit(2);
+    const g = await Game.create({
+      number: 999, status: "Scheduled", duration: "10", time: new Date(),
+      opponents: [team1._id, team2._id], goals: [1, 1],
+      gamePhase: "Final", finalPlacement: 1, winnerPlacement: 1, loserPlacement: 2,
+    });
+    await app.start(g._id);
+    const action = name => fetch(`${app.base}/game/${g._id}/shootout/${name}`, {
+      method: "POST", headers: { Cookie: env.adminCookie() },
+    });
+    await action("start");
+    await action("starter-1");
+    for (const kick of ["scored", "missed", "scored", "missed", "scored", "missed"]) await action(kick);
+    await action("finish");
+    await app.end(g._id);
+    const [loser, winner] = await Promise.all([Team.findById(team1._id), Team.findById(team2._id)]);
+    assert.strictEqual(winner.gamesWon, 1);
+    assert.strictEqual(loser.gamesLost, 1);
+    assert.strictEqual(winner.finalPlacement, 1);
+    assert.strictEqual(loser.finalPlacement, 2);
+    assert.deepStrictEqual(winner.goals, [1, 1]);
+  });
+
   it("endGame twice does not book the result twice", async function () {
     const g = await gameNo(1);
     await app.play(g, [1, 0]);

@@ -66,6 +66,7 @@ const { loadTemplate } = require("../services/tournamentTemplate");
 const { phaseMatches, isDummy } = require("../services/tournamentRules");
 const { getPendingDecisions } = require("../services/decisions");
 const { removeLastGoalfromGameAndPlayer } = require("./ScorerController");
+const { summarize, gameWinner } = require("../services/penaltyShootout");
 
 // Start the Websocket server
 server.listen(socketPort, () => {
@@ -201,10 +202,26 @@ function finishOvertime() {
   return extraTime.seconds;
 }
 
+async function timerAvailable(socket) {
+  try {
+    const game = await Game.findOne({ status: "active" }, "penaltyShootout").lean().exec();
+    if (game && game.penaltyShootout) {
+      socket.emit("penaltyShootoutError", "Der Timer kann während des Elfmeterschießens nicht verändert werden.");
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error checking timer availability:", err);
+    socket.emit("penaltyShootoutError", "Der Timer konnte nicht verändert werden.");
+    return false;
+  }
+}
+
 // WebSocket logic
 io.on('connection', (socket) => {
 
-    socket.on('playPauseGame', () => {
+    socket.on('playPauseGame', async () => {
+        if (!await timerAvailable(socket)) return;
         if (countdownEnded) return;
         if (isPaused) {
             isPaused = false;
@@ -222,27 +239,37 @@ io.on('connection', (socket) => {
         }
 });
 
-  socket.on("resetGame", duration => {
+  socket.on("resetGame", async duration => {
+    if (!await timerAvailable(socket)) return;
     //duration is in seconds
     resetTimer(duration);
   });
 
-  socket.on("toggleOvertime", () => {
+  socket.on("toggleOvertime", async () => {
+    if (!await timerAvailable(socket)) return;
     // Can only be (de)activated while the regular countdown is still pending
     if (countdownEnded || extraTime.started) return;
     extraTime.enabled = !extraTime.enabled;
     emitExtraState();
   });
 
-  socket.on("endOvertime", () => {
+  socket.on("endOvertime", async () => {
+    if (!await timerAvailable(socket)) return;
     if (!extraTime.started || extraTime.finished) return;
     finishOvertime();
     emitSound("end");
     emitTimerState();
   });
 
-  socket.on("getData", () => {
+  socket.on("getData", async () => {
     emitTimerState();
+    try {
+      const game = await Game.findOne({ status: "active" }).lean().exec();
+      socket.emit("penaltyShootoutUpdate", shootoutPayload(game));
+    } catch (err) {
+      console.error("Error fetching penalty shootout:", err);
+      socket.emit("penaltyShootoutError", "Elfmeterschießen konnte nicht geladen werden.");
+    }
   });
 
   socket.on("disconnect", () => {
@@ -309,6 +336,67 @@ function resetTimer(duration) {
     emitTimerState();
 }
 
+function shootoutPayload(game) {
+  return {
+    gameId: game ? String(game._id) : null,
+    shootout: game && game.penaltyShootout ? summarize(game.penaltyShootout) : null,
+  };
+}
+
+router.post("/:id/shootout/:action", async (req, res) => {
+  try {
+    const game = await Game.findById(req.params.id).lean().exec();
+    if (!game || game.status !== "active") return res.status(409).send("Das Spiel ist nicht aktiv.");
+    if (game.goals[0] !== game.goals[1]) return res.status(409).send("Elfmeterschießen ist nur bei Gleichstand möglich.");
+
+    const action = req.params.action;
+    let shootout = game.penaltyShootout;
+    const filter = { _id: game._id, status: "active", goals: game.goals };
+    if (action === "start") {
+      if (shootout) return res.status(409).send("Das Elfmeterschießen wurde bereits gestartet.");
+      filter.penaltyShootout = null;
+      shootout = { starter: 0, kicks: [], finished: false, revision: 0 };
+    } else {
+      if (!shootout || shootout.finished) return res.status(409).send("Das Elfmeterschießen ist nicht aktiv.");
+      filter["penaltyShootout.revision"] = shootout.revision;
+      const state = summarize(shootout);
+      if (action === "starter-0" || action === "starter-1") {
+        if (shootout.kicks.length) return res.status(409).send("Die beginnende Mannschaft kann nach dem ersten Schuss nicht geändert werden.");
+        shootout.starter = action === "starter-0" ? 0 : 1;
+      } else if (action === "scored" || action === "missed") {
+        if (state.winner !== null) return res.status(409).send("Das Elfmeterschießen ist bereits entschieden.");
+        shootout.kicks.push({ team: state.nextTeam, scored: action === "scored" });
+      } else if (action === "undo") {
+        if (!shootout.kicks.length) return res.status(409).send("Es gibt keinen Schuss zum Zurücknehmen.");
+        shootout.kicks.pop();
+      } else if (action === "finish") {
+        if (state.winner === null) return res.status(409).send("Das Elfmeterschießen ist noch nicht entschieden.");
+        shootout.finished = true;
+      } else {
+        return res.status(400).send("Unbekannte Aktion.");
+      }
+      shootout.revision++;
+    }
+
+    const updated = await Game.findOneAndUpdate(filter, { $set: { penaltyShootout: shootout } }, { returnDocument: "after" }).lean().exec();
+    if (!updated) return res.status(409).send("Das Spiel wurde zwischenzeitlich geändert. Bitte erneut versuchen.");
+    if (action === "start") {
+      clearInterval(timerInterval);
+      stopPauseTimer();
+      isPaused = true;
+      countdownEnded = true;
+      if (extraTime.started) extraTime.finished = true;
+      emitTimerState();
+    }
+    const payload = shootoutPayload(updated);
+    io.emit("penaltyShootoutUpdate", payload);
+    res.json(payload);
+  } catch (err) {
+    console.error("Error updating penalty shootout:", err);
+    res.status(500).send("Elfmeterschießen konnte nicht aktualisiert werden.");
+  }
+});
+
 // Gesperrt, solange Teilnehmer nicht feststehen oder eine manuelle Entscheidung zum Spiel offen ist
 async function getBlockReason(game) {
   if (game.opponents.some((o) => isDummy(o))) return "Die Teilnehmer dieses Spiels stehen noch nicht fest.";
@@ -369,6 +457,7 @@ router.post("/start/:id", async (req, res) => {
 
     const blockReason = await getBlockReason(game);
     if (blockReason) return res.status(409).send(blockReason);
+    if (game.penaltyShootout) return res.status(409).send("Ein Spiel mit Elfmeterschießen kann nicht erneut gestartet werden.");
 
     await Game.updateMany({ status: "active" }, { status: "ENDE" }); // Set other active games to END When new game starts
     await Game.findByIdAndUpdate(gameId, { status: "active" }); // Set the game status to "active"
@@ -390,6 +479,9 @@ router.post("/:id/change-score/:teamId/:i", async (req, res) => {
     // Find the game by ID
     const game = await Game.findById(req.params.id).exec();
 
+    if (game.penaltyShootout) {
+      return res.status(409).send("Der Spielstand kann während eines Elfmeterschießens nicht geändert werden.");
+    }
     // check wheter the goals will be decremented below 0 and if so, dont decrement
     if (game.goals[req.params.teamId - 1] < 1 && req.params.i == -1) {
       res.status(304).send("Goals cannot be decremented below 0");
@@ -487,6 +579,9 @@ router.get("/:id/endGame", async (req, res) => {
 
     // Set the game status to "Ended" only if the status is "active"
     if (game.status == "active") {
+      if (game.penaltyShootout && !game.penaltyShootout.finished) {
+        return res.redirect(`/game/${gameId}/play?error=shootout`);
+      }
       const mainSettings = await MainSettings.findOne();
       const template = loadTemplate(mainSettings.scheduleTemplate);
 
@@ -529,7 +624,7 @@ function isKnockoutDrawNotAllowed(game, template) {
   const ko = template.knockout_stage || {};
   const isKnockout = game.matchId && phaseMatches(template).some((m) => m.match.id === game.matchId);
   const requireWinner = !ko.draw_resolution || ko.draw_resolution.require_winner !== false;
-  return Boolean(isKnockout && requireWinner && game.goals[0] === game.goals[1]);
+  return Boolean(isKnockout && requireWinner && gameWinner(game) === null);
 }
 
 const updateTeam = async (team, game, isWinner, template) => {
@@ -543,7 +638,7 @@ const updateTeam = async (team, game, isWinner, template) => {
     team.gamesWon += 1;
     team.points_Group_Stage += isGroup ? points.win : 0;
     team.points_General += points.win;
-  } else if (game.goals[0] === game.goals[1]) {
+  } else if (game.goals[0] === game.goals[1] && (isGroup || gameWinner(game) === null)) {
     team.gamesDraw += 1;
     team.points_Group_Stage += isGroup ? points.draw : 0;
     team.points_General += points.draw;
@@ -576,16 +671,18 @@ const updateTeam = async (team, game, isWinner, template) => {
 
 async function writeGameDataToTeams(game, template) {
   try {
+    const isGroup = game.gamePhase === (template.group_stage.game_phase_key || "Group_Stage");
+    const winner = isGroup && game.goals[0] === game.goals[1] ? null : gameWinner(game);
     await updateTeam(
       await Team.findById(game.opponents[0]),
       game,
-      game.goals[0] > game.goals[1],
+      winner === 0,
       template
     );
     await updateTeam(
       await Team.findById(game.opponents[1]),
       game,
-      game.goals[1] > game.goals[0],
+      winner === 1,
       template
     );
   } catch (err) {

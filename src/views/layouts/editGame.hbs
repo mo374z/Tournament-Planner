@@ -38,7 +38,7 @@
         <div class="mb-3">
             <label for="goals1" class="form-label text-decoration-underline">Tore (Team 1):</label>
             {{#streq game.status "Ended"}}
-                <input type="number" id="goals1" name="goals1" value="{{game.goals.[0]}}" required class="form-control" min="0">
+                <input type="number" id="goals1" name="goals1" value="{{game.goals.[0]}}" required class="form-control" min="0" {{#if game.penaltyShootout}}readonly{{/if}}>
             {{else}}
                 <p class="form-control-plaintext"><b>{{game.goals.[0]}}</b></p>
             {{/streq}}
@@ -71,7 +71,7 @@
         <div class="mb-3">
             <label for="goals2" class="form-label text-decoration-underline">Tore (Team 2):</label>
             {{#streq game.status "Ended"}}
-                <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required class="form-control" min="0">
+                <input type="number" id="goals2" name="goals2" value="{{game.goals.[1]}}" required class="form-control" min="0" {{#if game.penaltyShootout}}readonly{{/if}}>
             {{else}}
                 <p class="form-control-plaintext"><b>{{game.goals.[1]}}</b></p>
             {{/streq}}

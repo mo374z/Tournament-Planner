@@ -204,6 +204,13 @@
         min-height: 46px;
     }
 
+    .penalty-panel { margin-top: 1rem; padding: 1rem; border: 1px solid var(--play-panel-border); border-radius: 10px; background: var(--play-card-background); }
+    .penalty-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .penalty-kicks { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+    .penalty-kick { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 2px solid #8a939e; border-radius: 50%; font-weight: bold; }
+    .penalty-kick.scored { background: #198754; color: white; border-color: #198754; }
+    .penalty-kick.missed { background: #dc3545; color: white; border-color: #dc3545; }
+
     .overtime-notice {
         margin: 0.25rem 0 0;
         color: var(--play-overtime);
@@ -451,6 +458,27 @@
                     <div class="extra-time-actions">
                         <button id="toggleOvertimeButton" class="btn btn-outline-secondary">Nachspielzeit aktivieren</button>
                         <button id="endOvertimeButton" class="btn btn-danger d-none">Nachspielzeit beenden</button>
+                        <button id="startShootoutButton" class="btn btn-outline-secondary" type="button">Elfmetermodus starten</button>
+                    </div>
+                    <div id="shootoutPanel" class="penalty-panel d-none">
+                        <h3>Elfmeterschießen</h3>
+                        <div id="shootoutStarter">
+                            <p>Wer beginnt?</p>
+                            <button type="button" class="btn btn-outline-secondary" data-shootout-action="starter-0">{{ game.opponents.[0] }}</button>
+                            <button type="button" class="btn btn-outline-secondary" data-shootout-action="starter-1">{{ game.opponents.[1] }}</button>
+                        </div>
+                        <div class="penalty-teams">
+                            <div><strong id="shootoutTeam0">{{ game.opponents.[0] }}</strong><div id="shootoutKicks0" class="penalty-kicks"></div></div>
+                            <div><strong id="shootoutTeam1">{{ game.opponents.[1] }}</strong><div id="shootoutKicks1" class="penalty-kicks"></div></div>
+                        </div>
+                        <p id="shootoutScore" class="fs-3 fw-bold"></p>
+                        <p id="shootoutStatus" class="fw-bold" aria-live="polite"></p>
+                        <div class="extra-time-actions">
+                            <button type="button" class="btn btn-success" data-shootout-action="scored">Getroffen</button>
+                            <button type="button" class="btn btn-danger" data-shootout-action="missed">Verschossen</button>
+                            <button type="button" class="btn btn-outline-secondary" data-shootout-action="undo">Letzten Schuss zurücknehmen</button>
+                            <button type="button" class="btn btn-primary" data-shootout-action="finish">Elfmeterschießen beenden</button>
+                        </div>
                     </div>
                     <div id="pauseBox" class="pause-box">
                         <span>Akt. Unterbrechung</span>
@@ -546,11 +574,14 @@
     </section>
 </div>
 
+<script src="/js/penaltyShootout.js"></script>
 <script>
     console.log('Game status: {{ areOtherGamesActiveBool }}');
 
     if (new URLSearchParams(window.location.search).get('error') === 'draw') {
-        alert('Dieses Spiel darf laut Turnier-Template nicht unentschieden enden. Bitte Nachspielzeit/Elfmeterschießen spielen und den Spielstand anpassen.');
+        alert('Dieses Spiel darf laut Turnier-Template nicht unentschieden enden. Bitte Nachspielzeit oder Elfmeterschießen spielen.');
+    } else if (new URLSearchParams(window.location.search).get('error') === 'shootout') {
+        alert('Bitte zuerst das Elfmeterschießen zu Ende spielen und beenden.');
     }
 
     const themeToggle = document.getElementById('themeToggle');
@@ -644,9 +675,10 @@
         try {
             const gameId = '{{ game._id }}';
 
-            await fetch(`/game/start/${gameId}`, {
+            const startResponse = await fetch(`/game/start/${gameId}`, {
                 method: 'POST',
             });
+            if (!startResponse.ok) throw new Error(await startResponse.text());
 
             const response = await fetch(`/game/${gameId}/updateLivePage`, {
                 method: 'POST',
@@ -658,6 +690,7 @@
             location.reload();
         } catch (err) {
             console.error('Error updating data on Live page: ', err);
+            alert(err.message || 'Das Spiel konnte nicht aktiviert werden.');
         }
     }
 
@@ -682,6 +715,7 @@
         if ('{{ game.status }}' === 'active') {
             socket.emit('getNextGame');
         }
+        socket.emit('getData');
     });
 
     socket.on('disconnect', () => {
@@ -694,6 +728,70 @@
     });
 
     socket.emit('getData'); //Call for game data when page loads
+
+    let shootoutState = null;
+    let shootoutBusy = false;
+    let timerHasEnded = false;
+    const shootoutPanel = document.getElementById('shootoutPanel');
+    const shootoutNames = [document.getElementById('shootoutTeam0').textContent, document.getElementById('shootoutTeam1').textContent];
+    const shootoutButtons = document.querySelectorAll('[data-shootout-action]');
+
+    function renderShootout() {
+        const state = shootoutState;
+        const active = Boolean(state);
+        shootoutPanel.classList.toggle('d-none', !active);
+        document.getElementById('startShootoutButton').classList.toggle('d-none', active);
+        document.getElementById('startShootoutButton').disabled = shootoutBusy;
+        document.querySelectorAll('#team1Controls button, #team2Controls button, #startButton, #resetButton, #toggleOvertimeButton, #endOvertimeButton').forEach(button => {
+            button.disabled = active;
+        });
+        document.getElementById('startButton').disabled = active || timerHasEnded;
+        if (!state) return;
+        const count = Math.max(5, state.teamKicks[0].length, state.teamKicks[1].length);
+        state.teamKicks.forEach((kicks, team) => renderPenaltyKicks(document.getElementById('shootoutKicks' + team), kicks, count));
+        document.getElementById('shootoutScore').textContent = state.scores.join(' : ');
+        document.getElementById('shootoutStatus').textContent = state.winner === null
+            ? 'Nächster Schütze: ' + shootoutNames[state.nextTeam]
+            : (state.finished ? 'Sieger: ' : 'Sieger steht fest: ') + shootoutNames[state.winner];
+        document.getElementById('shootoutStarter').classList.toggle('d-none', state.kicks.length > 0 || state.finished);
+        shootoutButtons.forEach(button => {
+            const action = button.dataset.shootoutAction;
+            button.classList.toggle('d-none', state.finished || (action === 'finish' && state.winner === null));
+            button.disabled = shootoutBusy || ((action === 'scored' || action === 'missed') && state.winner !== null) || (action === 'undo' && !state.kicks.length);
+            if (action.startsWith('starter-')) {
+                button.classList.toggle('btn-primary', action === 'starter-' + state.starter);
+                button.classList.toggle('btn-outline-secondary', action !== 'starter-' + state.starter);
+                button.setAttribute('aria-pressed', String(action === 'starter-' + state.starter));
+            }
+        });
+    }
+
+    async function shootoutAction(action) {
+        if (shootoutBusy) return;
+        shootoutBusy = true;
+        renderShootout();
+        try {
+            const response = await fetch('/game/{{ game._id }}/shootout/' + action, { method: 'POST' });
+            if (!response.ok) throw new Error(await response.text());
+            const payload = await response.json();
+            shootoutState = payload.shootout;
+        } catch (err) {
+            alert(err.message || 'Elfmeterschießen konnte nicht aktualisiert werden.');
+            socket.emit('getData');
+        } finally {
+            shootoutBusy = false;
+            renderShootout();
+        }
+    }
+
+    document.getElementById('startShootoutButton').addEventListener('click', () => shootoutAction('start'));
+    shootoutButtons.forEach(button => button.addEventListener('click', () => shootoutAction(button.dataset.shootoutAction)));
+    socket.on('penaltyShootoutUpdate', payload => {
+        if (payload.gameId !== '{{ game._id }}') return;
+        shootoutState = payload.shootout;
+        renderShootout();
+    });
+    socket.on('penaltyShootoutError', message => alert(message));
 
     function formatClock(totalSeconds) {
         const minutes = Math.floor(totalSeconds / 60);
@@ -713,7 +811,8 @@
         }
         const startButton = document.getElementById('startButton');
         startButton.textContent = isPaused ? 'Timer starten' : 'Timer pausieren';
-        startButton.disabled = timerStatus === 'Ended';
+        timerHasEnded = timerStatus === 'Ended';
+        startButton.disabled = timerHasEnded || Boolean(shootoutState);
         countdownTimer.classList.toggle('overtime-active', isOvertime);
         countdownTimer.classList.toggle('text-danger', Boolean(lastMin) && !isOvertime);
     });

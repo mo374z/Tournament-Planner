@@ -1,5 +1,6 @@
 const bodyparser = require('body-parser');
 const { TOURNAMENT_TZ, formatLocalInput } = require('./src/services/timezone');
+const { formatPenaltyResult } = require('./src/services/penaltyShootout');
 const path = require('path');
 const https = require('https');
 const http = require('http');
@@ -43,6 +44,7 @@ app.engine('hbs', exphbs.engine({
   extname: 'hbs',
   layoutsDir: __dirname + '/src/views/layouts/',
   helpers: {
+    formatPenaltyResult,
     formatTime: function (time) {
       const formattedTime = new Date(time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: TOURNAMENT_TZ });
       return formattedTime;

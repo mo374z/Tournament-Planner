@@ -99,6 +99,7 @@ async function getRank(team, groupRank = false) {
 
 async function updateFinalRanks() {
     const Game = mongoose.model('Game');
+    const { gameWinner } = require('../services/penaltyShootout');
 
     // Find all placement games that have ended
     const placementGames = await Game.find({
@@ -109,7 +110,7 @@ async function updateFinalRanks() {
     // Update finalPlacement for each team that participated in a placement game
     for (const game of placementGames) {
         // Determine winner and loser
-        const isTeam0Winner = game.goals[0] >= game.goals[1]; // bei Gleichstand gewinnt das erste Team (wie im Spielplan)
+        const isTeam0Winner = (gameWinner(game) ?? 0) === 0;
         const winnerId = isTeam0Winner ? game.opponents[0] : game.opponents[1];
         const loserId = isTeam0Winner ? game.opponents[1] : game.opponents[0];
 

@@ -321,16 +321,10 @@ router.post('/:id/edit', async (req, res) => {
         } = req.body;
 
         
-        // check wether goals are undefined, if not set goals1 and goals2 to 0
-        if (goals1 === undefined) {
-            goals1 = 0;
-        }
-        if (goals2 === undefined) {
-            goals2 = 0;
-        }
-
     // Fetch existing game details to obtain the old game time
     const existingGame = await Game.findById(gameId);
+    if (goals1 === undefined) goals1 = existingGame.penaltyShootout ? existingGame.goals[0] : 0;
+    if (goals2 === undefined) goals2 = existingGame.penaltyShootout ? existingGame.goals[1] : 0;
     const oldGameTime = existingGame.time;
     const oldGameduration = existingGame.duration;
 
@@ -351,6 +345,13 @@ router.post('/:id/edit', async (req, res) => {
       team2 = existingGame.opponents[1];
     } else if (team2 === undefined) {
       team2 = existingGame.opponents[1];
+    }
+
+    if (existingGame.penaltyShootout &&
+        (String(team1) !== String(existingGame.opponents[0]) ||
+         String(team2) !== String(existingGame.opponents[1]) ||
+         Number(goals1) !== existingGame.goals[0] || Number(goals2) !== existingGame.goals[1])) {
+      return res.status(409).send("Mannschaften und Spielstand können nach Beginn eines Elfmeterschießens nicht geändert werden.");
     }
 
     await Game.findByIdAndUpdate(gameId, {

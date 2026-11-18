@@ -15,6 +15,7 @@ Welcome to Tournament-Planner - your comprehensive solution for managing the leg
   - Instant goal count updates
   - Real-time standings
   - Live match status
+  - Elfmeterschießen bei Gleichstand: Startmannschaft wählen, Treffer und Fehlschüsse erfassen oder den letzten Schuss zurücknehmen. Nach fünf Schüssen pro Team wird bei Gleichstand paarweise weitergeschossen. Der Timer wird beim Start gestoppt. Das Ergebnis bleibt getrennt vom Spielstand gespeichert; währenddessen zeigt die Live-Seite das Elfmeterschießen statt der Werbung. Erst nach Entscheidung und Beenden des Elfmeterschießens kann das Spiel abgeschlossen werden. Gruppenspiele zählen für die Tabelle weiterhin als Unentschieden.
 
 ### User Experience
 - **Cross-Platform Accessibility**
